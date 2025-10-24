@@ -1,0 +1,57 @@
+{
+  "name": "@iyulab/router",
+  "version": "0.1.0",
+  "description": "A modern client-side router for web applications with support for Lit and React components",
+  "keywords": [
+    "router",
+    "routing",
+    "client-side",
+    "lit",
+    "react",
+    "spa",
+    "navigation"
+  ],
+  "license": "MIT",
+  "author": "iyulab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iyulab/node-packages.git",
+    "directory": "packages/router"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs.js",
+      "default": "./dist/index.umd.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@lit/react": "^1.0.8",
+    "lit": "^3.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "urlpattern-polyfill": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "rimraf": "^6.0.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-dts": "^4.2.3"
+  }
+}
