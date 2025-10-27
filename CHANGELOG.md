@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1 (October 27, 2025)
+- Fixed import path in package.json main module
+
 ## 0.2.0 (October 27, 2025)
 
 ### Major Updates
