@@ -1,13 +1,13 @@
 import type { RouteInfo } from "./types";
 
 /**
- * pathname 경로를 조합하여 반환합니다.
- * - 절대 경로로 반환됩니다.
+ * pathname 경로를 조합하여 절대경로를 반환합니다.
  */
-export function combinePath(...paths: string[]) {
-  return "/" + paths.map(p => p.replace(/^\/|\/$/g, ''))
-  .filter(p => p.length > 0)
-  .join('/');
+export function absolutePath(...paths: string[]) {
+  paths = paths.map(p => p.replace(/^\/|\/$/g, '')).filter(p => p.length > 0);
+  if (paths.length === 0) return '/';
+
+  return '/' + paths.join('/');
 }
 
 /**
@@ -17,22 +17,19 @@ export function combinePath(...paths: string[]) {
  */
 export function parseURL(url: string, basepath: string): RouteInfo {
   let urlObj: URL;
-  try {
-    basepath = catchBasepath(basepath);
-    if (url.startsWith('http')) {
-      urlObj = new URL(url);
-    } else if (url.startsWith('/')) {
-      urlObj = new URL(url, window.location.origin);
-    } else if (url.startsWith('?')) {
-      urlObj = new URL(window.location.pathname + url, window.location.origin);
-    } else if (url.startsWith('#')) {
-      urlObj = new URL(window.location.pathname + window.location.search + url, window.location.origin);
-    } else {
-      urlObj = new URL(combinePath(basepath, url), window.location.origin);
-    }
-  } catch (error) {
-    throw new Error(`Invalid URL format: ${url}`);
+  basepath = catchBasepath(basepath);
+  if (url.startsWith('http')) {
+    urlObj = new URL(url);
+  } else if (url.startsWith('/')) {
+    urlObj = new URL(url, window.location.origin);
+  } else if (url.startsWith('?')) {
+    urlObj = new URL(window.location.pathname + url, window.location.origin);
+  } else if (url.startsWith('#')) {
+    urlObj = new URL(window.location.pathname + window.location.search + url, window.location.origin);
+  } else {
+    urlObj = new URL(absolutePath(basepath, url), window.location.origin);
   }
+  
   return {
     href: urlObj.href,
     origin: urlObj.origin,
@@ -52,6 +49,8 @@ export function parseURL(url: string, basepath: string): RouteInfo {
  */
 export function catchBasepath(basepath: string) {
   if (basepath === '/') return basepath;
+
+  // basepath가 경로의 중간에 올수도 있으므로 /* 패턴으로 먼저 검사
   let pattern = new URLPattern({ pathname: basepath + '/*' });
   let match = pattern.exec({ pathname: window.location.pathname });
   if (match) {
@@ -59,25 +58,16 @@ export function catchBasepath(basepath: string) {
     const restPath = match.pathname.groups?.["0"];
     return restPath ? rawPath.replace("/" + restPath, '') : rawPath.slice(0, -1);
   }
+
+  // basepath가 경로의 끝에 올수도 있으므로 /? 패턴으로도 검사
   pattern = new URLPattern({ pathname: `${basepath}{/}?` });
   match = pattern.exec({ pathname: window.location.pathname });
   if (match) {
     return match.pathname.input;
   }
-  return basepath;
-}
 
-/**
- * /foo/* -> /foo/bar/baz 와 같은 와일드카드 패턴을 처리하기 위한 함수
- */
-export function getTailGroup(groups: {[key: string]: string | undefined}) {
-  let tailKey: string | undefined;
-  for (const key of Object.keys(groups)) {
-    if (/\d+/.test(key) && (tailKey === undefined || key > tailKey!)) {
-      tailKey = key;
-    }
-  }
-  return tailKey && groups[tailKey];
+  // 일치하는 basepath가 없으면 기본 basepath 반환
+  return basepath;
 }
 
 /**
@@ -87,6 +77,6 @@ export function getTailGroup(groups: {[key: string]: string | undefined}) {
  */
 export function getRandomID() {
   return window.isSecureContext
-    ? window.crypto.randomUUID()
-    : window.crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+        ? window.crypto.randomUUID()
+        : window.crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
 }

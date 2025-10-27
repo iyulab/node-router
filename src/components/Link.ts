@@ -1,19 +1,24 @@
 import { LitElement, css, html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
-import { createComponent } from "@lit/react";
-import React from 'react';
-import { combinePath } from "../Utils";
+import { property, state } from "lit/decorators.js";
 
-@customElement('u-link')
-export class ULink extends LitElement {
-  private static externalLinks = [/^http/, /^\/\//, /^mailto:/, 
-    /^tel:/, /^javascript:/, /^ftp:/, /^data:/, /^ws:/, /^wss:/ ];
-  private isExternalLink: boolean = false;
+import { absolutePath } from "../internals";
+
+/** 외부 링크 패턴 목록 */
+const EXTERNAL_LINK_PATTERNS = [
+  /^http/, /^\/\//, /^mailto:/, /^tel:/, /^javascript:/, /^ftp:/, /^data:/, /^ws:/, /^wss:/
+];
+
+/**
+ * - 클라이언트 라우팅을 지원하는 링크 엘리먼트입니다.
+ * - 내부 링크는 클라이언트 라우팅을 수행하고, 외부 링크는 새로운 페이지로 이동합니다.
+ * - 마우스 중간 버튼 클릭 또는 Ctrl 키를 누르면 새로운 탭에서 엽니다.
+ */
+export class Link extends LitElement {
+  /** 외부 링크 여부 */
+  private isExternal: boolean = false;
   
-  /**
-   * a 태그의 href 속성 및 새로운 페이지로 이동할 때 사용될 링크입니다.
-   */
-  @state() link: string = '#';
+  /** a 태그의 href 속성 및 새로운 페이지로 이동할 때 사용될 링크입니다. */
+  @state() anchorHref: string = '#';
 
   /**
    * - 속성을 정의하지 않으면 basepath로 이동합니다.
@@ -27,11 +32,11 @@ export class ULink extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.addEventListener('mousedown', this.handleMouseEvent);
+    this.addEventListener('mousedown', this.handleMouseDown);
   }
 
   disconnectedCallback() {
-    this.removeEventListener('mousedown', this.handleMouseEvent);
+    this.removeEventListener('mousedown', this.handleMouseDown);
     super.disconnectedCallback();
   }
 
@@ -40,14 +45,14 @@ export class ULink extends LitElement {
     await this.updateComplete;
 
     if (changedProperties.has('href')) {
-      this.isExternalLink = this.checkExternalLink(this.href || '');
-      this.link = this.getLink(this.href);
+      this.isExternal = this.checkExternalLink(this.href || '');
+      this.anchorHref = this.getAnchorHref(this.href);
     }
   }
 
   render() {
     return html`
-      <a href=${this.link} @click=${this.preventClickEvent}>
+      <a href=${this.anchorHref} @click=${this.preventClickEvent}>
         <slot></slot>
       </a>
     `;
@@ -59,7 +64,7 @@ export class ULink extends LitElement {
    * - 새로운 페이지로 이동: http로 시작하거나 절대경로일 경우 새로운 페이지로 이동합니다.
    * - 클라이언트 라우팅: 상대경로로 시작하면 클라이언트 라우팅을 합니다.
    */
-  private handleMouseEvent = (event: MouseEvent) => {
+  private handleMouseDown = (event: MouseEvent) => {
     // 네비게이션 이벤트가 아닌 경우는 처리하지 않습니다.
     const isNonNavigationClick = event.button === 2 || event.metaKey || event.shiftKey || event.altKey;
     if (event.defaultPrevented || isNonNavigationClick) return;
@@ -70,12 +75,11 @@ export class ULink extends LitElement {
 
     if (event.button === 1 || event.ctrlKey) {
       // 마우스 중간 버튼 또는 Ctrl 키를 누르면 새 탭에서 열립니다.
-      window.open(this.link, '_blank');
+      window.open(this.anchorHref, '_blank');
     } else if (!this.href) {
       // href 속성이 없으면 basepath로 이동합니다.
       this.dispatchPopstate(basepath, basepath);
-    } else if (this.isExternalLink ||
-      (this.href.startsWith("/") && !this.href.startsWith(basepath))) {
+    } else if (this.isExternal || (this.href.startsWith("/") && !this.href.startsWith(basepath))) {
       // 외부링크 이거나 basepath가 아닌 절대경로일 경우 새로운 페이지로 이동합니다.
       window.location.href = this.href;
     } else if (this.href.startsWith('#')) {
@@ -86,57 +90,50 @@ export class ULink extends LitElement {
       const url = window.location.pathname + this.href;
       this.dispatchPopstate(basepath, url);
     } else {
-      const url =combinePath(basepath, this.href);
+      const url =absolutePath(basepath, this.href);
       this.dispatchPopstate(basepath, url);
     }
   }
 
-  /**
-   * 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다.
-   */
+  /** 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다. */
   private dispatchPopstate(basepath: string, url: string) {
     window.history.pushState({ basepath: basepath }, '', url);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }
 
-  /**
-   * 클라이언트 라우팅을 위해 hashchange 이벤트를 발생시킵니다.
-   * - 해시이벤트를 받으면 현재 페이지에서 해당 태그위치로 스크롤합니다.
-   * - 스크롤 조절은 따로 구현해야 합니다.
-   */
+  /** 클라이언트 라우팅을 위해 hashchange 이벤트를 발생시킵니다. */
   private dispatchHashchange(basepath: string, url: string) {
     window.history.pushState({ basepath: basepath }, '', url);
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
 
-  /**
-   * link로 사용할 URL을 반환합니다.
-   */
-  private getLink(href?: string) {
-    const basepath = window.history.state?.basepath || '';
-    if (!href) {
-      return window.location.origin + basepath;
-    } else if (this.isExternalLink || href.startsWith('/') ||
-      href.startsWith('#') ||  href.startsWith('?')) {
-      return href;
-    } else {
-      return combinePath(basepath, href);
-    }
-  }
-
-  /**
-   * 기본 a 태그의 클릭 이벤트를 막습니다.
-   */
+  /** 기본 a 태그의 클릭 이벤트를 막습니다. */
   private preventClickEvent = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
   }
 
-  /**
-   * 외부 링크인지 확인합니다.
-   */
+  /** 외부 링크인지 확인합니다. */
   private checkExternalLink(href: string) {
-    return ULink.externalLinks.some((pattern) => pattern.test(href));
+    return EXTERNAL_LINK_PATTERNS.some((pattern) => pattern.test(href));
+  }
+
+  /** a 태그의 href 값을 계산합니다. */
+  private getAnchorHref(href?: string): string {
+    const basepath = window.history.state?.basepath || '';
+    
+    // href 속성이 없으면 basepath로 이동합니다.
+    if (!href) {
+      return window.location.origin + basepath;
+    }
+    
+    // 외부 링크이거나 절대경로일 경우 그대로 반환합니다.
+    if (this.isExternal || href.startsWith('/') || href.startsWith('#') || href.startsWith('?')) {
+      return href;
+    }
+
+    // 상대경로일 경우 basepath와 결합하여 반환합니다.
+    return absolutePath(basepath, href);
   }
 
   static styles = css`
@@ -152,9 +149,3 @@ export class ULink extends LitElement {
     }
   `;
 }
-
-export const Link = createComponent({
-  react: React as any,
-  tagName: 'u-link',
-  elementClass: ULink,
-});

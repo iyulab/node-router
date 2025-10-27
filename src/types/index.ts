@@ -1,5 +1,5 @@
-export type { IndexRoute, NonIndexRoute } from './RouteTypes';
-export type { Route } from './Route';
-export type { RouteURL } from './RouteURL';
+export type { RouteConfig } from './RouteConfig';
 export type { RouteInfo } from './RouteInfo';
 export type { RouterConfig } from './RouterConfig';
+export type { RouteError } from './RouteError';
+export * from './RouteEvent';

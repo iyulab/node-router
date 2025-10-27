@@ -7,26 +7,17 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'Router',
-      formats: ['es', 'cjs', 'umd'],
+      formats: ['es', 'cjs'],
       fileName: (format) => `main.${format}.js`,
     },
-    outDir: 'dist',
     rollupOptions: {
       external: [
-        'lit', 
-        'react', 
-        'react-dom',
-        '@lit/react'
-      ],
-      output: {
-        globals: {
-          'lit': 'Lit',
-          'react': 'React',
-          'react-dom': 'ReactDOM',
-          '@lit/react': 'LitReact'
-        }
-      }
+        /^react.*/,
+        /^lit.*/,
+        /^@lit.*/,
+      ]
     },
+    outDir: 'dist',
     emptyOutDir: true,
     minify: false,
     sourcemap: false

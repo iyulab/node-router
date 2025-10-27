@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "router",
@@ -26,9 +26,9 @@
   "exports": {
     ".": {
       "types": "./dist/main.d.ts",
-      "import": "./dist/main.es.js",
+      "import": "./dist/main.js",
       "require": "./dist/main.cjs.js",
-      "default": "./dist/main.umd.js"
+      "default": "./dist/main.es.js"
     }
   },
   "scripts": {

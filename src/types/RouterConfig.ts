@@ -1,11 +1,10 @@
-import type { LitElement } from "lit";
-import type { Route } from "./Route";
+import type { RouteConfig } from "./RouteConfig";
 
 /**
  * 라우터 설정
  */
 export interface RouterConfig {
-  /**
+    /**
    * 라우터가 연결될 최상위 엘리먼트
    */
   root: HTMLElement;
@@ -22,10 +21,5 @@ export interface RouterConfig {
    * - 라우트는 URLPattern을 사용하여 경로를 탐색합니다.
    * - 라우트는 렌더링할 엘리먼트 또는 컴포넌트를 지정합니다.
    */
-  routes: Route[];
-
-  /**
-   * 라우터가 URL을 찾지 못했을 때 렌더링할 엘리먼트
-   */
-  notfound: typeof LitElement | string;
+  routes: RouteConfig[];
 }

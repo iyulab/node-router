@@ -1,9 +1,6 @@
 import { LitElement, RootPart, html, render } from 'lit';
-import { customElement } from 'lit/decorators.js';
 import { createElement, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createComponent } from '@lit/react';
-import React from 'react';
 
 interface RenderOption {
   id?: string;
@@ -18,22 +15,25 @@ interface RenderComponentOption extends RenderOption {
   component: ComponentType;
 }
 
-@customElement('u-outlet')
-export class UOutlet extends LitElement {
+/**
+ * 라우트 아웃렛 컴포넌트
+ * 라우트 설정에 따라 LitElement 또는 React 컴포넌트를 렌더링합니다.
+ */
+export class Outlet extends LitElement {
 
   private routeId?: string;
-  private root?: HTMLDivElement;
+  private container?: HTMLDivElement;
+
   private reactRoot?: ReturnType<typeof createRoot>;
   private litRoot?: RootPart;
 
+  /** 쉐도우를 사용하지 않고, 직접 렌더링합니다. */
   protected createRenderRoot() {
     return this;
   }
 
   render() {
-    return html`
-      ${this.root}
-    `;
+    return html`${this.container}`;
   }
 
   /**
@@ -42,19 +42,21 @@ export class UOutlet extends LitElement {
    */
   public async renderElement({ id, element, force }: RenderElementOption) {
     if (this.routeId === id && !force) {
-      return this.root?.firstElementChild;
+      return this.container?.firstElementChild;
     }
+
     this.routeId = id;
-    this.clearRoot();
+    this.clear();
     const template = typeof element === 'string'
       ? document.createElement(element)
       : element.prototype instanceof LitElement
       ? new element()
       : undefined;
-    if (!template || !this.root) {
+    if (!template || !this.container) {
       throw new Error('DOM이 초기화되지 않았습니다.');
     }
-    this.litRoot = render(html`${template}`, this.root);
+    this.litRoot = render(html`${template}`, this.container);
+
     this.requestUpdate();
     await this.updateComplete;
     return template;
@@ -66,25 +68,27 @@ export class UOutlet extends LitElement {
    */
   public async renderComponent({ id, component, force }: RenderComponentOption) {
     if (this.routeId === id && !force) {
-      return this.root;
+      return this.container;
     }
+
     this.routeId = id;
-    this.clearRoot();
+    this.clear();
     const template = createElement(component);
-    if (!template || !this.root) {
+    if (!template || !this.container) {
       throw new Error('DOM이 초기화되지 않았습니다.');
     }
-    this.reactRoot = createRoot(this.root);
+    this.reactRoot = createRoot(this.container);
     this.reactRoot.render(template);
+
     this.requestUpdate();
     await this.updateComplete;
-    return this.root;
+    return this.container;
   }
 
   /**
    * 기존 DOM을 라이프 사이클에 맞게 제거합니다.
    */
-  public clearRoot() {
+  public clear() {
     // React DOM이 렌더링된 경우
     if(this.reactRoot) {
       this.reactRoot.unmount();
@@ -95,15 +99,9 @@ export class UOutlet extends LitElement {
       this.litRoot.setConnected(false);
       this.litRoot = undefined;
     }
-    // Root 초기화
-    this.root = document.createElement('div');
-    this.root.style.width = '100%';
-    this.root.style.height = '100%';
+    // Container 초기화
+    this.container = document.createElement('div');
+    this.container.style.width = '100%';
+    this.container.style.height = '100%';
   }
 }
-
-export const Outlet = createComponent({
-  react: React as any,
-  tagName: 'u-outlet',
-  elementClass: UOutlet,
-});
