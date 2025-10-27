@@ -9,3 +9,10 @@ export interface RouteInfo extends RouteURL {
    */
   data?: any;
 }
+
+// window.route 타입 선언
+declare global {
+  interface Window {
+    route: RouteInfo;
+  }
+}

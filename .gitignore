@@ -14,7 +14,6 @@ build/
 .vscode/
 *.swp
 *.swo
-*~
 
 # Temporary files
 *.tmp

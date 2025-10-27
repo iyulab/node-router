@@ -6,35 +6,24 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'URouter',
-      fileName: (format) => {
-        switch (format) {
-          case 'es':
-            return 'index.js';
-          case 'cjs':
-            return 'index.cjs.js';
-          case 'umd':
-            return 'index.umd.js';
-          default:
-            return `index.${format}.js`;
-        }
-      },
-      formats: ['es', 'cjs', 'umd']
+      name: 'Router',
+      formats: ['es', 'cjs', 'umd'],
+      fileName: (format) => `main.${format}.js`,
     },
     outDir: 'dist',
     rollupOptions: {
-      external: ['lit', 'react', 'react-dom', '@lit/react'],
+      external: [
+        'lit', 
+        'react', 
+        'react-dom',
+        '@lit/react'
+      ],
       output: {
         globals: {
           'lit': 'Lit',
           'react': 'React',
           'react-dom': 'ReactDOM',
           '@lit/react': 'LitReact'
-        },
-        format: 'es',
-        compact: false,
-        generatedCode: {
-          constBindings: true
         }
       }
     },
@@ -45,8 +34,9 @@ export default defineConfig({
   plugins: [
     dts({
       outDir: 'dist',
+      tsconfigPath: resolve(__dirname, 'tsconfig.json'),
       insertTypesEntry: true,
-      rollupTypes: true
+      rollupTypes: true,
     }) as PluginOption
   ]
 });

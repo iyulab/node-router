@@ -12,6 +12,7 @@ A modern client-side router for web applications with support for Lit and React 
 - 🔗 Smart link component with external link detection
 - 📊 Route progress tracking
 - 🎨 Flexible outlet system for component rendering
+- 🌐 Global route information access via `window.route`
 
 ## Installation
 
@@ -123,28 +124,66 @@ const routes = [
 
 ### Route Information Access
 
+You can access current route information globally via `window.route`:
+
 ```typescript
-import { LitChannel, ReactChannel } from '@iyulab/router';
+// In any component or script
+console.log('Current path:', window.route.pathname);
+console.log('Route params:', window.route.params);
+console.log('Query params:', window.route.search);
+console.log('Route data:', window.route.data);
 
 // For Lit components
-export class MyLitComponent extends LitChannel {
+import { LitElement, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+
+@customElement('my-component')
+export class MyComponent extends LitElement {
+  connectedCallback() {
+    super.connectedCallback();
+    // Listen for route changes
+    document.addEventListener('route-change', this.onRouteChange);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener('route-change', this.onRouteChange);
+    super.disconnectedCallback();
+  }
+
+  private onRouteChange = () => {
+    this.requestUpdate(); // Trigger re-render when route changes
+  };
+
   render() {
     return html`
-      <div>Current path: ${this.routeInfo?.pathname}</div>
-      <div>Params: ${JSON.stringify(this.routeInfo?.params)}</div>
+      <div>Current path: ${window.route?.pathname}</div>
+      <div>Params: ${JSON.stringify(window.route?.params)}</div>
     `;
   }
 }
 
 // For React components
-const MyReactComponent = ReactChannel((routeInfo) => {
+import React, { useState, useEffect } from 'react';
+
+export function MyReactComponent() {
+  const [routeInfo, setRouteInfo] = useState(window.route);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setRouteInfo(window.route);
+    };
+
+    document.addEventListener('route-change', handleRouteChange);
+    return () => document.removeEventListener('route-change', handleRouteChange);
+  }, []);
+
   return (
     <div>
       <div>Current path: {routeInfo?.pathname}</div>
       <div>Params: {JSON.stringify(routeInfo?.params)}</div>
     </div>
   );
-});
+}
 ```
 
 ## API Reference
@@ -184,8 +223,10 @@ type Route = {
 
 - `UOutlet` / `Outlet`: Outlet component for rendering route components
 - `ULink` / `Link`: Smart link component with client-side navigation
-- `LitChannel`: Base class for Lit components to access route information
-- `ReactChannel`: HOC for React components to access route information
+
+### Global Route Access
+
+- `window.route`: Global access to current route information (RouteInfo object)
 
 ## Events
 

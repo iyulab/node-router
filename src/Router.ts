@@ -10,7 +10,6 @@ export class Router {
   private readonly _routes: Route[];
   private _routeInfo?: RouteInfo;
   private requestID?: string;
-  private _polyfillLoaded = false;
 
   public get basepath() {
     return this._basepath;
@@ -24,22 +23,6 @@ export class Router {
     this._notfound = config.notfound;
     this._basepath = combinePath(config.basepath || '/');
     this._routes = this.setRoutes(config.routes, this._basepath);
-    this.loadPolyfillIfNeeded();
-  }
-
-  /**
-   * URLPattern 폴리필을 필요시 로드
-   */
-  private async loadPolyfillIfNeeded() {
-    // @ts-ignore: Property 'URLPattern' does not exist on type 'typeof globalThis'
-    if (!globalThis.URLPattern && !this._polyfillLoaded) {
-      try {
-        await import("urlpattern-polyfill");
-        this._polyfillLoaded = true;
-      } catch (error) {
-        console.error('Failed to load URLPattern polyfill:', error);
-      }
-    }
   }
 
   /**
@@ -65,9 +48,6 @@ export class Router {
    * @param href 이동할 경로
    */
   public async go(href: string) {
-    // URLPattern 폴리필 확인
-    await this.loadPolyfillIfNeeded();
-    
     // 요청 ID 생성
     const requestID = getRandomID();
     this.requestID = requestID;
@@ -97,6 +77,9 @@ export class Router {
     if(this.requestID !== requestID) return;
     this.dispatchProgress(0.5);
     this._routeInfo = routeInfo;
+    
+    // window.route에 현재 라우트 정보 설정
+    window.route = routeInfo;
     
     // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
     let outlet = this.getOutlet(this._rootElement);
@@ -166,8 +149,7 @@ export class Router {
    */
   private ensurePattern(route: Route) {
     if (!route.pattern && route.path !== undefined) {
-      // @ts-ignore: Property 'URLPattern' does not exist on type 'typeof globalThis'
-      route.pattern = new globalThis.URLPattern({ pathname: `${route.path}{/}?` });
+      route.pattern = new URLPattern({ pathname: `${route.path}{/}?` });
     }
   }
 
