@@ -22,4 +22,3 @@ const UOutlet = createComponent({
 
 export { ULink, Link };
 export { UOutlet, Outlet };
-export { ErrorPage } from './ErrorPage';

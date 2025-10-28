@@ -1,9 +1,19 @@
 # Changelog
 
-## 0.2.1 (October 27, 2025)
-- Fixed import path in package.json main module
+## 0.3.0 (October 28, 2025)
 
-## 0.2.0 (October 27, 2025)
+### Breaking Changes
+- Complete router architecture overhaul
+- Split RouteConfig type into `IndexRouteConfig` and `PathRouteConfig`
+- Changed `RouteError` to class and added `NotFoundRouteError`
+- Simplified `Outlet` component rendering (unified renderContent method)
+- Changed route event names (`route-start` → `route-begin`, `route-end` → `route-done`)
+
+### Added
+- Improved ErrorPage component styling and usability
+- Unified route rendering using render functions
+
+## 0.2.1 (October 27, 2025)
 
 ### Major Updates
 - Refactored routing mechanism for improved performance

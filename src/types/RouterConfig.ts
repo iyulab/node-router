@@ -13,6 +13,7 @@ export interface RouterConfig {
    * 라우터의 기본 경로
    * - 라우터의 기본 경로는 URL의 시작점입니다.
    * - URLPattern을 사용하여 경로를 탐색합니다.
+   * @default  '/'
    */
   basepath?: string;
   

@@ -1,8 +1,8 @@
-import { LitElement, html, nothing } from 'lit';
+import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 import { styles } from './ErrorPage.styles.js';
-import type { RouteError } from '../types/RouteError.js';
+import { RouteError } from '../types/RouteError.js';
 
 /**
  * 라우터 에러 표시 컴포넌트
@@ -20,37 +20,25 @@ export class ErrorPage extends LitElement {
     const icon = this.getErrorIcon(error.code);
 
     return html`
-      <div class="container">
+      <div class="container" role="alert" aria-live="polite">
         <div class="icon" aria-hidden="true">${icon}</div>
-        <div class="code">${error.code}</div>
+        <div class="code" aria-label="Error code">${error.code}</div>
         <div class="message">${error.message}</div>
-        
-        ${error.path 
-          ? html`
-            <div class="path">
-              Path: <code>${error.path}</code>
-            </div>` 
-          : nothing}
         
         <div class="actions">
           <button 
-            class="button button--primary"
-            @click=${this.handleGoHome}
-            type="button">
-            🏠 Go Home
-          </button>
-          
-          <button 
-            class="button button--secondary"
+            class="button"
             @click=${this.handleGoBack}
-            type="button">
+            title="Go back to previous page"
+            aria-label="Go back to previous page">
             ← Go Back
           </button>
           
           <button 
-            class="button button--secondary"
+            class="button"
             @click=${this.handleRefresh}
-            type="button">
+            title="Refresh the current page"
+            aria-label="Refresh the current page">
             🔄 Refresh
           </button>
         </div>
@@ -60,30 +48,28 @@ export class ErrorPage extends LitElement {
 
   /** 기본 에러 정보 반환 */
   private getDefaultError(): RouteError {
-    return {
-      code: 500,
-      message: 'An unexpected error occurred',
-      timestamp: new Date().toISOString()
-    };
+    return new RouteError(500, 'Something went wrong. Please try again or contact support if the problem persists.');
   }
 
   /** 에러 코드에 따른 기본 아이콘 반환 */
   private getErrorIcon(code: number | string): string {
-    switch (code) {
+    const numericCode = typeof code === 'string' ? parseInt(code) : code;
+    
+    switch (numericCode) {
       case 404:
         return '🔍';
       case 403:
         return '🔒';
+      case 401:
+        return '🔑';
+      case 429:
+        return '⏱️';
+      case 503:
+        return '🛠️';
       case 500:
-        return '⚠️';
       default:
-        return '❌';
+        return '⚠️';
     }
-  }
-
-  /** 홈으로 이동 */
-  private handleGoHome() {
-    window.location.href = '/';
   }
 
   /** 뒤로가기 */

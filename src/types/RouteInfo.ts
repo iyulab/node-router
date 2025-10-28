@@ -68,11 +68,6 @@ export interface RouteInfo {
    * @example #profile
    */
   hash?: string;
-
-  /**
-   * 엘리먼트 또는 컴포넌트 렌더링 전에 호출되는 함수에서 반환된 데이터
-   */
-  data?: any;
 }
 
 // window.route 타입 선언

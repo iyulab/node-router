@@ -1,8 +1,8 @@
 import type { RouteInfo } from './RouteInfo';
-import type { RouteError } from './RouteError';
+import { RouteError } from './RouteError';
 
 /** 라우터 이벤트 기본 클래스 */
-export abstract class RouteEvent extends Event {
+abstract class RouteEvent extends Event {
   
   /** 라우팅 정보 */
   public readonly routeInfo: RouteInfo;
@@ -31,18 +31,18 @@ export abstract class RouteEvent extends Event {
 /**
  * 라우트 시작 이벤트
  */
-export class RouteStartEvent extends RouteEvent {
+export class RouteBeginEvent extends RouteEvent {
   constructor(routeInfo: RouteInfo) {
-    super('route-start', routeInfo, false);
+    super('route-begin', routeInfo, false);
   }
 }
 
 /**
  * 라우트 완료 이벤트
  */
-export class RouteEndEvent extends RouteEvent {
+export class RouteDoneEvent extends RouteEvent {
   constructor(routeInfo: RouteInfo) {
-    super('route-end', routeInfo, false);
+    super('route-done', routeInfo, false);
   }
 }
 
