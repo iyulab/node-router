@@ -14,8 +14,6 @@ export class Router {
   private _requestID?: string;
   /** 현재 라우팅 정보 */
   private _routeInfo?: RouteInfo;
-  /** 현재 라우팅 시도 카운터 */
-  private _counter: number = 0;
 
   constructor(config: RouterConfig) {
     this._rootElement = config.root;
@@ -24,7 +22,19 @@ export class Router {
 
     window.removeEventListener('popstate', this.handlePopstate);
     window.addEventListener('popstate', this.handlePopstate);
-    this.initiate();
+    this.waitingRootElement();
+  }
+
+  /** 초기 라우팅 처리, TODO: 제거 */
+  private async waitingRootElement() {
+    let outlet = this.findOutlet(this._rootElement);
+    let count = 0;
+    while (!outlet && count < 20) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      count++;
+      outlet = this.findOutlet(this._rootElement);
+    }
+    this.handlePopstate();
   }
 
   public get basepath() {
@@ -118,18 +128,6 @@ export class Router {
         console.error('Original error:', error);
       }
     }
-  }
-
-  /** 초기 라우팅 처리, TODO: 제거 */
-  private async initiate() {
-    let outlet = await this.findOutlet(this._rootElement);
-    while (!outlet && this._counter < 20) {
-      await new Promise(resolve => setTimeout(resolve, 50));
-      this._counter++;
-      outlet = await this.findOutlet(this._rootElement);
-    }
-    this._counter = 0;
-    this.handlePopstate();
   }
 
   /** 브라우저 히스토리 이벤트가 발생시 라우팅 처리 */
