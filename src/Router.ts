@@ -22,11 +22,11 @@ export class Router {
 
     window.removeEventListener('popstate', this.handlePopstate);
     window.addEventListener('popstate', this.handlePopstate);
-    this.waitingRootElement();
+    this.waitForConnected();
   }
 
   /** 초기 라우팅 처리, TODO: 제거 */
-  private async waitingRootElement() {
+  private async waitForConnected() {
     let outlet = this.findOutlet(this._rootElement);
     let count = 0;
     while (!outlet && count < 20) {
@@ -37,12 +37,22 @@ export class Router {
     this.handlePopstate();
   }
 
+  /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
+  public destroy() {
+    window.removeEventListener('popstate', this.handlePopstate);
+    this._routeInfo = undefined;
+    this._requestID = undefined;
+  }
+
+  /** 라우터의 기본 경로 반환 */
   public get basepath() {
     return this._basepath;
   }
+  /** 등록된 라우트 반환 */
   public get routes() {
     return this._routes;
   }
+  /** 현재 라우팅 정보 반환 */
   public get routeInfo() {
     return this._routeInfo;
   }

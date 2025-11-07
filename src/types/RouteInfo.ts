@@ -69,10 +69,3 @@ export interface RouteInfo {
    */
   hash?: string;
 }
-
-// window.route 타입 선언
-declare global {
-  interface Window {
-    route: RouteInfo;
-  }
-}

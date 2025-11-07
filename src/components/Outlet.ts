@@ -1,7 +1,8 @@
 import { LitElement, RootPart, html, render } from 'lit';
 import { createRoot, Root } from 'react-dom/client';
-import { type ReactElement } from 'react';
-import { type TemplateResult } from 'lit';
+import type { TemplateResult } from 'lit';
+import type { ReactElement } from 'react';
+
 
 interface RenderOption {
   id?: string;

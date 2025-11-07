@@ -1,8 +1,8 @@
 import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import { styles } from './ErrorPage.styles.js';
 import { RouteError } from '../types/RouteError.js';
+import { styles } from './ErrorPage.styles.js';
 
 /**
  * 라우터 에러 표시 컴포넌트

@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+- Added global declarations
+- Added destroy method to Router class
+
 ## 0.3.0 (October 28, 2025)
 
 ### Breaking Changes
