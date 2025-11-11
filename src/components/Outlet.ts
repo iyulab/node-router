@@ -2,11 +2,12 @@ import { LitElement, RootPart, html, render } from 'lit';
 import { createRoot, Root } from 'react-dom/client';
 import type { TemplateResult } from 'lit';
 import type { ReactElement } from 'react';
+import type { RenderResult } from '../types/RouteConfig';
 
 interface RenderOption {
   id?: string;
   force?: boolean;
-  content: HTMLElement | ReactElement | TemplateResult<1>;
+  content: RenderResult;
 }
 
 /**

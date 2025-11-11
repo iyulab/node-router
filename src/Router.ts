@@ -106,7 +106,10 @@ export class Router {
       let title = undefined;
       for (const route of routes) {
         if(this._requestID !== requestID) return;
-        const content = route.render(routeInfo);
+        // 렌더 함수가 없는 경우 건너뜀
+        if(!route.render) continue;
+
+        const content = await route.render(routeInfo);
         const element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
         outlet = findOutlet(element) || outlet;
         title = route.title || title;

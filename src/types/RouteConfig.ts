@@ -2,6 +2,8 @@ import type { TemplateResult } from "lit";
 import type { ReactElement } from "react";
 import type { RouteInfo } from "./RouteInfo";
 
+export type RenderResult = HTMLElement | ReactElement | TemplateResult<1>;
+
 /**
  * 공통 라우트 속성
  */
@@ -28,7 +30,7 @@ interface BaseRouteConfig {
    * }
    * ```
    */
-  render: (info: RouteInfo) => HTMLElement | ReactElement | TemplateResult<1>;
+  render?: (info: RouteInfo) => Promise<RenderResult> | RenderResult;
 
   /**
    * 중첩 라우트

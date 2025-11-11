@@ -1,5 +1,8 @@
 # Changelog
 
+## [Unreleased]
+- Changed route rendering to support both synchronous and asynchronous `render` methods in route config
+
 ## 0.4.0 (November 11, 2025)
 - Added global declarations
 - Added `destroy` method to Router class
