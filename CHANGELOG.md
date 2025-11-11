@@ -1,8 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## 0.4.0 (November 11, 2025)
 - Added global declarations
-- Added destroy method to Router class
+- Added `destroy` method to Router class
+- Added `useIntercept`(whether to intercept anchor tag clicks) option to RouterConfig
 
 ## 0.3.0 (October 28, 2025)
 

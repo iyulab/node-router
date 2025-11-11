@@ -20,5 +20,5 @@ const UOutlet = createComponent({
   elementClass: Outlet,
 });
 
-export { ULink, Link };
-export { UOutlet, Outlet };
+export { Link, ULink };
+export { Outlet, UOutlet };

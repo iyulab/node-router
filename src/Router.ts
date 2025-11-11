@@ -1,10 +1,11 @@
-import { absolutePath, getRandomID, parseURL } from './internals';
-import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundRouteError } from './types';
 import { ErrorPage } from './components/ErrorPage.js';
-
+import { getRandomID, absolutePath, isExternalUrl, parseUrl, findAnchorFromEvent, findOutlet, findOutletOrThrow, getRoutes, setRoutes } from './internals';
+import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundRouteError } from './types';
 import type { RouteConfig, RouteInfo, RouterConfig } from './types';
-import type { Outlet } from './components';
 
+/**
+ * `lit-element`와 `react-component` 기반의 클라이언트 사이드 라우터
+ */
 export class Router {
   private readonly _rootElement: HTMLElement;
   private readonly _basepath: string;
@@ -18,28 +19,33 @@ export class Router {
   constructor(config: RouterConfig) {
     this._rootElement = config.root;
     this._basepath = absolutePath(config.basepath || '/');
-    this._routes = this.setRoutes(config.routes, this._basepath);
+    this._routes = setRoutes(config.routes, this._basepath);
 
-    window.removeEventListener('popstate', this.handlePopstate);
-    window.addEventListener('popstate', this.handlePopstate);
-    this.waitForConnected();
+    this.waitConnected();
+    window.removeEventListener('popstate', this.handleWindowPopstate);
+    window.addEventListener('popstate', this.handleWindowPopstate);
+    if (config.useIntercept !== false) {
+      this._rootElement.removeEventListener('click', this.handleRootClick);
+      this._rootElement.addEventListener('click', this.handleRootClick);
+    }
   }
 
   /** 초기 라우팅 처리, TODO: 제거 */
-  private async waitForConnected() {
-    let outlet = this.findOutlet(this._rootElement);
+  private async waitConnected() {
+    let outlet = findOutlet(this._rootElement);
     let count = 0;
     while (!outlet && count < 20) {
       await new Promise(resolve => setTimeout(resolve, 50));
+      outlet = findOutlet(this._rootElement);
       count++;
-      outlet = this.findOutlet(this._rootElement);
     }
-    this.handlePopstate();
+    this.handleWindowPopstate();
   }
 
   /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
   public destroy() {
-    window.removeEventListener('popstate', this.handlePopstate);
+    window.removeEventListener('popstate', this.handleWindowPopstate);
+    this._rootElement.removeEventListener('click', this.handleRootClick);
     this._routeInfo = undefined;
     this._requestID = undefined;
   }
@@ -48,10 +54,12 @@ export class Router {
   public get basepath() {
     return this._basepath;
   }
+
   /** 등록된 라우트 반환 */
   public get routes() {
     return this._routes;
   }
+
   /** 현재 라우팅 정보 반환 */
   public get routeInfo() {
     return this._routeInfo;
@@ -67,7 +75,7 @@ export class Router {
     this._requestID = requestID;
 
     // URL 분석
-    const routeInfo = parseURL(href, this._basepath);
+    const routeInfo = parseUrl(href, this._basepath);
     if (routeInfo.href === this._routeInfo?.href) return;
     
     try {
@@ -76,7 +84,7 @@ export class Router {
       window.dispatchEvent(new RouteBeginEvent(routeInfo));
 
       // 일치하는 라우트 찾기
-      const routes = this.getRoutes(routeInfo.pathname);
+      const routes = getRoutes(routeInfo.pathname, this._routes);
       const lastRoute = routes[routes.length - 1];
 
       //// 현재 라우트 정보 업데이트
@@ -94,13 +102,13 @@ export class Router {
       }
 
       // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.), 문서 제목 업데이트
-      let outlet = this.findOutletOrThrow(this._rootElement);
+      let outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
       for (const route of routes) {
         if(this._requestID !== requestID) return;
         const content = route.render(routeInfo);
         const element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
-        outlet = this.findOutlet(element) || outlet;
+        outlet = findOutlet(element) || outlet;
         title = route.title || title;
       }
       document.title = title || document.title;
@@ -141,112 +149,34 @@ export class Router {
   }
 
   /** 브라우저 히스토리 이벤트가 발생시 라우팅 처리 */
-  private handlePopstate = async () => {
+  private handleWindowPopstate = async () => {
     const href = window.location.href;
     await this.go(href);
   };
 
-  /** 라우트를 재설정합니다. */
-  private setRoutes(routes: RouteConfig[], basepath: string) {
-    for (const route of routes) {
-      route.id ||= getRandomID();
+  /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */
+  private handleRootClick = (e: MouseEvent) => {
+    try {
+      if (e.defaultPrevented) return;
+      // middle click or modifier keys -> 원래 동작 유지
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+
+      const anchor = findAnchorFromEvent(e);
+      if (!anchor) return;
+
+      // 안전 체크: 외부 사이트, 다운로드 등
+      const href = anchor.getAttribute('href') || anchor.href;
+      if (!href) return;
+      if (isExternalUrl(href)) return; // 외부 url이면 건드리지 않음
+      if (anchor.hasAttribute('download')) return;
+      if (anchor.getAttribute('rel') === 'external') return;
+      if (anchor.target && anchor.target !== '') return; // target 지정 시 기본 동작 유지
       
-      if ('index' in route && route.index) {
-        // 인덱스 라우트는 현재 basepath를 URLPattern으로 설정
-        route.path = new URLPattern({ pathname: `${basepath}{/}?` });
-      } else if ('path' in route && route.path) {
-        // 경로 라우트 처리 - string이면 URLPattern으로 변환
-        if (typeof route.path === 'string') {
-          const absolutePathStr = absolutePath(basepath, route.path);
-          route.path = new URLPattern({ pathname: `${absolutePathStr}{/}?` });
-        }
-      } else {
-        throw new Error('Route must have either "index" or "path" property defined.');
-      }
-
-      if (route.children && route.children.length > 0) {
-        let childBasepath: string;
-        if ('index' in route) {
-          // 인덱스 라우트는 현재 basepath를 그대로 사용
-          childBasepath = basepath;
-        } else {
-          // 경로 라우트는 해당 경로를 자식의 basepath로 사용
-          if (typeof route.path === 'string') {
-            childBasepath = absolutePath(basepath, route.path);
-          } else {
-            // URLPattern에서 pathname 추출
-            childBasepath = route.path.pathname.replace('{/}?', '');
-          }
-        }
-        route.children = this.setRoutes(route.children, childBasepath);
-        route.force ||= false;
-      } else {
-        route.force ||= true;
-      }
+      e.preventDefault();
+      // this.go가 내부에서 history 관리 및 동시성 체크를 함
+      void this.go(anchor.href);
+    } catch {
+      // 예외는 무시하고 기본 동작 유지
     }
-    return routes;
-  }
-
-  /** URLPattern을 사용하여 경로와 일치하는 라우트들을 자식 라우트까지 포함하여 반환합니다. */
-  private getRoutes(pathname: string, routes: RouteConfig[] = this._routes): RouteConfig[] {
-    for (const route of routes) {
-      if (route.children) {
-        const childRoutes = this.getRoutes(pathname, route.children);
-        if (childRoutes.length > 0) {
-          return [route, ...childRoutes];
-        }
-      }
-      
-      // 라우트 매칭 확인
-      let matches = false;
-      if ('index' in route && route.index && route.path) {
-        // 인덱스 라우트는 설정된 path URLPattern으로 테스트
-        matches = route.path.test({ pathname: pathname });
-      } else if ('path' in route && route.path instanceof URLPattern) {
-        matches = route.path.test({ pathname: pathname });
-      }
-      
-      if (matches) {
-        return [route];
-      }
-    }
-    return [];
-  }
-
-  /** Outlet 엘리먼트를 찾아 반환합니다. */
-  private findOutlet(element: HTMLElement): Outlet | undefined {
-    let outlet: Outlet | undefined = undefined;
-
-    if (element.shadowRoot) {
-      // Shadow DOM에서 찾기
-      outlet = element.shadowRoot.querySelector('u-outlet') as Outlet;
-      if (outlet) return outlet;
-
-      for (const child of Array.from(element.shadowRoot.children)) {
-        outlet = this.findOutlet(child as HTMLElement);
-        if (outlet) return outlet;
-      }
-    } else {
-      // 일반 DOM에서 찾기
-      outlet = element.querySelector('u-outlet') as Outlet;
-      if (outlet) return outlet;
-
-      for (const child of Array.from(element.children)) {
-        outlet = this.findOutlet(child as HTMLElement);
-        if (outlet) return outlet;
-      }
-    }
-
-    // 없으면 undefined 반환
-    return undefined;
-  }
-
-  /** Outlet 엘리먼트를 찾아 반환합니다. 없으면 에러를 던집니다. */
-  private findOutletOrThrow(element: HTMLElement): Outlet {
-    const outlet = this.findOutlet(element);
-    if (!outlet) {
-      throw new Error('No Outlet component found in the root element.');
-    }
-    return outlet;
-  }
+  };
 }

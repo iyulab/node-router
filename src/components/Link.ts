@@ -1,12 +1,7 @@
 import { LitElement, css, html } from "lit";
 import { property, state } from "lit/decorators.js";
 
-import { absolutePath } from "../internals";
-
-/** 외부 링크 패턴 목록 */
-const EXTERNAL_LINK_PATTERNS = [
-  /^http/, /^\/\//, /^mailto:/, /^tel:/, /^javascript:/, /^ftp:/, /^data:/, /^ws:/, /^wss:/
-];
+import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
 
 /**
  * - 클라이언트 라우팅을 지원하는 링크 엘리먼트입니다.
@@ -45,7 +40,7 @@ export class Link extends LitElement {
     await this.updateComplete;
 
     if (changedProperties.has('href')) {
-      this.isExternal = this.checkExternalLink(this.href || '');
+      this.isExternal = isExternalUrl(this.href || '');
       this.anchorHref = this.getAnchorHref(this.href);
     }
   }
@@ -113,12 +108,7 @@ export class Link extends LitElement {
     event.stopPropagation();
   }
 
-  /** 외부 링크인지 확인합니다. */
-  private checkExternalLink(href: string) {
-    return EXTERNAL_LINK_PATTERNS.some((pattern) => pattern.test(href));
-  }
-
-  /** a 태그의 href 값을 계산합니다. */
+  /** a 태그에 주입할 href 값을 계산합니다. */
   private getAnchorHref(href?: string): string {
     const basepath = window.history.state?.basepath || '';
     

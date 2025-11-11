@@ -1,13 +1,33 @@
-import type { RouteInfo } from "./types";
+import type { RouteInfo } from "../types/RouteInfo";
 
 /**
- * pathname 경로를 조합하여 절대경로를 반환합니다.
+ * 주어진 URL이 외부 링크인지 확인합니다.
+ * @param url 확인할 URL 문자열
  */
-export function absolutePath(...paths: string[]) {
-  paths = paths.map(p => p.replace(/^\/|\/$/g, '')).filter(p => p.length > 0);
-  if (paths.length === 0) return '/';
+export function isExternalUrl(url: string): boolean {
+  if (!url) return false;
+  const s = url.trim();
 
-  return '/' + paths.join('/');
+  // 스킴 기반 즉시 외부 처리
+  if (/^(?:mailto:|tel:|javascript:)/i.test(s)) return true;
+
+  // 프로토콜 상대 URL
+  if (s.startsWith('//')) return true;
+
+  // 파싱 시도
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    const parsed = new URL(s, base);
+
+    // 특정 스킴(ftp, data, ws 등)은 외부로 처리
+    if (/^(?:ftp:|ftps:|data:|ws:|wss:)/i.test(parsed.protocol)) return true;
+
+    // origin 비교 — 같으면 내부(false), 다르면 외부(true)
+    return parsed.origin !== new URL(base).origin;
+  } catch {
+    // 파싱 실패(상대경로 등) -> 내부 링크로 간주
+    return false;
+  }
 }
 
 /**
@@ -15,9 +35,9 @@ export function absolutePath(...paths: string[]) {
  * - ?로 시작하는 쿼리스트링, #으로 시작하는 해시값은 현재 경로에서 추가됩니다.
  * - 상대경로는 basepath를 기준으로 절대경로로 변환됩니다.
  */
-export function parseURL(url: string, basepath: string): RouteInfo {
+export function parseUrl(url: string, basepath: string): RouteInfo {
   let urlObj: URL;
-  basepath = catchBasepath(basepath);
+  basepath = catchBasePath(basepath);
   if (url.startsWith('http')) {
     urlObj = new URL(url);
   } else if (url.startsWith('/')) {
@@ -43,11 +63,21 @@ export function parseURL(url: string, basepath: string): RouteInfo {
 }
 
 /**
- * 현재 경로상의 basepath를 반환합니다.
+ * pathname 경로를 조합하여 절대경로를 반환합니다.
+ */
+export function absolutePath(...paths: string[]) {
+  paths = paths.map(p => p.replace(/^\/|\/$/g, '')).filter(p => p.length > 0);
+  if (paths.length === 0) return '/';
+
+  return '/' + paths.join('/');
+}
+
+/**
+ * basepath가 동적 패턴일 경우 실제 경로에서 해당 basepath를 추출하여 반환합니다.
  * @example
  * catchBasePath('/app/:id') => '/app/123'
  */
-export function catchBasepath(basepath: string) {
+export function catchBasePath(basepath: string) {
   if (basepath === '/') return basepath;
 
   // basepath가 경로의 중간에 올수도 있으므로 /* 패턴으로 먼저 검사
@@ -68,15 +98,4 @@ export function catchBasepath(basepath: string) {
 
   // 일치하는 basepath가 없으면 기본 basepath 반환
   return basepath;
-}
-
-/**
- * 랜덤한 ID를 생성합니다.
- * - https일 경우 crypto.randomUUID()를 사용합니다.
- * - 그 외의 경우 crypto.getRandomValues()를 사용합니다.
- */
-export function getRandomID() {
-  return window.isSecureContext
-        ? window.crypto.randomUUID()
-        : window.crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
 }

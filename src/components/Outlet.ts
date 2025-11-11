@@ -3,7 +3,6 @@ import { createRoot, Root } from 'react-dom/client';
 import type { TemplateResult } from 'lit';
 import type { ReactElement } from 'react';
 
-
 interface RenderOption {
   id?: string;
   force?: boolean;

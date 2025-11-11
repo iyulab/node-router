@@ -23,4 +23,10 @@ export interface RouterConfig {
    * - 라우트는 렌더링할 엘리먼트 또는 컴포넌트를 지정합니다.
    */
   routes: RouteConfig[];
+
+  /**
+   * `a` 태그 클릭 시 클라이언트 라우팅을 수행할지 여부를 설정합니다.
+   * @default true
+   */
+  useIntercept?: boolean;
 }
