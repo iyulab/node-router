@@ -4,9 +4,9 @@
  * **EXTRACT** 주석으로 감싸진 부분이 빌드 시에만 포함됩니다.
  */
 
-import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent } from './types/RouteEvent';
-import { RouteInfo } from './types/RouteInfo';
-import { Link, Outlet } from './components';
+import type { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent } from './types/RouteEvent';
+import type { RouteInfo } from './types/RouteInfo';
+import type { Link, Outlet } from './components';
 
 /* === EXTRACT === */
 declare global {

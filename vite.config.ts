@@ -7,13 +7,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    minify: false,
+    minify: false, // 난독화 및 압축 비활성화
     sourcemap: false,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'Router',
-      formats: ['es', 'cjs'],
-      fileName: (format) => format === 'es' ? `main.js` :`main.${format}.js`,
+      formats: ['es'],
+      fileName: (format, entry) => {
+        return format === 'es' ? `index.js` : `${entry}.${format}.js`;
+      }
     },
     rollupOptions: {
       external: [
@@ -29,11 +30,12 @@ export default defineConfig({
       tsconfigPath: resolve(__dirname, 'tsconfig.json'),
       insertTypesEntry: true,
       rollupTypes: true,
+      copyDtsFiles: true,
       afterBuild: () => {
         try {
-          // global.d.ts의 전역 선언을 main.d.ts에 추가
+          // global.d.ts의 전역 선언을 index.d.ts에 추가
           const globalDtsPath = resolve(__dirname, 'src/global.d.ts');
-          const mainDtsPath = resolve(__dirname, 'dist/main.d.ts');
+          const mainDtsPath = resolve(__dirname, 'dist/index.d.ts');
 
           const globalContent = readFileSync(globalDtsPath, 'utf-8');
           const mainContent = readFileSync(mainDtsPath, 'utf-8');

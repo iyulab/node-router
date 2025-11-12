@@ -1,7 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+- 
+
+## 0.5.0 (November 12, 2025)
 - Changed route rendering to support both synchronous and asynchronous `render` methods in route config
+- Removed commonjs build output, now only ESM is supported
 
 ## 0.4.0 (November 11, 2025)
 - Added global declarations
