@@ -42,14 +42,35 @@ export class RouteError extends Error {
 /**
  * 페이지를 찾을 수 없을 때 발생하는 에러
  */
-export class NotFoundRouteError extends RouteError {
+export class NotFoundError extends RouteError {
   constructor(path: string, original?: Error | any) {
     super(404, `Page not found: ${path}`, original);
-    this.name = 'NotFoundError';
+  }
+}
 
-    // Error.captureStackTrace가 존재하면 사용 (Node.js 환경)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, NotFoundRouteError);
-    }
+/**
+ * u-outlet 요소를 찾을 수 없을 때 발생하는 에러
+ */
+export class OutletMissingError extends RouteError {
+  constructor() {
+    super('OUTLET_MISSING', 'Router outlet element not found. Add <u-outlet> to your template.');
+  }
+}
+
+/**
+ * 컨텐츠 로드시 나타나는 에러
+ */
+export class ContentLoadError extends RouteError {
+  constructor(original?: Error | any) {
+    super('CONTENT_LOAD_FAILED', 'Failed to load route content. Check browser console for details.', original);
+  }
+}
+
+/**
+ * 컨텐츠 렌더링시 발생하는 에러
+ */
+export class ContentRenderError extends RouteError {
+  constructor(original?: Error | any) {
+    super('CONTENT_RENDER_FAILED', 'Failed to render route component. Check browser console for details.', original);
   }
 }

@@ -1,4 +1,5 @@
 import type { Outlet } from "../components/Outlet";
+import { OutletMissingError } from "../types/RouteError";
 
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 
@@ -36,7 +37,7 @@ export function findOutlet(element: HTMLElement): Outlet | undefined {
 export function findOutletOrThrow(element: HTMLElement): Outlet {
   const outlet = findOutlet(element);
   if (!outlet) {
-    throw new Error('No Outlet component found in the root element.');
+    throw new OutletMissingError();
   }
   return outlet;
 }

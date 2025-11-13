@@ -1,7 +1,9 @@
 import { ErrorPage } from './components/ErrorPage.js';
-import { getRandomID, absolutePath, isExternalUrl, parseUrl, findAnchorFromEvent, findOutlet, findOutletOrThrow, getRoutes, setRoutes } from './internals';
-import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundRouteError } from './types';
+import { Outlet } from './components/Outlet.js';
+import { getRandomID, absolutePath, isExternalUrl, parseUrl, findAnchorFromEvent, findOutlet, getRoutes, setRoutes, findOutletOrThrow } from './internals';
+import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundError, ContentLoadError, ContentRenderError } from './types';
 import type { RouteConfig, RouteInfo, RouterConfig } from './types';
+import { RenderResult } from './types/RouteConfig.js';
 
 /**
  * `lit-element`와 `react-component` 기반의 클라이언트 사이드 라우터
@@ -78,6 +80,7 @@ export class Router {
     const routeInfo = parseUrl(href, this._basepath);
     if (routeInfo.href === this._routeInfo?.href) return;
     
+    let outlet: Outlet | undefined = undefined;
     try {
       // 라우트 시작 이벤트 발생
       if(this._requestID !== requestID) return;
@@ -95,25 +98,41 @@ export class Router {
       this._routeInfo = routeInfo;
       window.route = routeInfo;
 
-      // RouterError 컴포넌트로 404 에러 표시
-      if(this._requestID !== requestID) return;
-      if (routes.length === 0) {
-        throw new NotFoundRouteError(routeInfo.href);
-      }
-
-      // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.), 문서 제목 업데이트
-      let outlet = findOutletOrThrow(this._rootElement);
+      // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
+      outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
+      let content: RenderResult | null = null;
+      let element: HTMLElement | null = null;
+
+      if (routes.length === 0) {
+        throw new NotFoundError(routeInfo.href);
+      }
       for (const route of routes) {
         if(this._requestID !== requestID) return;
+
         // 렌더 함수가 없는 경우 건너뜀
         if(!route.render) continue;
 
-        const content = await route.render(routeInfo);
-        const element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
+        // 라우트에 해당하는 컨텐츠 가져오기
+        try {
+          content = await route.render(routeInfo);
+        } catch (LoadError) {
+          throw new ContentLoadError(LoadError);
+        }
+        
+        // Outlet에 실제 컨텐츠 렌더링 수행
+        try {
+          element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
+        } catch (renderError) {
+          throw new ContentRenderError(renderError);
+        }
+        
+        // 다음 라우트를 위한 outlet 찾기
         outlet = findOutlet(element) || outlet;
         title = route.title || title;
       }
+
+      // 문서 제목 업데이트
       document.title = title || document.title;
       
       // 브라우저 히스토리 업데이트
@@ -128,25 +147,29 @@ export class Router {
       window.dispatchEvent(new RouteDoneEvent(routeInfo));
       
     } catch (error: any) {
-      const routeError = new RouteError(
+      // 이벤트 생성 및 에러 로깅
+      const routeError = error instanceof RouteError ? error
+      : new RouteError(
         error.status || error.code || 'UNKNOWN_ERROR',
         error.message || 'An unexpected error occurred',
         error
       );
-
-      // 에러 이벤트 발생 및 콘솔 출력
       window.dispatchEvent(new RouteErrorEvent(routeError, routeInfo));
-      console.error('Routing error:', error);
+      console.error('Routing error:', error.original || error);
 
-      // Error 컴포넌트로 에러 표시
+      // ErrorPage 렌더링
       try {
-        const errorEl = new ErrorPage();
-        errorEl.error = routeError;
-        document.body.innerHTML = '';
-        document.body.appendChild(errorEl);
+        const errorPage = new ErrorPage();
+        errorPage.error = error;
+        if (outlet) {
+          outlet.renderContent({ id: '#', content: errorPage, force: true });
+        } else {
+          document.body.innerHTML = '';
+          document.body.appendChild(errorPage);
+        }
       } catch (pageError) {
         console.error('Failed to render error component:', pageError);
-        console.error('Original error:', error);
+        console.error('Original error:', routeError.original || routeError);
       }
     }
   }

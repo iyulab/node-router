@@ -1,7 +1,10 @@
 # Changelog
 
 ## [Unreleased]
-- 
+- (No changes yet)
+
+## 0.5.1 (November 13, 2025)
+- route error handling improvements
 
 ## 0.5.0 (November 12, 2025)
 - Changed route rendering to support both synchronous and asynchronous `render` methods in route config

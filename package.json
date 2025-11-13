@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "lit",
@@ -24,7 +24,7 @@
     "LICENSE"
   ],
   "type": "module",
-  "types": "src/index.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
@@ -42,9 +42,8 @@
   "devDependencies": {
     "@lit/react": "^1.0.8",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.3",
+    "@types/react": "^19.2.4",
     "@types/react-dom": "^19.2.3",
-    "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.2",
     "vite-plugin-dts": "^4.5.4"
