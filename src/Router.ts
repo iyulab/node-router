@@ -23,25 +23,12 @@ export class Router {
     this._basepath = absolutePath(config.basepath || '/');
     this._routes = setRoutes(config.routes, this._basepath);
 
-    this.waitConnected();
     window.removeEventListener('popstate', this.handleWindowPopstate);
     window.addEventListener('popstate', this.handleWindowPopstate);
     if (config.useIntercept !== false) {
       this._rootElement.removeEventListener('click', this.handleRootClick);
       this._rootElement.addEventListener('click', this.handleRootClick);
     }
-  }
-
-  /** 초기 라우팅 처리, TODO: 제거 */
-  private async waitConnected() {
-    let outlet = findOutlet(this._rootElement);
-    let count = 0;
-    while (!outlet && count < 20) {
-      await new Promise(resolve => setTimeout(resolve, 50));
-      outlet = findOutlet(this._rootElement);
-      count++;
-    }
-    this.handleWindowPopstate();
   }
 
   /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
