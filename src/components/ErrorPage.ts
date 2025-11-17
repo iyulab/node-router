@@ -1,15 +1,17 @@
 import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 
 import { RouteError } from '../types/RouteError.js';
 import { styles } from './ErrorPage.styles.js';
-import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 
 /** 에러 아이콘 모음 로드 */
-const icons = Object.entries(import.meta.glob('../assets/*.svg', { as: 'raw', eager: true }))
-  .reduce((acc, [path, content]) => {
+const icons = Object.entries(import.meta.glob('../assets/*.svg', { 
+    eager: true,
+    query: '?raw'
+  })).reduce((acc, [path, content]) => {
     const name = path.split('/').pop()?.replace('.svg', '') || '';
-    acc[name] = content;
+    acc[name] = (content as any).default as string;
     return acc;
   }, {} as Record<string, string>);
 
@@ -29,7 +31,7 @@ export class ErrorPage extends LitElement {
     const icon = this.getErrorIcon(error.code);
 
     return html`
-      <div class="icon">${icon}</div>
+      <div class="icon">${unsafeHTML(icon)}</div>
       <div class="code">${error.code}</div>
       <div class="message">${error.message}</div>
     `;
@@ -48,27 +50,27 @@ export class ErrorPage extends LitElement {
     // 문자열 에러 코드 처리
     switch (codeStr) {
       case 'OUTLET_NOT_FOUND':
-        return unsafeSVG(icons["box-seam"] || '📦');
+        return icons["box-seam"] || '📦';
       case 'CONTENT_LOAD_FAILED':
-        return unsafeSVG(icons["wifi-off"] || '📡');
+        return icons["wifi-off"] || '📡';
       case 'RENDER_FAILED':
-        return unsafeSVG(icons["palette"] || '🎨');
+        return icons["palette"] || '🎨';
     }
     
     // 숫자 에러 코드 처리
     switch (numericCode) {
       case 404:
-        return unsafeSVG(icons["search"] || '🔍');
+        return icons["search"] || '🔍';
       case 403:
-        return unsafeSVG(icons["ban"] || '🚫');
+        return icons["ban"] || '🚫';
       case 401:
-        return unsafeSVG(icons["person-lock"] || '🔐');
+        return icons["person-lock"] || '🔐';
       case 429:
-        return unsafeSVG(icons["stopwatch"] || '⏱️');
+        return icons["stopwatch"] || '⏱️';
       case 503:
-        return unsafeSVG(icons["wrench-adjustable"] || '🛠️');
+        return icons["wrench-adjustable"] || '🛠️';
       default:
-        return unsafeSVG(icons["exclamation-triangle"] || '⚠️');
+        return icons["exclamation-triangle"] || '⚠️';
     }
   }
 }

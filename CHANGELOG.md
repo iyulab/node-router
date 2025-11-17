@@ -3,6 +3,15 @@
 ## [Unreleased]
 - (No changes yet)
 
+## 0.5.2 (November 17, 2025)
+- Changed `RouteInfo` to `RouteContext` and added progress callback support
+- Added `initialLoad` option to RouterConfig to control initial route loading behavior
+- Added `fallback` option to RouterConfig for custom fallback rendering
+- Added `RouteProgressEvent` to notify route loading progress
+- Removed `children` in `NonIndexRouteConfig` to simplify route definitions
+- Removed `route` in `window` object to reduce global namespace pollution
+- Improved error handling and logging in ErrorPage component
+
 ## 0.5.1 (November 13, 2025)
 - route error handling improvements
 

@@ -44,6 +44,7 @@ export default defineConfig({
           // main.d.ts 끝에 전역 선언 추가
           const updatedContent = mainContent + '\n' + extractedContent;
           writeFileSync(mainDtsPath, updatedContent, 'utf-8');
+          console.log('Global declarations added to index.d.ts successfully.');
         } catch (error) {
           console.error('Failed to add global declarations:', error);
         }

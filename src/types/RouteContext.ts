@@ -1,7 +1,9 @@
+import { RouteError } from "./RouteError";
+
 /**
  * 라우터 정보
  */
-export interface RouteInfo {
+export interface RouteContext {
   /**
    * 전체 URL 정보
    * - 도메인 이름을 포함한 URL의 전체 경로입니다.
@@ -68,4 +70,19 @@ export interface RouteInfo {
    * @example #profile
    */
   hash?: string;
+
+  /**
+   * 현재 라우팅의 진행 상태를 업데이트하여, window 객체의 'route-progress' 이벤트를 트리거합니다.
+   * 여러 라우팅이 호출되는 경우, 가장 최근의 라우팅의 진행 상태만 반영되며, 나머지는 무시됩니다.
+   * @param value 진행 상태 값 (0~100)
+   */
+  progress: (value: number) => void;
+}
+
+export interface FallbackRouteContext extends RouteContext {
+  /**
+   * 라우팅 에러 정보
+   * - 라우팅 중 발생한 에러 정보를 포함합니다.
+   */
+  error: RouteError;
 }

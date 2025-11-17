@@ -41,7 +41,10 @@ export class Outlet extends LitElement {
     this.clear();
     
     if (!this.container) {
-      throw new Error('DOM이 초기화되지 않았습니다.');
+      throw new Error('Outlet container is not initialized.');
+    }
+    if (content === false) {
+      throw new Error('Content is false, cannot render.');
     }
 
     if (content instanceof HTMLElement) {

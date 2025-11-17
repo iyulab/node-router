@@ -12,37 +12,31 @@ export function setRoutes(routes: RouteConfig[], basepath: string) {
   for (const route of routes) {
     route.id ||= getRandomID();
     
-    if ('index' in route && route.index) {
+    if (route.index === true) {
       // 인덱스 라우트는 현재 basepath를 URLPattern으로 설정
       route.path = new URLPattern({ pathname: `${basepath}{/}?` });
-    } else if ('path' in route && route.path) {
-      // 경로 라우트 처리 - string이면 URLPattern으로 변환
+      route.force ||= true;
+    } else {
       if (typeof route.path === 'string') {
+        // 경로 라우트 처리 - string이면 URLPattern으로 변환
         const absolutePathStr = absolutePath(basepath, route.path);
         route.path = new URLPattern({ pathname: `${absolutePathStr}{/}?` });
-      }
-    } else {
-      throw new Error('Route must have either "index" or "path" property defined.');
-    }
-
-    if (route.children && route.children.length > 0) {
-      let childBasepath: string;
-      if ('index' in route) {
-        // 인덱스 라우트는 현재 basepath를 그대로 사용
-        childBasepath = basepath;
+      } else if (route.path instanceof URLPattern) {
+        // 이미 URLPattern인 경우, 아무것도 하지 않음
       } else {
-        // 경로 라우트는 해당 경로를 자식의 basepath로 사용
-        if (typeof route.path === 'string') {
-          childBasepath = absolutePath(basepath, route.path);
-        } else {
-          // URLPattern에서 pathname 추출
-          childBasepath = route.path.pathname.replace('{/}?', '');
-        }
+        // 경로가 설정되지 않은 경우 현재 basepath를 사용
+        route.path = new URLPattern({ pathname: `${basepath}{/}?` });
       }
-      route.children = setRoutes(route.children, childBasepath);
-      route.force ||= false;
-    } else {
-      route.force ||= true;
+
+      // 자식 라우트가 있는 경우 재귀적으로 처리
+      if (route.children && route.children.length > 0) {
+        // URLPattern에서 자식 route에 맞는 basepath 추출
+        const childBasepath = route.path.pathname.replace('{/}?', '');
+        route.children = setRoutes(route.children, childBasepath);
+        route.force ||= false;
+      } else {
+        route.force ||= true;
+      }
     }
   }
   return routes;
@@ -53,7 +47,7 @@ export function setRoutes(routes: RouteConfig[], basepath: string) {
  */
 export function getRoutes(pathname: string, routes: RouteConfig[]): RouteConfig[] {
   for (const route of routes) {
-    if (route.children) {
+    if (route.index !== true && route.children && route.children.length > 0) {
       const childRoutes = getRoutes(pathname, route.children);
       if (childRoutes.length > 0) {
         return [route, ...childRoutes];
@@ -61,16 +55,11 @@ export function getRoutes(pathname: string, routes: RouteConfig[]): RouteConfig[
     }
     
     // 라우트 매칭 확인
-    let matches = false;
-    if ('index' in route && route.index && route.path) {
-      // 인덱스 라우트는 설정된 path URLPattern으로 테스트
-      matches = route.path.test({ pathname: pathname });
-    } else if ('path' in route && route.path instanceof URLPattern) {
-      matches = route.path.test({ pathname: pathname });
-    }
-    
-    if (matches) {
-      return [route];
+    if (route.path instanceof URLPattern) {
+      const isMatch = route.path.test({ pathname: pathname });
+      if (isMatch) return [route];
+    } else {
+      throw new Error('Route path must be an instance of URLPattern, Something wrong in setRoutes function.');
     }
   }
   return [];

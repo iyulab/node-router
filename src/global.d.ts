@@ -4,18 +4,14 @@
  * **EXTRACT** 주석으로 감싸진 부분이 빌드 시에만 포함됩니다.
  */
 
-import type { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent } from './types/RouteEvent';
-import type { RouteInfo } from './types/RouteInfo';
+import type { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent';
 import type { Link, Outlet } from './components';
 
 /* === EXTRACT === */
 declare global {
-  interface Window {
-    route: RouteInfo;
-  }
-
   interface WindowEventMap {
     'route-begin': RouteBeginEvent;
+    'route-progress': RouteProgressEvent;
     'route-done': RouteDoneEvent;
     'route-error': RouteErrorEvent;
   }

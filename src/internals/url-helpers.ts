@@ -1,4 +1,4 @@
-import type { RouteInfo } from "../types/RouteInfo";
+import { RouteContext } from "../types/RouteContext";
 
 /**
  * 주어진 URL이 외부 링크인지 확인합니다.
@@ -35,7 +35,7 @@ export function isExternalUrl(url: string): boolean {
  * - ?로 시작하는 쿼리스트링, #으로 시작하는 해시값은 현재 경로에서 추가됩니다.
  * - 상대경로는 basepath를 기준으로 절대경로로 변환됩니다.
  */
-export function parseUrl(url: string, basepath: string): RouteInfo {
+export function parseUrl(url: string, basepath: string): RouteContext {
   let urlObj: URL;
   basepath = catchBasePath(basepath);
   if (url.startsWith('http')) {
@@ -59,6 +59,7 @@ export function parseUrl(url: string, basepath: string): RouteInfo {
     query: new URLSearchParams(urlObj.search),
     hash: urlObj.hash,
     params: {},
+    progress: () => {}
   };
 }
 

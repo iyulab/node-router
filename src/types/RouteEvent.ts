@@ -1,17 +1,17 @@
-import type { RouteInfo } from './RouteInfo';
+import type { RouteContext } from './RouteContext';
 import { RouteError } from './RouteError';
 
 /** 라우터 이벤트 기본 클래스 */
 abstract class RouteEvent extends Event {
-  
+
   /** 라우팅 정보 */
-  public readonly routeInfo: RouteInfo;
+  public readonly context: RouteContext;
   /** 이벤트 발생 시간 */
   public readonly timestamp: string;
 
-  constructor(type: string, routeInfo:RouteInfo, cancelable: boolean = false) {
+  constructor(type: string, context: RouteContext, cancelable: boolean = false) {
     super(type, { bubbles: true, composed: true, cancelable });
-    this.routeInfo = routeInfo;
+    this.context = context;
     this.timestamp = new Date().toISOString();
   }
 
@@ -32,8 +32,22 @@ abstract class RouteEvent extends Event {
  * 라우트 시작 이벤트
  */
 export class RouteBeginEvent extends RouteEvent {
-  constructor(routeInfo: RouteInfo) {
-    super('route-begin', routeInfo, false);
+  constructor(context: RouteContext) {
+    super('route-begin', context, false);
+  }
+}
+
+/**
+ * 라우트 진행 이벤트
+ */
+export class RouteProgressEvent extends RouteEvent {
+
+  /** 진행 상태 값 (0~100) */
+  public readonly progress: number;
+
+  constructor(context: RouteContext, progress: number) {
+    super('route-progress', context, false);
+    this.progress = progress;
   }
 }
 
@@ -41,8 +55,8 @@ export class RouteBeginEvent extends RouteEvent {
  * 라우트 완료 이벤트
  */
 export class RouteDoneEvent extends RouteEvent {
-  constructor(routeInfo: RouteInfo) {
-    super('route-done', routeInfo, false);
+  constructor(context: RouteContext) {
+    super('route-done', context, false);
   }
 }
 
@@ -54,11 +68,8 @@ export class RouteErrorEvent extends RouteEvent {
   /** 에러 정보 */
   public readonly error: RouteError;
 
-  constructor(
-    error: RouteError,
-    routeInfo: RouteInfo
-  ) {
-    super('route-error', routeInfo, false);
+  constructor(context: RouteContext, error: RouteError) {
+    super('route-error', context, false);
     this.error = error;
   }
 }

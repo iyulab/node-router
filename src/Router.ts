@@ -1,9 +1,8 @@
 import { ErrorPage } from './components/ErrorPage.js';
 import { Outlet } from './components/Outlet.js';
 import { getRandomID, absolutePath, isExternalUrl, parseUrl, findAnchorFromEvent, findOutlet, getRoutes, setRoutes, findOutletOrThrow } from './internals';
-import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundError, ContentLoadError, ContentRenderError } from './types';
-import type { RouteConfig, RouteInfo, RouterConfig } from './types';
-import { RenderResult } from './types/RouteConfig.js';
+import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundError, ContentLoadError, ContentRenderError, RouteProgressEvent } from './types';
+import type { RouteConfig, RouteContext, RouterConfig, FallbackRouteConfig, RenderResult } from './types';
 
 /**
  * `lit-element`와 `react-component` 기반의 클라이언트 사이드 라우터
@@ -12,22 +11,28 @@ export class Router {
   private readonly _rootElement: HTMLElement;
   private readonly _basepath: string;
   private readonly _routes: RouteConfig[];
+  private readonly _fallback?: FallbackRouteConfig;
   
   /** 현재 라우팅 요청 ID */
   private _requestID?: string;
   /** 현재 라우팅 정보 */
-  private _routeInfo?: RouteInfo;
+  private _context?: RouteContext;
 
   constructor(config: RouterConfig) {
     this._rootElement = config.root;
     this._basepath = absolutePath(config.basepath || '/');
-    this._routes = setRoutes(config.routes, this._basepath);
+    this._routes = setRoutes(config.routes || [], this._basepath);
+    this._fallback = config.fallback;
 
     window.removeEventListener('popstate', this.handleWindowPopstate);
     window.addEventListener('popstate', this.handleWindowPopstate);
+
     if (config.useIntercept !== false) {
       this._rootElement.removeEventListener('click', this.handleRootClick);
       this._rootElement.addEventListener('click', this.handleRootClick);
+    }
+    if (config.initialLoad !== false) {
+      void this.go(window.location.href);
     }
   }
 
@@ -35,8 +40,8 @@ export class Router {
   public destroy() {
     window.removeEventListener('popstate', this.handleWindowPopstate);
     this._rootElement.removeEventListener('click', this.handleRootClick);
-    this._routeInfo = undefined;
     this._requestID = undefined;
+    this._context = undefined;
   }
 
   /** 라우터의 기본 경로 반환 */
@@ -44,14 +49,14 @@ export class Router {
     return this._basepath;
   }
 
-  /** 등록된 라우트 반환 */
+  /** 등록된 라우트 정보 반환 */
   public get routes() {
     return this._routes;
   }
 
   /** 현재 라우팅 정보 반환 */
-  public get routeInfo() {
-    return this._routeInfo;
+  public get context() {
+    return this._context;
   }
 
   /**
@@ -64,35 +69,52 @@ export class Router {
     this._requestID = requestID;
 
     // URL 분석
-    const routeInfo = parseUrl(href, this._basepath);
-    if (routeInfo.href === this._routeInfo?.href) return;
+    const context = parseUrl(href, this._basepath);
+    if (context.href === this._context?.href) return;
+
+    // 각 라우트에 대해 고유한 progress 콜백 생성
+    const progressCallback = (value: number) => {
+      // 오래된 요청은 무시, 현재 시점의 요청만 처리
+      if (this._requestID !== requestID) return;
+      // 정수 0..100 범위 보정
+      const progress = Math.max(0, Math.min(100, Math.round(value)));
+      // 라우트 진행 이벤트 발생
+      window.dispatchEvent(new RouteProgressEvent(context, progress));
+    };
+    context.progress = progressCallback;
+
+    // 브라우저 히스토리 업데이트
+    if (context.href !== window.location.href) {
+      window.history.pushState({ basepath: context.basepath }, '', context.href);
+    } else {
+      window.history.replaceState({ basepath: context.basepath }, '', context.href);
+    }
     
     let outlet: Outlet | undefined = undefined;
     try {
       // 라우트 시작 이벤트 발생
       if(this._requestID !== requestID) return;
-      window.dispatchEvent(new RouteBeginEvent(routeInfo));
+      window.dispatchEvent(new RouteBeginEvent(context));
 
       // 일치하는 라우트 찾기
-      const routes = getRoutes(routeInfo.pathname, this._routes);
+      const routes = getRoutes(context.pathname, this._routes);
       const lastRoute = routes[routes.length - 1];
 
       //// 현재 라우트 정보 업데이트
-      if (lastRoute && 'path' in lastRoute && lastRoute.path instanceof URLPattern) {
+      if (lastRoute && lastRoute.path instanceof URLPattern) {
         // 인덱스 or 경로 라우트의 path URLPattern으로 params 추출
-        routeInfo.params = lastRoute.path.exec({ pathname: routeInfo.pathname })?.pathname.groups || {};
+        context.params = lastRoute.path.exec({ pathname: context.pathname })?.pathname.groups || {};
       }
-      this._routeInfo = routeInfo;
-      window.route = routeInfo;
+      this._context = context;
 
       // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
       outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
-      let content: RenderResult | null = null;
+      let content: RenderResult | false | null = null;
       let element: HTMLElement | null = null;
 
       if (routes.length === 0) {
-        throw new NotFoundError(routeInfo.href);
+        throw new NotFoundError(context.href);
       }
       for (const route of routes) {
         if(this._requestID !== requestID) return;
@@ -101,11 +123,16 @@ export class Router {
         if(!route.render) continue;
 
         // 라우트에 해당하는 컨텐츠 가져오기
-        try {
-          content = await route.render(routeInfo);
+        try {  
+          content = await route.render(context);
+          if (content === false || content === null) {
+            throw new Error('Failed to load content for the route.');
+          }
         } catch (LoadError) {
           throw new ContentLoadError(LoadError);
         }
+
+        if(this._requestID !== requestID) return;
         
         // Outlet에 실제 컨텐츠 렌더링 수행
         try {
@@ -119,20 +146,10 @@ export class Router {
         title = route.title || title;
       }
 
-      // 문서 제목 업데이트
+      // 문서 제목 업데이트, 라우트 완료 이벤트 발생
       document.title = title || document.title;
-      
-      // 브라우저 히스토리 업데이트
-      if(this._requestID !== requestID) return;
-      if (routeInfo.href !== window.location.href) {
-        window.history.pushState({ basepath: routeInfo.basepath }, '', routeInfo.href);
-      } else {
-        window.history.replaceState({ basepath: routeInfo.basepath }, '', routeInfo.href);
-      }
-      
-      // 라우트 완료 이벤트 발생
-      window.dispatchEvent(new RouteDoneEvent(routeInfo));
-      
+      window.dispatchEvent(new RouteDoneEvent(context));
+
     } catch (error: any) {
       // 이벤트 생성 및 에러 로깅
       const routeError = error instanceof RouteError ? error
@@ -141,18 +158,24 @@ export class Router {
         error.message || 'An unexpected error occurred',
         error
       );
-      window.dispatchEvent(new RouteErrorEvent(routeError, routeInfo));
-      console.error('Routing error:', error.original || error);
+      window.dispatchEvent(new RouteErrorEvent(context, routeError));
+      console.error('Routing error:', routeError.original);
 
-      // ErrorPage 렌더링
+      // Fallback 또는 ErrorPage 렌더링
       try {
-        const errorPage = new ErrorPage();
-        errorPage.error = error;
-        if (outlet) {
-          outlet.renderContent({ id: '#', content: errorPage, force: true });
+        if (this._fallback && this._fallback.render && outlet) {
+          const fallbackContent = await this._fallback.render({ ...context, error: routeError });
+          outlet.renderContent({ id: '#fallback', content: fallbackContent, force: true });
+          document.title = this._fallback.title || document.title;
         } else {
-          document.body.innerHTML = '';
-          document.body.appendChild(errorPage);
+          const errorContent = new ErrorPage();
+          errorContent.error = error;
+          if (outlet) {
+            outlet.renderContent({ id: '#error', content: errorContent, force: true });
+          } else {
+            document.body.innerHTML = '';
+            document.body.appendChild(errorContent);
+          }
         }
       } catch (pageError) {
         console.error('Failed to render error component:', pageError);
