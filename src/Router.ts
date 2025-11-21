@@ -125,7 +125,7 @@ export class Router {
         // 라우트에 해당하는 컨텐츠 가져오기
         try {  
           content = await route.render(context);
-          if (content === false || content === null) {
+          if (content === false || content === undefined || content === null) {
             throw new Error('Failed to load content for the route.');
           }
         } catch (LoadError) {

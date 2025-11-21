@@ -11,21 +11,28 @@ import type { RouteConfig } from "../types/RouteConfig";
 export function setRoutes(routes: RouteConfig[], basepath: string) {
   for (const route of routes) {
     route.id ||= getRandomID();
+    route.ignoreCase ||= false;
     
     if (route.index === true) {
       // 인덱스 라우트는 현재 basepath를 URLPattern으로 설정
-      route.path = new URLPattern({ pathname: `${basepath}{/}?` });
+      route.path = new URLPattern({ pathname: `${basepath}{/}?` }, {
+        ignoreCase: route.ignoreCase,
+      });
       route.force ||= true;
     } else {
       if (typeof route.path === 'string') {
         // 경로 라우트 처리 - string이면 URLPattern으로 변환
         const absolutePathStr = absolutePath(basepath, route.path);
-        route.path = new URLPattern({ pathname: `${absolutePathStr}{/}?` });
+        route.path = new URLPattern({ pathname: `${absolutePathStr}{/}?` }, {
+          ignoreCase: route.ignoreCase,
+        });
       } else if (route.path instanceof URLPattern) {
         // 이미 URLPattern인 경우, 아무것도 하지 않음
       } else {
         // 경로가 설정되지 않은 경우 현재 basepath를 사용
-        route.path = new URLPattern({ pathname: `${basepath}{/}?` });
+        route.path = new URLPattern({ pathname: `${basepath}{/}?` }, {
+          ignoreCase: route.ignoreCase,
+        });
       }
 
       // 자식 라우트가 있는 경우 재귀적으로 처리

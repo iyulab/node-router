@@ -43,8 +43,8 @@ export class Outlet extends LitElement {
     if (!this.container) {
       throw new Error('Outlet container is not initialized.');
     }
-    if (content === false) {
-      throw new Error('Content is false, cannot render.');
+    if (typeof content !== 'object') {
+      throw new Error('Content is not a valid renderable object.');
     }
 
     if (content instanceof HTMLElement) {
