@@ -64,13 +64,17 @@ export class Router {
    * @param href 이동할 경로
    */
   public async go(href: string) {
-    // 요청 ID 생성
+    // 요청 ID 생성 및 URL 분석
     const requestID = getRandomID();
     this._requestID = requestID;
-
-    // URL 분석
     const context = parseUrl(href, this._basepath);
-    if (context.href === this._context?.href) return;
+
+    // 브라우저 히스토리 업데이트
+    if (context.href !== window.location.href) {
+      window.history.pushState({ basepath: context.basepath }, '', context.href);
+    } else {
+      window.history.replaceState({ basepath: context.basepath }, '', context.href);
+    }
 
     // 각 라우트에 대해 고유한 progress 콜백 생성
     const progressCallback = (value: number) => {
@@ -82,13 +86,6 @@ export class Router {
       window.dispatchEvent(new RouteProgressEvent(context, progress));
     };
     context.progress = progressCallback;
-
-    // 브라우저 히스토리 업데이트
-    if (context.href !== window.location.href) {
-      window.history.pushState({ basepath: context.basepath }, '', context.href);
-    } else {
-      window.history.replaceState({ basepath: context.basepath }, '', context.href);
-    }
     
     let outlet: Outlet | undefined = undefined;
     try {
@@ -102,28 +99,30 @@ export class Router {
 
       //// 현재 라우트 정보 업데이트
       if (lastRoute && lastRoute.path instanceof URLPattern) {
-        // 인덱스 or 경로 라우트의 path URLPattern으로 params 추출
         context.params = lastRoute.path.exec({ pathname: context.pathname })?.pathname.groups || {};
       }
       this._context = context;
 
-      // Outlet 렌더링(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
+      // Outlet 준비(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
       outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
       let content: RenderResult | false | null = null;
       let element: HTMLElement | null = null;
 
+      // 일치하는 라우트가 없으면 404 에러 발생
       if (routes.length === 0) {
         throw new NotFoundError(context.href);
       }
-      for (const route of routes) {
-        if(this._requestID !== requestID) return;
 
-        // 렌더 함수가 없는 경우 건너뜀
+      // 각 라우트에 대해 렌더링 수행
+      for (const route of routes) {
+        // 오래된 요청은 무시, 현재 시점의 요청만 처리
+        if(this._requestID !== requestID) return;
+        // 렌더링 함수가 없으면 건너뜀
         if(!route.render) continue;
 
-        // 라우트에 해당하는 컨텐츠 가져오기
-        try {  
+        // 라우트에 해당하는 컨텐츠 가져오기, 실패시 에러 발생
+        try {
           content = await route.render(context);
           if (content === false || content === undefined || content === null) {
             throw new Error('Failed to load content for the route.');
@@ -131,10 +130,8 @@ export class Router {
         } catch (LoadError) {
           throw new ContentLoadError(LoadError);
         }
-
-        if(this._requestID !== requestID) return;
         
-        // Outlet에 실제 컨텐츠 렌더링 수행
+        // Outlet에 실제 컨텐츠 렌더링 수행, 실패시 에러 발생
         try {
           element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
         } catch (renderError) {

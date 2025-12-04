@@ -1,7 +1,7 @@
 # Changelog
 
-## [Unreleased]
-- (No changes yet)
+## 0.5.3 (December 4, 2025)
+- Removed logic that prevented routing when navigating to the same URL
 
 ## 0.5.2 (November 17, 2025)
 - Changed `RouteInfo` to `RouteContext` and added progress callback support
