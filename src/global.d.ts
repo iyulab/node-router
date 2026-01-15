@@ -1,13 +1,8 @@
+import type { RouteBeginEvent, RouteProgressEvent, RouteDoneEvent, RouteErrorEvent } from './types/RouteEvent';
+
 /** 
- * vite-plugin-dts 설정의 rollupTypes 옵션에서 global 선언을 인식하지 못하는 문제로
- * 빌드에 포함될 global 선언 파일은 따로 분리하여 관리합니다.
- * **EXTRACT** 주석으로 감싸진 부분이 빌드 시에만 포함됩니다.
+ * 전역 WindowEventMap에 라우터 이벤트 타입 
  */
-
-import type { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent';
-import type { Link, Outlet } from './components';
-
-/* === EXTRACT === */
 declare global {
   interface WindowEventMap {
     'route-begin': RouteBeginEvent;
@@ -15,12 +10,6 @@ declare global {
     'route-done': RouteDoneEvent;
     'route-error': RouteErrorEvent;
   }
-
-  interface HTMLElementTagNameMap {
-    'u-link': Link;
-    'u-outlet': Outlet;
-  }
 }
-/* === EXTRACT === */
 
 export {};

@@ -3,7 +3,7 @@ import { RouteError } from './RouteError';
 
 /** 라우터 이벤트 기본 클래스 */
 abstract class RouteEvent extends Event {
-
+  
   /** 라우팅 정보 */
   public readonly context: RouteContext;
   /** 이벤트 발생 시간 */

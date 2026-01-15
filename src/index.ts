@@ -1,5 +1,13 @@
-export * from './components';
-export * from './types';
-export { Router } from './Router';
+// types exports
+export * from './types/RouteConfig';
+export * from './types/RouteContext';
+export * from './types/RouteError';
+export * from './types/RouteEvent';
+export * from './types/RouterConfig';
 
-export * from './global.d.js';
+// components exports
+export * from './components/UOutlet';
+export * from './components/ULink';
+
+// main export
+export { Router } from './Router';

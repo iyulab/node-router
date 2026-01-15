@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+- Updated dependencies: lit (3.3.1 → 3.3.2), react (19.2.1 → 19.2.3), react-dom (19.2.1 → 19.2.3)
+- Updated devDependencies: @types/node (24.10.1 → 25.0.3), vite (7.2.6 → 7.3.0)
+- Updated workflow configuration from publish-npm.yaml to publish-npm.yml
+
 ## 0.5.3 (December 4, 2025)
 - Removed logic that prevented routing when navigating to the same URL
 

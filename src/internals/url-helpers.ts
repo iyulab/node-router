@@ -1,4 +1,4 @@
-import { RouteContext } from "../types/RouteContext";
+import type { RouteContext } from "../types/RouteContext";
 
 /**
  * 주어진 URL이 외부 링크인지 확인합니다.

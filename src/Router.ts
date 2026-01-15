@@ -1,11 +1,17 @@
-import { ErrorPage } from './components/ErrorPage.js';
-import { Outlet } from './components/Outlet.js';
-import { getRandomID, absolutePath, isExternalUrl, parseUrl, findAnchorFromEvent, findOutlet, getRoutes, setRoutes, findOutletOrThrow } from './internals';
-import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteError, NotFoundError, ContentLoadError, ContentRenderError, RouteProgressEvent } from './types';
-import type { RouteConfig, RouteContext, RouterConfig, FallbackRouteConfig, RenderResult } from './types';
+import { UErrorPage } from './components/UErrorPage.js';
+import type { UOutlet } from './components/UOutlet.js';
+import { getRandomID } from './internals/crypto-helpers.js';
+import { findAnchorFromEvent, findOutlet, findOutletOrThrow } from './internals/node-helpers.js';
+import { getRoutes, setRoutes  } from './internals/route-helpers.js';
+import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
+import { ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
+import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
+import type { RouteContext } from './types/RouteContext.js';
+import type { RouterConfig } from './types/RouterConfig.js';
+import type { FallbackRouteConfig, RenderResult, RouteConfig } from './types/RouteConfig.js';
 
 /**
- * `lit-element`와 `react-component` 기반의 클라이언트 사이드 라우터
+ * `lit-element`, `react`를 지원하는 클라이언트 사이드 라우터
  */
 export class Router {
   private readonly _rootElement: HTMLElement;
@@ -87,7 +93,7 @@ export class Router {
     };
     context.progress = progressCallback;
     
-    let outlet: Outlet | undefined = undefined;
+    let outlet: UOutlet | undefined = undefined;
     try {
       // 라우트 시작 이벤트 발생
       if(this._requestID !== requestID) return;
@@ -165,7 +171,7 @@ export class Router {
           outlet.renderContent({ id: '#fallback', content: fallbackContent, force: true });
           document.title = this._fallback.title || document.title;
         } else {
-          const errorContent = new ErrorPage();
+          const errorContent = new UErrorPage();
           errorContent.error = error;
           if (outlet) {
             outlet.renderContent({ id: '#error', content: errorContent, force: true });

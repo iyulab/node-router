@@ -1,7 +1,8 @@
-import { LitElement, RootPart, html, render } from 'lit';
+import { LitElement, html, render, type TemplateResult, type RootPart } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { createRoot, Root } from 'react-dom/client';
-import type { TemplateResult } from 'lit';
 import type { ReactElement } from 'react';
+
 import type { RenderResult } from '../types/RouteConfig';
 
 interface RenderOption {
@@ -11,15 +12,15 @@ interface RenderOption {
 }
 
 /**
- * 라우트 아웃렛 컴포넌트
  * 라우트 설정에 따라 LitElement 또는 React 컴포넌트를 렌더링합니다.
  */
-export class Outlet extends LitElement {
+@customElement('u-outlet')
+export class UOutlet extends LitElement {
   private routeId?: string;
   private container?: HTMLDivElement;
   private content?: Root | RootPart;
 
-  /** 쉐도우를 사용하지 않고, 직접 렌더링합니다. */
+  /** 외부 스타일을 적용하기 위해 라이트 돔을사용 합니다. */
   protected createRenderRoot() {
     return this;
   }

@@ -1,15 +1,15 @@
-import type { Outlet } from "../components/Outlet";
+import type { UOutlet } from "../components/UOutlet";
 import { OutletMissingError } from "../types/RouteError";
 
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 
  */
-export function findOutlet(element: HTMLElement): Outlet | undefined {
-  let outlet: Outlet | undefined = undefined;
+export function findOutlet(element: HTMLElement): UOutlet | undefined {
+  let outlet: UOutlet | undefined = undefined;
 
   if (element.shadowRoot) {
     // Shadow DOM에서 찾기
-    outlet = element.shadowRoot.querySelector('u-outlet') as Outlet;
+    outlet = element.shadowRoot.querySelector('u-outlet') as UOutlet;
     if (outlet) return outlet;
 
     for (const child of Array.from(element.shadowRoot.children)) {
@@ -18,7 +18,7 @@ export function findOutlet(element: HTMLElement): Outlet | undefined {
     }
   } else {
     // 일반 DOM에서 찾기
-    outlet = element.querySelector('u-outlet') as Outlet;
+    outlet = element.querySelector('u-outlet') as UOutlet;
     if (outlet) return outlet;
 
     for (const child of Array.from(element.children)) {
@@ -34,7 +34,7 @@ export function findOutlet(element: HTMLElement): Outlet | undefined {
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 없으면 에러를 던집니다. 
  */
-export function findOutletOrThrow(element: HTMLElement): Outlet {
+export function findOutletOrThrow(element: HTMLElement): UOutlet {
   const outlet = findOutlet(element);
   if (!outlet) {
     throw new OutletMissingError();

@@ -1,27 +1,25 @@
-import { LitElement, html } from 'lit';
+import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 
 import { RouteError } from '../types/RouteError.js';
-import { styles } from './ErrorPage.styles.js';
 
 /** 에러 아이콘 모음 로드 */
 const icons = Object.entries(import.meta.glob('../assets/*.svg', { 
-    eager: true,
-    query: '?raw'
-  })).reduce((acc, [path, content]) => {
-    const name = path.split('/').pop()?.replace('.svg', '') || '';
-    acc[name] = (content as any).default as string;
-    return acc;
-  }, {} as Record<string, string>);
+  eager: true,
+  query: '?raw'
+})).reduce((acc, [path, content]) => {
+  const name = path.split('/').pop()?.replace('.svg', '') || '';
+  acc[name] = (content as any).default as string;
+  return acc;
+}, {} as Record<string, string>);
 
 /**
  * 라우터 에러 표시 컴포넌트
  * 라우팅 중 발생한 에러 정보를 사용자에게 보여줍니다.
  */
 @customElement('u-error-page')
-export class ErrorPage extends LitElement {
-  static styles = styles;
+export class UErrorPage extends LitElement {
 
   /** 표시할 에러 정보 */
   @property({ type: Object }) error?: RouteError;
@@ -73,4 +71,66 @@ export class ErrorPage extends LitElement {
         return icons["exclamation-triangle"] || '⚠️';
     }
   }
+
+  static styles = css`
+    :host {
+      --route-icon-color: #4a5568;
+      --route-code-color: #1a202c;
+      --route-message-color: #718096;
+    }
+    :host-context([theme="dark"]) {
+      --route-icon-color: #a0aec0;
+      --route-code-color: #f7fafc;
+      --route-message-color: #cbd5e0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --route-icon-color: #a0aec0;
+        --route-code-color: #f7fafc;
+        --route-message-color: #cbd5e0;
+      }
+    };
+
+    :host {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      width: 100%;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: auto;
+      user-select: none;
+    }
+
+    .icon {
+      display: contents;
+      font-size: 6rem;
+      color: var(--route-icon-color);
+      opacity: 0.85;
+    }
+
+    svg {
+      width: 1em;
+      height: 1em;
+      fill: currentColor;
+    }
+
+    .code {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 1rem 0;
+      color: var(--route-code-color);
+      letter-spacing: -0.5px;
+    }
+
+    .message {
+      font-size: 1rem;
+      color: var(--route-message-color);
+      max-width: 600px;
+      line-height: 1.6;
+    }
+  `;
 }

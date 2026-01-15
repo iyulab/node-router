@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit";
-import { property, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
 
@@ -8,11 +8,12 @@ import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
  * - 내부 링크는 클라이언트 라우팅을 수행하고, 외부 링크는 새로운 페이지로 이동합니다.
  * - 마우스 중간 버튼 클릭 또는 Ctrl 키를 누르면 새로운 탭에서 엽니다.
  */
-export class Link extends LitElement {
+@customElement('u-link')
+export class ULink extends LitElement {
   /** 외부 링크 여부 */
   private isExternal: boolean = false;
   
-  /** a 태그의 href 속성 및 새로운 페이지로 이동할 때 사용될 링크입니다. */
+  /** a 태그의 href 속성 및 새로운 페이지로 이동할 때 사용될 링크입니다.*/
   @state() anchorHref: string = '#';
 
   /**
@@ -27,11 +28,11 @@ export class Link extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.addEventListener('mousedown', this.handleMouseDown);
+    this.addEventListener('pointerdown', this.handlePointerDown);
   }
 
   disconnectedCallback() {
-    this.removeEventListener('mousedown', this.handleMouseDown);
+    this.removeEventListener('pointerdown', this.handlePointerDown);
     super.disconnectedCallback();
   }
 
@@ -47,10 +48,28 @@ export class Link extends LitElement {
 
   render() {
     return html`
-      <a href=${this.anchorHref} @click=${this.preventClickEvent}>
+      <a href=${this.anchorHref} @click=${this.handleAnchorClick}>
         <slot></slot>
       </a>
     `;
+  }
+
+  /** a 태그에 주입할 href 값을 계산합니다. */
+  private getAnchorHref(href?: string): string {
+    const basepath = window.history.state?.basepath || '';
+    
+    // href 속성이 없으면 basepath로 이동합니다.
+    if (!href) {
+      return window.location.origin + basepath;
+    }
+    
+    // 외부 링크이거나 절대경로일 경우 그대로 반환합니다.
+    if (this.isExternal || href.startsWith('/') || href.startsWith('#') || href.startsWith('?')) {
+      return href;
+    }
+
+    // 상대경로일 경우 basepath와 결합하여 반환합니다.
+    return absolutePath(basepath, href);
   }
 
   /**
@@ -59,7 +78,7 @@ export class Link extends LitElement {
    * - 새로운 페이지로 이동: http로 시작하거나 절대경로일 경우 새로운 페이지로 이동합니다.
    * - 클라이언트 라우팅: 상대경로로 시작하면 클라이언트 라우팅을 합니다.
    */
-  private handleMouseDown = (event: MouseEvent) => {
+  private handlePointerDown = (event: MouseEvent) => {
     // 네비게이션 이벤트가 아닌 경우는 처리하지 않습니다.
     const isNonNavigationClick = event.button === 2 || event.metaKey || event.shiftKey || event.altKey;
     if (event.defaultPrevented || isNonNavigationClick) return;
@@ -90,6 +109,12 @@ export class Link extends LitElement {
     }
   }
 
+  /** 기본 a 태그의 클릭 이벤트를 막습니다. */
+  private handleAnchorClick = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   /** 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다. */
   private dispatchPopstate(basepath: string, url: string) {
     window.history.pushState({ basepath: basepath }, '', url);
@@ -100,30 +125,6 @@ export class Link extends LitElement {
   private dispatchHashchange(basepath: string, url: string) {
     window.history.pushState({ basepath: basepath }, '', url);
     window.dispatchEvent(new HashChangeEvent('hashchange'));
-  }
-
-  /** 기본 a 태그의 클릭 이벤트를 막습니다. */
-  private preventClickEvent = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  /** a 태그에 주입할 href 값을 계산합니다. */
-  private getAnchorHref(href?: string): string {
-    const basepath = window.history.state?.basepath || '';
-    
-    // href 속성이 없으면 basepath로 이동합니다.
-    if (!href) {
-      return window.location.origin + basepath;
-    }
-    
-    // 외부 링크이거나 절대경로일 경우 그대로 반환합니다.
-    if (this.isExternal || href.startsWith('/') || href.startsWith('#') || href.startsWith('?')) {
-      return href;
-    }
-
-    // 상대경로일 경우 basepath와 결합하여 반환합니다.
-    return absolutePath(basepath, href);
   }
 
   static styles = css`
