@@ -1,3 +1,6 @@
+// global.d.ts reference
+import './global.d.ts';
+
 // types exports
 export * from './types/RouteConfig';
 export * from './types/RouteContext';
