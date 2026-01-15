@@ -126,37 +126,23 @@ export class AppRoot extends LitElement {
 
 ```tsx
 import React from 'react';
-import { Outlet, Link } from '@iyulab/router';
+import { UOutlet, ULink } from '@iyulab/router/react';
 
 export function AppRoot() {
   return (
     <div>
       <nav>
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
-        <Link href="/user/123">User Profile</Link>
+        <ULink href="/">Home</ULink>
+        <ULink href="/about">About</ULink>
+        <ULink href="/user/123">User Profile</ULink>
       </nav>
       <main>
-        <Outlet />
+        <UOutlet />
       </main>
     </div>
   );
 }
 ```
-
-## Browser Support
-
-- **URLPattern API**: Required for routing functionality
-- **Modern browsers**: Chrome 95+, Firefox 106+, Safari 16.4+
-- **Polyfill**: Consider using [urlpattern-polyfill](https://www.npmjs.com/package/urlpattern-polyfill) for older browsers
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 

@@ -1,9 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## 0.6.0 (January 15, 2026)
+- Refactored internal module organization
+- Renamed web-components: `ErrorPage` → `UErrorPage`, `Link` → `ULink`, `Outlet` → `UOutlet`
+- Added dedicated `react.ts` export for React-compatible components(`ULink`, `UOutlet`)
+- Improved `ULink` to support `target` attribute for anchor tags, allowing standard browser behavior for links like `_blank`, etc.
 - Updated dependencies: lit (3.3.1 → 3.3.2), react (19.2.1 → 19.2.3), react-dom (19.2.1 → 19.2.3)
-- Updated devDependencies: @types/node (24.10.1 → 25.0.3), vite (7.2.6 → 7.3.0)
-- Updated workflow configuration from publish-npm.yaml to publish-npm.yml
 
 ## 0.5.3 (December 4, 2025)
 - Removed logic that prevented routing when navigating to the same URL

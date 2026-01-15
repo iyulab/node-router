@@ -1,130 +1,150 @@
-import { LitElement, css, html } from "lit";
+import { LitElement, PropertyValues, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
 
 /**
  * - 클라이언트 라우팅을 지원하는 링크 엘리먼트입니다.
- * - 내부 링크는 클라이언트 라우팅을 수행하고, 외부 링크는 새로운 페이지로 이동합니다.
- * - 마우스 중간 버튼 클릭 또는 Ctrl 키를 누르면 새로운 탭에서 엽니다.
+ * - 내부 링크는 클라이언트 라우팅을 수행하고, 외부 링크는 브라우저 기본 네비게이션을 사용합니다.
+ * - Ctrl/Meta/Shift/Alt, 중클릭/우클릭 등은 브라우저 기본 동작(새 탭, 컨텍스트 메뉴 등)을 그대로 유지합니다.
  */
-@customElement('u-link')
+@customElement("u-link")
 export class ULink extends LitElement {
   /** 외부 링크 여부 */
   private isExternal: boolean = false;
-  
-  /** a 태그의 href 속성 및 새로운 페이지로 이동할 때 사용될 링크입니다.*/
-  @state() anchorHref: string = '#';
+
+  /** a 태그에 주입할 href 값 */
+  @state() computedHref: string = "#";
+
+  /**
+   * a 태그 target을 지원하고 싶으면 열어두는게 좋습니다.
+   * - _blank 등을 쓰면 무조건 브라우저 기본 동작을 따르도록 처리합니다.
+   */
+  @property({ type: String }) target?: string;
 
   /**
    * - 속성을 정의하지 않으면 basepath로 이동합니다.
-   * - http 로 시작하면 새로운 페이지를 로드합니다.
-   * - 절대경로일 경우 basepath로 시작하면 클라이언트 라우팅을 합니다. 그렇지 않으면 새로운 페이지를 로드합니다.
-   * - 상대경로로 시작하면 (현재의 basepath + 상대경로)로 클라이언트 라우팅을 합니다.
-   * - ?로 시작하면 현재 경로에 쿼리스트링을 추가하고, 클라이언트 라우팅을 합니다.
-   * - #으로 시작하면 현재 경로에 해시를 추가하고, hashchange 이벤트를 발생시킵니다.
+   * - http(s)로 시작하면 외부 링크로 간주하고 브라우저 네비게이션을 사용합니다.
+   * - 절대경로(/...)일 경우 basepath로 시작하면 SPA 라우팅 대상이 될 수 있습니다.
+   * - 상대경로는 (basepath + 상대경로)로 SPA 라우팅 대상이 될 수 있습니다.
+   * - ?로 시작하면 현재 pathname에 쿼리스트링을 붙여 SPA 라우팅합니다.
+   * - #으로 시작하면 현재 URL에 해시만 바꾸고(브라우저 기본) 동작합니다.
    */
   @property({ type: String }) href?: string;
 
-  connectedCallback() {
-    super.connectedCallback();
-    this.addEventListener('pointerdown', this.handlePointerDown);
-  }
+  protected willUpdate(changedProperties: PropertyValues): void {
+    super.willUpdate(changedProperties);
 
-  disconnectedCallback() {
-    this.removeEventListener('pointerdown', this.handlePointerDown);
-    super.disconnectedCallback();
-  }
-
-  protected async updated(changedProperties: any) {
-    super.updated(changedProperties);
-    await this.updateComplete;
-
-    if (changedProperties.has('href')) {
-      this.isExternal = isExternalUrl(this.href || '');
-      this.anchorHref = this.getAnchorHref(this.href);
+    if (changedProperties.has("href")) {
+      this.isExternal = isExternalUrl(this.href || "");
+      this.computedHref = this.computeHref(this.href);
     }
   }
 
   render() {
     return html`
-      <a href=${this.anchorHref} @click=${this.handleAnchorClick}>
+      <a 
+        target=${this.target ?? "_self"}
+        href=${this.computedHref}
+        @click=${this.handleAnchorClick}
+      >
         <slot></slot>
       </a>
     `;
   }
 
+  /** basepath를 state에서 꺼내는 헬퍼 */
+  private getBasepath(): string {
+    return window.history.state?.basepath || "";
+  }
+
   /** a 태그에 주입할 href 값을 계산합니다. */
-  private getAnchorHref(href?: string): string {
-    const basepath = window.history.state?.basepath || '';
-    
-    // href 속성이 없으면 basepath로 이동합니다.
+  private computeHref(href?: string): string {
+    const basepath = this.getBasepath();
+
+    // href 속성이 없으면 basepath로 이동 (절대 URL로 넣어 hover 표시 확실히)
     if (!href) {
       return window.location.origin + basepath;
     }
-    
-    // 외부 링크이거나 절대경로일 경우 그대로 반환합니다.
-    if (this.isExternal || href.startsWith('/') || href.startsWith('#') || href.startsWith('?')) {
-      return href;
-    }
 
-    // 상대경로일 경우 basepath와 결합하여 반환합니다.
+    // 외부 링크는 그대로 (http/https 등)
+    if (this.isExternal) return href;
+
+    // 해시 / 쿼리스트링은 그대로 (브라우저가 표시/처리)
+    if (href.startsWith("#") || href.startsWith("?")) return href;
+
+    // 절대경로(/...)는 그대로 표시
+    if (href.startsWith("/")) return href;
+
+    // 상대경로는 basepath와 결합해서 표시
     return absolutePath(basepath, href);
   }
 
   /**
-   * 링크 엘리먼트의 마우스 이벤트 핸들러
-   * - 새로운 탭에서 열기: 마우스 중간 버튼 또는 Ctrl 키를 누릅니다.
-   * - 새로운 페이지로 이동: http로 시작하거나 절대경로일 경우 새로운 페이지로 이동합니다.
-   * - 클라이언트 라우팅: 상대경로로 시작하면 클라이언트 라우팅을 합니다.
+   * 클릭 가로채기 규칙
+   * - 좌클릭(0) + 보조키 없음(ctrl/meta/shift/alt 없음) + target이 _self일 때만 SPA 라우팅 고려
+   * - 그 외(중클릭/우클릭/보조키/target=_blank 등)는 브라우저 기본 동작 유지
    */
-  private handlePointerDown = (event: MouseEvent) => {
-    // 네비게이션 이벤트가 아닌 경우는 처리하지 않습니다.
-    const isNonNavigationClick = event.button === 2 || event.metaKey || event.shiftKey || event.altKey;
-    if (event.defaultPrevented || isNonNavigationClick) return;
+  private handleAnchorClick = (event: MouseEvent) => {
+    // 이미 막힌 이벤트면 건드리지 않음
+    if (event.defaultPrevented) return;
 
-    event.preventDefault();
-    event.stopPropagation(); 
-    const basepath = window.history.state?.basepath || '';
+    // 좌클릭만 SPA 라우팅 고려
+    if (event.button !== 0) return;
 
-    if (event.button === 1 || event.ctrlKey) {
-      // 마우스 중간 버튼 또는 Ctrl 키를 누르면 새 탭에서 열립니다.
-      window.open(this.anchorHref, '_blank');
-    } else if (!this.href) {
-      // href 속성이 없으면 basepath로 이동합니다.
+    // 보조키가 있으면(새 탭/새 창 등) 브라우저에 맡김
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    // target이 _blank 등으로 지정되면 브라우저 동작 유지
+    const target = (this.target ?? "").trim();
+    if (target && target.toLowerCase() !== "_self") return;
+
+    const basepath = this.getBasepath();
+
+    // href 없으면 basepath로 SPA 라우팅
+    if (!this.href) {
+      event.preventDefault();
       this.dispatchPopstate(basepath, basepath);
-    } else if (this.isExternal || (this.href.startsWith("/") && !this.href.startsWith(basepath))) {
-      // 외부링크 이거나 basepath가 아닌 절대경로일 경우 새로운 페이지로 이동합니다.
-      window.location.href = this.href;
-    } else if (this.href.startsWith('#')) {
-      // 해시로 시작하면 hashchange 이벤트를 발생시킵니다.
-      const url = window.location.pathname + window.location.search + this.href;
-      this.dispatchHashchange(basepath, url);
-    } else if (this.href.startsWith('?')) {
+      return;
+    }
+
+    // 외부 링크는 브라우저 네비게이션
+    if (this.isExternal) return;
+
+    // hash(#)는 브라우저 기본 동작 유지 (hashchange를 브라우저가 발생시킴)
+    if (this.href.startsWith("#")) return;
+
+    // 여기부터는 SPA 라우팅으로 가로채는 케이스들
+    event.preventDefault();
+
+    if (this.href.startsWith("?")) {
+      // 현재 pathname + ?query
       const url = window.location.pathname + this.href;
       this.dispatchPopstate(basepath, url);
-    } else {
-      const url =absolutePath(basepath, this.href);
-      this.dispatchPopstate(basepath, url);
+      return;
     }
-  }
 
-  /** 기본 a 태그의 클릭 이벤트를 막습니다. */
-  private handleAnchorClick = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+    if (this.href.startsWith("/")) {
+      // 절대경로인데 basepath 밖이면 전체 페이지 네비게이션이 자연스럽지만,
+      // a 태그 기본을 막았기 때문에 직접 이동시켜야 함
+      if (!this.href.startsWith(basepath)) {
+        window.location.assign(this.href);
+        return;
+      }
+      // basepath 내부면 SPA 라우팅
+      this.dispatchPopstate(basepath, this.href);
+      return;
+    }
+
+    // 상대경로 → basepath와 결합 후 SPA 라우팅
+    const url = absolutePath(basepath, this.href);
+    this.dispatchPopstate(basepath, url);
+  };
 
   /** 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다. */
   private dispatchPopstate(basepath: string, url: string) {
-    window.history.pushState({ basepath: basepath }, '', url);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  }
-
-  /** 클라이언트 라우팅을 위해 hashchange 이벤트를 발생시킵니다. */
-  private dispatchHashchange(basepath: string, url: string) {
-    window.history.pushState({ basepath: basepath }, '', url);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    window.history.pushState({ basepath }, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   static styles = css`
@@ -136,7 +156,12 @@ export class ULink extends LitElement {
     a {
       display: contents;
       text-decoration: none;
+
+      font-size: inherit;
+      font-weight: inherit;
+      font-family: inherit;
       color: inherit;
+      cursor: inherit;
     }
   `;
 }
