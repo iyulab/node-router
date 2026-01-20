@@ -1,11 +1,17 @@
 # Changelog
 
+## 0.6.1 (January 20, 2026)
+- Fixed `UErrorPage` CSS syntax error (trailing semicolon in CSS block)
+- Enhanced initial route loading to wait for outlet element readiness
+- Changed click event listener from rootElement to document level for better event handling
+- Added `global.d.ts` import to main entry point
+- Removed unnecessary `computedHref` state from `ULink` component
+
 ## 0.6.0 (January 15, 2026)
 - Refactored internal module organization
 - Renamed web-components: `ErrorPage` → `UErrorPage`, `Link` → `ULink`, `Outlet` → `UOutlet`
 - Added dedicated `react.ts` export for React-compatible components(`ULink`, `UOutlet`)
 - Improved `ULink` to support `target` attribute for anchor tags, allowing standard browser behavior for links like `_blank`, etc.
-- Updated dependencies: lit (3.3.1 → 3.3.2), react (19.2.1 → 19.2.3), react-dom (19.2.1 → 19.2.3)
 
 ## 0.5.3 (December 4, 2025)
 - Removed logic that prevented routing when navigating to the same URL

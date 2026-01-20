@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import type { RouteContext, RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from '../src';
 import { repeat } from 'lit/directives/repeat.js';
+import type { RouteContext, RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from '../src';
 
 @customElement('preview-layout')
 export class PreviewLayout extends LitElement {
@@ -46,7 +46,7 @@ export class PreviewLayout extends LitElement {
         })}
       </nav>
       
-      <div class="outlet-container">
+      <div class="viewport">
         <u-outlet></u-outlet>
       </div>
     `;
@@ -108,7 +108,7 @@ export class PreviewLayout extends LitElement {
       background: #007bff;
     }
 
-    .outlet-container {
+    .viewport {
       flex: 1;
       padding: 1.5rem;
       overflow: auto;

@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "lit",
