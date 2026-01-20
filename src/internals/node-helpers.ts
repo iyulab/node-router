@@ -43,11 +43,31 @@ export function findOutletOrThrow(element: HTMLElement): UOutlet {
 }
 
 /** 
+ * 주어진 엘리먼트 내에서 `u-outlet`이 준비될 때까지 대기합니다.
+ * @param element 대기할 엘리먼트
+ * @param timeout 타임아웃 시간(밀리초, 기본값: 10_000ms)
+ * @returns 준비된 `u-outlet` 엘리먼트
+ */
+export async function waitOutlet(element: HTMLElement, timeout = 10_000): Promise<UOutlet> {
+  const start = performance.now();
+
+  while (performance.now() - start < timeout) {
+    const outlet = findOutlet(element);
+    if (outlet) return outlet;
+
+    // 다음 체크까지 잠깐 대기
+    await new Promise<void>(r => setTimeout(r, 50));
+  }
+
+  throw new Error('Timed out waiting for u-outlet.');
+}
+
+/** 
  * composedPath()/closest를 사용해 이벤트에서 A 태그를 찾아 반환 
  */
-export function findAnchorFromEvent(e: Event): HTMLAnchorElement | null {
+export function findAnchorFrom(event: Event): HTMLAnchorElement | null {
   // composedPath가 있으면 Shadow DOM 포함해서 탐색
-  const targets = e.composedPath() || [];
+  const targets = event.composedPath() || [];
   if (targets && targets.length) {
     for (const node of targets) {
       if (!(node instanceof Element)) continue;
@@ -56,7 +76,7 @@ export function findAnchorFromEvent(e: Event): HTMLAnchorElement | null {
   }
 
   // fallback: 이벤트 타깃에서 closest 검색
-  const tgt = e.target as HTMLElement | null;
+  const tgt = event.target as HTMLElement | null;
   if (!tgt) return null;
   const anchor = tgt.closest('a') as HTMLAnchorElement | null;
   return anchor;

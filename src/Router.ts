@@ -1,7 +1,7 @@
 import { UErrorPage } from './components/UErrorPage.js';
 import type { UOutlet } from './components/UOutlet.js';
 import { getRandomID } from './internals/crypto-helpers.js';
-import { findAnchorFromEvent, findOutlet, findOutletOrThrow } from './internals/node-helpers.js';
+import { findAnchorFrom, findOutlet, findOutletOrThrow, waitOutlet } from './internals/node-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
 import { ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
@@ -34,18 +34,20 @@ export class Router {
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
-      this._rootElement.removeEventListener('click', this.handleRootClick);
-      this._rootElement.addEventListener('click', this.handleRootClick);
+      document.removeEventListener('click', this.handleDocumentClick);
+      document.addEventListener('click', this.handleDocumentClick);
     }
     if (config.initialLoad !== false) {
-      void this.go(window.location.href);
+      void waitOutlet(this._rootElement).then(() => {
+        this.go(window.location.href);
+      });
     }
   }
 
   /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
   public destroy() {
     window.removeEventListener('popstate', this.handleWindowPopstate);
-    this._rootElement.removeEventListener('click', this.handleRootClick);
+    document.removeEventListener('click', this.handleDocumentClick);
     this._requestID = undefined;
     this._context = undefined;
   }
@@ -194,13 +196,13 @@ export class Router {
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */
-  private handleRootClick = (e: MouseEvent) => {
+  private handleDocumentClick = (e: MouseEvent) => {
     try {
       if (e.defaultPrevented) return;
       // middle click or modifier keys -> 원래 동작 유지
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
 
-      const anchor = findAnchorFromEvent(e);
+      const anchor = findAnchorFrom(e);
       if (!anchor) return;
 
       // 안전 체크: 외부 사이트, 다운로드 등

@@ -13,9 +13,6 @@ export class ULink extends LitElement {
   /** 외부 링크 여부 */
   private isExternal: boolean = false;
 
-  /** a 태그에 주입할 href 값 */
-  @state() computedHref: string = "#";
-
   /**
    * a 태그 target을 지원하고 싶으면 열어두는게 좋습니다.
    * - _blank 등을 쓰면 무조건 브라우저 기본 동작을 따르도록 처리합니다.
@@ -37,7 +34,6 @@ export class ULink extends LitElement {
 
     if (changedProperties.has("href")) {
       this.isExternal = isExternalUrl(this.href || "");
-      this.computedHref = this.computeHref(this.href);
     }
   }
 
@@ -45,9 +41,8 @@ export class ULink extends LitElement {
     return html`
       <a 
         target=${this.target ?? "_self"}
-        href=${this.computedHref}
-        @click=${this.handleAnchorClick}
-      >
+        href=${this.computeHref(this.href)}
+        @click=${this.handleAnchorClick}>
         <slot></slot>
       </a>
     `;

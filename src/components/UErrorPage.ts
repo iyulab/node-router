@@ -90,7 +90,7 @@ export class UErrorPage extends LitElement {
         --route-code-color: #f7fafc;
         --route-message-color: #cbd5e0;
       }
-    };
+    }
 
     :host {
       display: flex;

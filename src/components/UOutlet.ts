@@ -25,6 +25,16 @@ export class UOutlet extends LitElement {
     return this;
   }
 
+  /** 컴포넌트가 DOM에 연결될 때 초기화 작업 수행 */
+  connectedCallback(): void {
+    super.connectedCallback();
+  
+    this.dispatchEvent(new CustomEvent('outlet-load', {
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
   render() {
     return html`${this.container}`;
   }
