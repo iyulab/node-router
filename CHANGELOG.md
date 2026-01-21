@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.2 (January 21, 2026)
+
+### Breaking Changes
+- Refactored `UOutlet` from LitElement to native HTMLElement (improved performance and reduced dependencies)
+
+### Changed
+- Changed `ULink` click event handling to host element level for better encapsulation
+- Changed `@lit-react` devDependency to dependency for proper React integration
+- Enhanced all helpers and types for better TypeScript support
+
 ## 0.6.1 (January 20, 2026)
 - Fixed `UErrorPage` CSS syntax error (trailing semicolon in CSS block)
 - Enhanced initial route loading to wait for outlet element readiness
