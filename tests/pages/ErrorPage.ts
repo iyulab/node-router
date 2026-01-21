@@ -14,10 +14,10 @@ export class ErrorPage extends LitElement {
     }
     
     return html`
-      <div class="error-container">
+      <div class="container">
         <h1>😢</h1>
-        <div class="error-code">${this.error.code || 'ERROR'}</div>
-        <div class="error-message">${this.error.message || 'Something went wrong'}</div>
+        <div class="code">${this.error.code || 'ERROR'}</div>
+        <div class="message">${this.error.message || 'Something went wrong'}</div>
         <a href="/">← Back to Home</a>
       </div>
     `;
@@ -29,7 +29,7 @@ export class ErrorPage extends LitElement {
       padding: 2rem;
     }
 
-    .error-container {
+    .container {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 3rem;
       border-radius: 16px;
@@ -42,14 +42,14 @@ export class ErrorPage extends LitElement {
       margin: 0 0 1rem 0;
     }
 
-    .error-code {
+    .code {
       font-size: 1.5rem;
       font-weight: bold;
       margin-bottom: 0.5rem;
       opacity: 0.9;
     }
 
-    .error-message {
+    .message {
       font-size: 1.2rem;
       margin-bottom: 2rem;
       opacity: 0.8;
@@ -65,7 +65,6 @@ export class ErrorPage extends LitElement {
       font-weight: bold;
       transition: transform 0.2s;
     }
-
     a:hover {
       transform: translateY(-2px);
     }

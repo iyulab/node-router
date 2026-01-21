@@ -2,25 +2,26 @@ import type { RouteContext } from "../types/RouteContext";
 
 /**
  * 주어진 URL이 외부 링크인지 확인합니다.
+ * 
  * @param url 확인할 URL 문자열
+ * @return 외부 링크인 경우 true, 내부 링크인 경우 false
  */
 export function isExternalUrl(url: string): boolean {
   if (!url) return false;
-  const s = url.trim();
+  url = url.trim();
 
   // 스킴 기반 즉시 외부 처리
-  if (/^(?:mailto:|tel:|javascript:)/i.test(s)) return true;
-
+  if (/^(?:mailto:|tel:|javascript:)/i.test(url)) return true;
   // 프로토콜 상대 URL
-  if (s.startsWith('//')) return true;
+  if (url.startsWith('//')) return true;
 
   // 파싱 시도
   try {
     const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
-    const parsed = new URL(s, base);
+    const parsed = new URL(url, base);
 
-    // 특정 스킴(ftp, data, ws 등)은 외부로 처리
-    if (/^(?:ftp:|ftps:|data:|ws:|wss:)/i.test(parsed.protocol)) return true;
+    // 네트워크 이동이 발생하는 것만 외부
+    if (/^(?:ftp:|ftps:|ws:|wss:)/i.test(parsed.protocol)) return true;
 
     // origin 비교 — 같으면 내부(false), 다르면 외부(true)
     return parsed.origin !== new URL(base).origin;
@@ -31,13 +32,20 @@ export function isExternalUrl(url: string): boolean {
 }
 
 /**
- * URL 문자열을 파싱하여 새로운 URL 정보를 반환합니다.
- * - ?로 시작하는 쿼리스트링, #으로 시작하는 해시값은 현재 경로에서 추가됩니다.
- * - 상대경로는 basepath를 기준으로 절대경로로 변환됩니다.
+ * URL 문자열을 파싱하여 RouteContext 객체로 반환합니다.
+ * - http(s)로 시작하는 절대 URL은 외부 링크로 간주됩니다.
+ * - 절대경로(/...)는 그대로 사용됩니다.
+ * - 상대경로는 basepath를 기준으로 절대경로로 변환됩니다. 
+ * - 쿼리스트링(?)로 시작하는 쿼리는 현재 경로와 추가됩니다.
+ * - 해시(#)로 시작하는 해시는 현재 경로와 추가됩니다.
+ * 
+ * @param url 파싱할 URL 문자열
+ * @param basepath 기준이 되는 basepath 문자열
+ * @returns 파싱된 RouteContext 객체
  */
 export function parseUrl(url: string, basepath: string): RouteContext {
   let urlObj: URL;
-  basepath = catchBasePath(basepath);
+  basepath = catchBasepath(basepath);
   if (url.startsWith('http')) {
     urlObj = new URL(url);
   } else if (url.startsWith('/')) {
@@ -65,8 +73,11 @@ export function parseUrl(url: string, basepath: string): RouteContext {
 
 /**
  * pathname 경로를 조합하여 절대경로를 반환합니다.
+ * 
+ * @param paths 조합할 경로 문자열들
+ * @returns 조합된 절대경로 문자열
  */
-export function absolutePath(...paths: string[]) {
+export function absolutePath(...paths: string[]): string {
   paths = paths.map(p => p.replace(/^\/|\/$/g, '')).filter(p => p.length > 0);
   if (paths.length === 0) return '/';
 
@@ -74,11 +85,15 @@ export function absolutePath(...paths: string[]) {
 }
 
 /**
- * basepath가 동적 패턴일 경우 실제 경로에서 해당 basepath를 추출하여 반환합니다.
+ * basepath가 동적 패턴일 경우(RouteConfig에서 basepath가 :id 등으로 정의된 경우),
+ * 현재 경로에서 해당되는 패턴의 basepath를 추출하여 반환합니다.
+ * 
+ * @param basepath 동적 패턴이 포함된 basepath 문자열
+ * @return 현재 경로에 매칭되는 basepath 문자열
  * @example
  * catchBasePath('/app/:id') => '/app/123'
  */
-export function catchBasePath(basepath: string) {
+export function catchBasepath(basepath: string): string {
   if (basepath === '/') return basepath;
 
   // basepath가 경로의 중간에 올수도 있으므로 /* 패턴으로 먼저 검사

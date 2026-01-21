@@ -4,11 +4,16 @@ import { absolutePath } from "./url-helpers";
 import type { RouteConfig } from "../types/RouteConfig";
 
 /**
- * 라우트들을 설정된 basepath에 맞게 재귀적으로 처리합니다.
- * 각 라우트에 고유 ID를 부여하고, 경로를 절대 경로에 URLPattern으로 변환합니다.
- * 자식 라우트가 있으면 재귀적으로 처리합니다.
+ * 라우트들을 다음 사항에 따라 재귀적으로 재설정합니다.
+ * - 각 라우트에 고유 `id`를 랜덤하게 부여합니다.
+ * - `path`를 URLPattern 객체로 변환합니다.
+ * - 자식 라우트가 있으면 재귀적으로 재설정합니다.
+ * 
+ * @param routes 설정할 라우트 배열
+ * @param basepath 기준이 되는 basepath 문자열
+ * @returns 재설정된 라우트 배열
  */
-export function setRoutes(routes: RouteConfig[], basepath: string) {
+export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[] {
   for (const route of routes) {
     route.id ||= getRandomID();
     route.ignoreCase ||= false;
@@ -40,22 +45,31 @@ export function setRoutes(routes: RouteConfig[], basepath: string) {
         // URLPattern에서 자식 route에 맞는 basepath 추출
         const childBasepath = route.path.pathname.replace('{/}?', '');
         route.children = setRoutes(route.children, childBasepath);
+
+        // 자식 라우트가 있으면 강제 렌더링 false
         route.force ||= false;
       } else {
+        // 자식 라우트가 없으면 강제 렌더링 true
         route.force ||= true;
       }
     }
   }
+
   return routes;
 }
 
 /** 
- * URLPattern을 사용하여 경로와 일치하는 라우트들을 자식 라우트까지 포함하여 반환합니다. 
+ * URLPattern을 사용하여 경로와 일치하는 라우트들을 자식 라우트까지 포함하여 반환합니다.
+ * 반환된 배열은 상위 라우트부터 하위 라우트 순서로 정렬됩니다.
+ * 
+ * @param routes 검사할 라우트 배열 
+ * @param pathname 검사할 경로 이름
+ * @returns 일치하는 라우트 배열
  */
-export function getRoutes(pathname: string, routes: RouteConfig[]): RouteConfig[] {
+export function getRoutes(routes: RouteConfig[], pathname: string): RouteConfig[] {
   for (const route of routes) {
     if (route.index !== true && route.children && route.children.length > 0) {
-      const childRoutes = getRoutes(pathname, route.children);
+      const childRoutes = getRoutes(route.children, pathname);
       if (childRoutes.length > 0) {
         return [route, ...childRoutes];
       }

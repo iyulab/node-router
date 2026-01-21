@@ -6,21 +6,22 @@ import type { RouteContext, RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, Ro
 @customElement('preview-layout')
 export class PreviewLayout extends LitElement {
   @state() context?: RouteContext;
+  @state() progress: number = 0;
 
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener('route-begin', this.handleRouteBegin);
     window.addEventListener('route-done', this.handleRouteDone);
-    window.addEventListener('route-error', this.handleRouteError);
     window.addEventListener('route-progress', this.handleRouteProgress);
+    window.addEventListener('route-error', this.handleRouteError);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('route-begin', this.handleRouteBegin);
     window.removeEventListener('route-done', this.handleRouteDone);
-    window.removeEventListener('route-error', this.handleRouteError);
     window.removeEventListener('route-progress', this.handleRouteProgress);
+    window.removeEventListener('route-error', this.handleRouteError);
   }
 
   render() {
@@ -39,11 +40,22 @@ export class PreviewLayout extends LitElement {
             (link.href !== '/' && this.context?.pathname?.startsWith(link.href));
           
           return html`
-            <a href=${link.href} ?active=${isActive}>
+            <u-link class="link" href=${link.href} ?active=${isActive}>
               ${link.label}
-            </a>
+            </u-link>
           `;
+          // return html`
+          //   <a class="link" href=${link.href} ?active=${isActive}>
+          //     ${link.label}
+          //   </a>
+          // `;
         })}
+
+        <div style="flex:1"></div>
+
+        <span class="progress">
+          Progress: ${this.progress}%
+        </span>
       </nav>
       
       <div class="viewport">
@@ -54,24 +66,27 @@ export class PreviewLayout extends LitElement {
 
   private handleRouteBegin = (e: Event) => {
     const event = e as RouteBeginEvent;
+    this.progress = 0;
     console.info(`Route begin: `, event.context);
   };
 
   private handleRouteDone = (e: Event) => {
     const event = e as RouteDoneEvent;
     this.context = event.context;
+    this.progress = 100;
     console.info(`Route done: `, event.context);
+  };
+
+  private handleRouteProgress = (e: Event) => {
+    const event = e as RouteProgressEvent;
+    this.progress = event.progress;
+    console.info(`Route Progress: ${event.progress}%`);
   };
 
   private handleRouteError = (e: Event) => {
     const event = e as RouteErrorEvent;
     const message = event.error?.message || 'Unknown error';
     console.error(`Route error: ${message}`, event.error);
-  };
-
-  private handleRouteProgress = (e: Event) => {
-    const event = e as RouteProgressEvent;
-    console.info(`Route Progress: ${event.progress}%`);
   };
 
   static styles = css`
@@ -93,19 +108,24 @@ export class PreviewLayout extends LitElement {
       gap: 1rem;
     }
 
-    nav a {
+    nav .link {
       color: #333;
       text-decoration: none;
       padding: 0.5rem 1rem;
       border-radius: 4px;
       transition: background 0.2s;
     }
-    nav a:hover {
+    nav .link:hover {
       background: #f0f0f0;
     }
-    nav a[active] {
+    nav .link[active] {
       color: white;
       background: #007bff;
+    }
+
+    nav .progress {
+      font-size: 0.9rem;
+      color: #666;
     }
 
     .viewport {

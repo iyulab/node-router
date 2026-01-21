@@ -7,10 +7,9 @@ import './pages/ContextPage';
 import './pages/NestedLitPage';
 import { NestedReactPage } from './pages/NestedReactPage';
 
-const root = document.querySelector('preview-layout') as HTMLElement;
 const router = new Router({
   // 라우팅 결과를 렌더링될 루트 요소 지정
-  root,
+  root: document.querySelector('preview-layout') as HTMLElement,
 
   // 기본 경로 설정
   basepath: '/',
@@ -20,10 +19,10 @@ const router = new Router({
     {
       path: '/',
       title: 'Home',
-      render: async () => html`<home-page></home-page>`,
+      render: () => html`<home-page></home-page>`,
     },
     {
-      path: '/context',
+      path: '/context/:id?',
       title: 'Context Viewer',
       render: async (ctx) => {
         
@@ -37,12 +36,14 @@ const router = new Router({
         ctx.progress(100);
 
         // 컨텍스트 정보를 ContextPage 컴포넌트에 전달하여 렌더링
-        return html`<context-page .ctx=${ctx}></context-page>`;
+        // URLPattern으로 :id와 :name 파라미터를 추출
+        // 예: /context/123/john -> { id: '123', name: 'john' }
+        return html`<context-page .context=${ctx}></context-page>`;
       }
     },
     {
       path: '/nested',
-      render: async () => {
+      render: () => {
         const layout = document.createElement('div');
         layout.innerHTML = '<h2>Nested Layout</h2><u-outlet></u-outlet>';
         return layout;
@@ -50,12 +51,12 @@ const router = new Router({
       children: [
         {
           index: true,
-          title: 'Nested (Lit)',
-          render: async () => html`<nested-lit-page></nested-lit-page>`,
+          title: 'Nested Page (Lit)',
+          render: () => html`<nested-lit-page></nested-lit-page>`,
         },
         {
           path: 'react',
-          title: 'Nested (React)',
+          title: 'Nested Page (React)',
           render: () => {
             return (
               <NestedReactPage></NestedReactPage>
@@ -67,7 +68,7 @@ const router = new Router({
     {
       path: '/error',
       title: 'Error Test',
-      render: async () => {
+      render: () => {
         throw new Error('This is a test error');
       }
     },
@@ -76,12 +77,12 @@ const router = new Router({
   // 오류 발생 시 표시할 페이지 설정
   fallback: {
     title: 'Error Occurred',
-    render: async (ctx) => {
+    render: (ctx) => {
       return html`<error-page .error=${ctx.error}></error-page>`;
     },
   },
   
-  // a 태그 기본 동작 차단 및 히스토리 API 사용 설정
+  // a 태그 기본 동작 차단 및 SPA 라우팅 사용
   useIntercept: true,
 
   // 초기 로드 시 라우터 시작

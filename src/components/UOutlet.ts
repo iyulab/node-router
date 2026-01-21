@@ -1,99 +1,75 @@
-import { LitElement, html, render, type TemplateResult, type RootPart } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { render as renderTemplate } from 'lit';
+import type { TemplateResult, RootPart } from 'lit';
 import { createRoot, Root } from 'react-dom/client';
 import type { ReactElement } from 'react';
 
 import type { RenderResult } from '../types/RouteConfig';
 
+/** 렌더링 옵션 */
 interface RenderOption {
+  /** 교차 렌더링 방지 ID */
   id?: string;
+  /** 강제 렌더링 여부 */
   force?: boolean;
-  content: RenderResult;
+  /** 렌더링할 값 */
+  value: RenderResult;
 }
 
-/**
- * 라우트 설정에 따라 LitElement 또는 React 컴포넌트를 렌더링합니다.
+/** 
+ * LitElement 또는 React 컴포넌트를 렌더링해주는 웹컴포넌트 입니다. 
  */
-@customElement('u-outlet')
-export class UOutlet extends LitElement {
+export class UOutlet extends HTMLElement {
+  /** 교차 렌더링 방지 id */
   private routeId?: string;
-  private container?: HTMLDivElement;
-  private content?: Root | RootPart;
-
-  /** 외부 스타일을 적용하기 위해 라이트 돔을사용 합니다. */
-  protected createRenderRoot() {
-    return this;
-  }
-
-  /** 컴포넌트가 DOM에 연결될 때 초기화 작업 수행 */
-  connectedCallback(): void {
-    super.connectedCallback();
-  
-    this.dispatchEvent(new CustomEvent('outlet-load', {
-      bubbles: true,
-      composed: true,
-    }));
-  }
-
-  render() {
-    return html`${this.container}`;
-  }
+  /** 실제 렌더링 컨텐츠 */
+  private root?: Root | RootPart;
 
   /**
-   * render 함수의 결과를 렌더링합니다.
-   * - HTMLElement, ReactElement, TemplateResult를 모두 처리할 수 있습니다.
+   * 주어진 렌더링 옵션에 따라 컨텐츠를 렌더링합니다.
    */
-  public async renderContent({ id, content, force }: RenderOption) {
-    if (this.routeId === id && force === false && this.container) {
-      return this.container;
-    }
-
+  public render({ id, value, force }: RenderOption) {
+    if (this.routeId === id && force === false) return;
     this.routeId = id;
-    this.clear();
+    this.reset();
     
-    if (!this.container) {
-      throw new Error('Outlet container is not initialized.');
-    }
-    if (typeof content !== 'object') {
+    if (typeof value !== 'object') {
       throw new Error('Content is not a valid renderable object.');
     }
 
-    if (content instanceof HTMLElement) {
+    if (value instanceof HTMLElement) {
       // HTMLElement인 경우 직접 추가
-      this.container.appendChild(content);
-    } else if ("_$litType$" in content) {
+      this.replaceChildren(value);
+      this.root = undefined;
+    } else if ("_$litType$" in value) {
       // TemplateResult인 경우
-      this.content = render(content as TemplateResult<1>, this.container);
-    } else if ('$$typeof' in content) {
+      this.root = renderTemplate(value as TemplateResult<1>, this);
+    } else if ('$$typeof' in value) {
       // ReactElement인 경우
-      this.content = createRoot(this.container);
-      this.content.render(content as ReactElement);
+      this.root = createRoot(this);
+      this.root.render(value as ReactElement);
     } else {
       throw new Error('not supported content type for Outlet rendering.');
     }
-
-    this.requestUpdate();
-    await this.updateComplete;
-    return this.container!;
   }
 
   /**
-   * 기존 DOM을 라이프 사이클에 맞게 제거합니다.
+   * 기존 DOM을 삭제하여, 초기 상태로 되돌립니다.
    */
-  public clear() {
-    if (this.content) {
-      // React DOM이 렌더링된 경우
-      if ('unmount' in this.content) {
-        this.content.unmount();
-      }
-      // LitElement가 렌더링된 경우
-      if ('setConnected' in this.content) {
-        this.content.setConnected(false);
-      }
-      this.content = undefined;
+  public reset() {
+    // Lit-Element가 붙어있던 경우 강제 초기화
+    if (this.root && '_$litPart$' in this) {
+      delete this._$litPart$;
     }
-    // Container 초기화 - display: contents로 레이아웃에 영향을 주지 않음
-    this.container = document.createElement('div');
-    this.container.style.display = 'contents';
+
+    // React가 붙어있던 경우
+    if (this.root && 'unmount' in this.root) {
+      this.root.unmount();
+    }
+
+    // Dom 초기화
+    this.root = undefined;
+    this.innerHTML = "";
   }
 }
+
+customElements.define('u-outlet', UOutlet);

@@ -3,8 +3,12 @@ import { OutletMissingError } from "../types/RouteError";
 
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 
+ * 
+ * @param element 검색을 시작할 HTMLElement
+ * @returns 찾은 UOutlet 엘리먼트 또는 undefined
  */
 export function findOutlet(element: HTMLElement): UOutlet | undefined {
+  if (!element) return undefined;
   let outlet: UOutlet | undefined = undefined;
 
   if (element.shadowRoot) {
@@ -33,6 +37,10 @@ export function findOutlet(element: HTMLElement): UOutlet | undefined {
 
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 없으면 에러를 던집니다. 
+ * 
+ * @param element 검색을 시작할 HTMLElement
+ * @returns 찾은 UOutlet 엘리먼트
+ * @throws OutletMissingError `u-outlet` 엘리먼트를 찾지 못한 경우
  */
 export function findOutletOrThrow(element: HTMLElement): UOutlet {
   const outlet = findOutlet(element);
@@ -44,6 +52,7 @@ export function findOutletOrThrow(element: HTMLElement): UOutlet {
 
 /** 
  * 주어진 엘리먼트 내에서 `u-outlet`이 준비될 때까지 대기합니다.
+ * 
  * @param element 대기할 엘리먼트
  * @param timeout 타임아웃 시간(밀리초, 기본값: 10_000ms)
  * @returns 준비된 `u-outlet` 엘리먼트
@@ -63,7 +72,10 @@ export async function waitOutlet(element: HTMLElement, timeout = 10_000): Promis
 }
 
 /** 
- * composedPath()/closest를 사용해 이벤트에서 A 태그를 찾아 반환 
+ * 이벤트에서 composedPath()/closest를 사용하여 A 태그를 찾아 반환합니다. 
+ * 
+ * @param event 이벤트 객체
+ * @returns 찾은 A 태그 엘리먼트 또는 null
  */
 export function findAnchorFrom(event: Event): HTMLAnchorElement | null {
   // composedPath가 있으면 Shadow DOM 포함해서 탐색
@@ -78,6 +90,5 @@ export function findAnchorFrom(event: Event): HTMLAnchorElement | null {
   // fallback: 이벤트 타깃에서 closest 검색
   const tgt = event.target as HTMLElement | null;
   if (!tgt) return null;
-  const anchor = tgt.closest('a') as HTMLAnchorElement | null;
-  return anchor;
+  return tgt.closest('a') as HTMLAnchorElement | null;
 }

@@ -1,7 +1,7 @@
 import { UErrorPage } from './components/UErrorPage.js';
 import type { UOutlet } from './components/UOutlet.js';
 import { getRandomID } from './internals/crypto-helpers.js';
-import { findAnchorFrom, findOutlet, findOutletOrThrow, waitOutlet } from './internals/node-helpers.js';
+import { findAnchorFrom, findOutlet, findOutletOrThrow, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
 import { ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
@@ -11,7 +11,7 @@ import type { RouterConfig } from './types/RouterConfig.js';
 import type { FallbackRouteConfig, RenderResult, RouteConfig } from './types/RouteConfig.js';
 
 /**
- * `lit-element`, `react`를 지원하는 클라이언트 사이드 라우터
+ * `lit-element`, `react`를 지원하는 SPA 클라이언트 라우터 객체입니다.
  */
 export class Router {
   private readonly _rootElement: HTMLElement;
@@ -25,16 +25,15 @@ export class Router {
   private _context?: RouteContext;
 
   constructor(config: RouterConfig) {
+    this.destroy();
+    
     this._rootElement = config.root;
     this._basepath = absolutePath(config.basepath || '/');
     this._routes = setRoutes(config.routes || [], this._basepath);
     this._fallback = config.fallback;
-
-    window.removeEventListener('popstate', this.handleWindowPopstate);
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
-      document.removeEventListener('click', this.handleDocumentClick);
       document.addEventListener('click', this.handleDocumentClick);
     }
     if (config.initialLoad !== false) {
@@ -56,12 +55,10 @@ export class Router {
   public get basepath() {
     return this._basepath;
   }
-
   /** 등록된 라우트 정보 반환 */
   public get routes() {
     return this._routes;
   }
-
   /** 현재 라우팅 정보 반환 */
   public get context() {
     return this._context;
@@ -102,7 +99,7 @@ export class Router {
       window.dispatchEvent(new RouteBeginEvent(context));
 
       // 일치하는 라우트 찾기
-      const routes = getRoutes(context.pathname, this._routes);
+      const routes = getRoutes(this._routes, context.pathname);
       const lastRoute = routes[routes.length - 1];
 
       //// 현재 라우트 정보 업데이트
@@ -115,7 +112,6 @@ export class Router {
       outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
       let content: RenderResult | false | null = null;
-      let element: HTMLElement | null = null;
 
       // 일치하는 라우트가 없으면 404 에러 발생
       if (routes.length === 0) {
@@ -141,13 +137,13 @@ export class Router {
         
         // Outlet에 실제 컨텐츠 렌더링 수행, 실패시 에러 발생
         try {
-          element = await outlet.renderContent({ id: route.id, content: content, force: route.force });
+          outlet.render({ id: route.id, value: content, force: route.force });
         } catch (renderError) {
           throw new ContentRenderError(renderError);
         }
         
         // 다음 라우트를 위한 outlet 찾기
-        outlet = findOutlet(element) || outlet;
+        outlet = findOutlet(outlet) || outlet;
         title = route.title || title;
       }
 
@@ -170,13 +166,13 @@ export class Router {
       try {
         if (this._fallback && this._fallback.render && outlet) {
           const fallbackContent = await this._fallback.render({ ...context, error: routeError });
-          outlet.renderContent({ id: '#fallback', content: fallbackContent, force: true });
+          outlet.render({ id: '#fallback', value: fallbackContent, force: true });
           document.title = this._fallback.title || document.title;
         } else {
           const errorContent = new UErrorPage();
           errorContent.error = error;
           if (outlet) {
-            outlet.renderContent({ id: '#error', content: errorContent, force: true });
+            outlet.render({ id: '#error', value: errorContent, force: true });
           } else {
             document.body.innerHTML = '';
             document.body.appendChild(errorContent);
@@ -190,13 +186,13 @@ export class Router {
   }
 
   /** 브라우저 히스토리 이벤트가 발생시 라우팅 처리 */
-  private handleWindowPopstate = async () => {
+  private handleWindowPopstate = async (_: PopStateEvent) => {
     const href = window.location.href;
     await this.go(href);
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */
-  private handleDocumentClick = (e: MouseEvent) => {
+  private handleDocumentClick = async (e: MouseEvent) => {
     try {
       if (e.defaultPrevented) return;
       // middle click or modifier keys -> 원래 동작 유지
@@ -213,9 +209,9 @@ export class Router {
       if (anchor.getAttribute('rel') === 'external') return;
       if (anchor.target && anchor.target !== '') return; // target 지정 시 기본 동작 유지
       
+      // 기본 동작을 막고, 라우팅
       e.preventDefault();
-      // this.go가 내부에서 history 관리 및 동시성 체크를 함
-      void this.go(anchor.href);
+      await this.go(anchor.href);
     } catch {
       // 예외는 무시하고 기본 동작 유지
     }
