@@ -18,7 +18,7 @@ interface RenderOption {
 /** 
  * LitElement 또는 React 컴포넌트를 렌더링해주는 웹컴포넌트 입니다. 
  */
-export class UOutlet extends HTMLElement {
+class UOutlet extends HTMLElement {
   /** 교차 렌더링 방지 id */
   private routeId?: string;
   /** 실제 렌더링 컨텐츠 */
@@ -73,3 +73,11 @@ export class UOutlet extends HTMLElement {
 }
 
 customElements.define('u-outlet', UOutlet);
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'u-outlet': UOutlet;
+  }
+}
+
+export { UOutlet };

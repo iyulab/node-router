@@ -20,7 +20,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        // /^@lit.*/, // @lit/react패키지 빌드에 포함
+        /^@lit.*/,
         /^lit.*/,
         /^react.*/,
       ],
