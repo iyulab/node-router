@@ -9,6 +9,10 @@ import { OutletMissingError } from "../types/RouteError";
  */
 export function findOutlet(element: HTMLElement): UOutlet | undefined {
   if (!element) return undefined;
+
+  // element 자체가 u-outlet인 경우 바로 반환
+  if (element.tagName === 'U-OUTLET') return element as UOutlet;
+
   let outlet: UOutlet | undefined = undefined;
 
   if (element.shadowRoot) {
@@ -68,7 +72,10 @@ export async function waitOutlet(element: HTMLElement, timeout = 10_000): Promis
     await new Promise<void>(r => setTimeout(r, 50));
   }
 
-  throw new Error('Timed out waiting for u-outlet.');
+  throw new Error(
+    `Timed out waiting for <u-outlet> inside <${element.tagName.toLowerCase()}>. ` +
+    `Ensure that the router root element contains a <u-outlet> child.`
+  );
 }
 
 /** 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1 (February 9, 2026)
+
+### Fixed
+- Fixed silent failure when passing `<u-outlet>` element directly as `Router` root (#1)
+- `findOutlet()` now recognizes the root element itself as a valid outlet
+- Improved `waitOutlet()` timeout error message with root element context for easier debugging
+
 ## 0.6.2 (January 21, 2026)
 
 ### Breaking Changes
