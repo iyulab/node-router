@@ -65,6 +65,16 @@ interface BaseRouteConfig {
    * @default false
    */
   ignoreCase?: boolean;
+
+  /**
+   * 라우트에 연결할 메타데이터
+   * - 인증, SEO, 분석 등의 용도로 사용할 수 있습니다.
+   * @example
+   * ```typescript
+   * { path: '/admin', meta: { requiresAuth: true, role: 'admin' } }
+   * ```
+   */
+  meta?: Record<string, unknown>;
 }
 
 interface IndexRouteConfig extends BaseRouteConfig {

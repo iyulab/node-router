@@ -106,6 +106,14 @@ export class Router {
       if (lastRoute && lastRoute.path instanceof URLPattern) {
         context.params = lastRoute.path.exec({ pathname: context.pathname })?.pathname.groups || {};
       }
+
+      // 매칭된 라우트들의 meta 병합 (부모 → 자식 순서로 override)
+      const mergedMeta: Record<string, unknown> = {};
+      for (const route of routes) {
+        if (route.meta) Object.assign(mergedMeta, route.meta);
+      }
+      context.meta = mergedMeta;
+
       this._context = context;
 
       // Outlet 준비(부모 route부터 u-outlet을 찾아서 렌더링합니다.)

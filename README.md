@@ -144,6 +144,129 @@ export function AppRoot() {
 }
 ```
 
+## Error Handling
+
+The router provides comprehensive error handling through `FallbackRouteContext`. When a routing error occurs, the fallback render function receives a context with full error information:
+
+```typescript
+const router = new Router({
+  root: document.body,
+  basepath: '/',
+  routes: [...],
+  fallback: {
+    title: 'Error',
+    render: (ctx) => {
+      // ctx.error contains RouteError with code, message, and original error
+      const { code, message, original } = ctx.error;
+
+      if (code === 'NOT_FOUND') {
+        return html`<not-found-page .path=${ctx.pathname}></not-found-page>`;
+      }
+      if (code === 'CONTENT_LOAD_ERROR') {
+        return html`<error-page .message=${message}></error-page>`;
+      }
+      return html`<error-page .error=${ctx.error}></error-page>`;
+    }
+  }
+});
+```
+
+Error types:
+- `NotFoundError` — No matching route found (code: `NOT_FOUND`)
+- `ContentLoadError` — Route render function threw an error (code: `CONTENT_LOAD_ERROR`)
+- `ContentRenderError` — Outlet rendering failed (code: `CONTENT_RENDER_ERROR`)
+
+## Route Metadata
+
+Routes can carry arbitrary metadata via the `meta` field. When a route matches, metadata from the entire matched route chain is merged (parent → child order, child overrides parent):
+
+```typescript
+const router = new Router({
+  root: document.body,
+  basepath: '/',
+  routes: [
+    {
+      path: '/admin',
+      meta: { requiresAuth: true, layout: 'admin' },
+      render: (ctx) => {
+        // ctx.meta === { requiresAuth: true, layout: 'admin' }
+        return html`<admin-layout><u-outlet></u-outlet></admin-layout>`;
+      },
+      children: [
+        {
+          path: 'settings',
+          meta: { requiresAuth: true, role: 'superadmin' },
+          render: (ctx) => {
+            // ctx.meta === { requiresAuth: true, layout: 'admin', role: 'superadmin' }
+            return html`<admin-settings></admin-settings>`;
+          }
+        }
+      ]
+    }
+  ]
+});
+```
+
+Use cases: authentication guards, SEO tags, analytics tracking, layout selection, and more.
+
+## Route Events
+
+The router dispatches events on the `window` object during navigation:
+
+| Event | Type | Description |
+|-------|------|-------------|
+| `route-begin` | `RouteBeginEvent` | Fired when navigation starts |
+| `route-progress` | `RouteProgressEvent` | Fired during async loading (0–100) |
+| `route-done` | `RouteDoneEvent` | Fired when navigation completes successfully |
+| `route-error` | `RouteErrorEvent` | Fired when a routing error occurs |
+
+```typescript
+// Track navigation progress
+window.addEventListener('route-progress', (e: RouteProgressEvent) => {
+  progressBar.value = e.progress;
+});
+
+// Log navigation events
+window.addEventListener('route-begin', (e: RouteBeginEvent) => {
+  console.log('Navigating to:', e.context.pathname);
+});
+
+window.addEventListener('route-done', (e: RouteDoneEvent) => {
+  analytics.trackPageView(e.context.pathname);
+});
+
+window.addEventListener('route-error', (e: RouteErrorEvent) => {
+  errorTracker.report(e.error);
+});
+```
+
+## URL Parameters
+
+The router supports URLPattern-based parameter matching:
+
+```typescript
+const routes: RouteConfig[] = [
+  // Required parameter
+  { path: '/user/:id', render: (ctx) => html`<user-page .id=${ctx.params.id}></user-page>` },
+
+  // Optional parameter
+  { path: '/posts/:category?', render: (ctx) => {
+    const category = ctx.params.category || 'all';
+    return html`<posts-page .category=${category}></posts-page>`;
+  }},
+
+  // Wildcard (catch-all)
+  { path: '/docs/:path*', render: (ctx) => html`<docs-page .path=${ctx.params.path}></docs-page>` },
+
+  // Multiple parameters
+  { path: '/org/:orgId/repo/:repoId', render: (ctx) => {
+    return html`<repo-page .orgId=${ctx.params.orgId} .repoId=${ctx.params.repoId}></repo-page>`;
+  }}
+];
+```
+
+When URL parameters change (e.g., navigating from `/user/1` to `/user/2`), leaf routes (without children) automatically re-render since `force` defaults to `true`. For parent routes with children, set `force: true` explicitly if re-rendering is needed on parameter changes.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.

@@ -77,6 +77,12 @@ export interface RouteContext {
    * @param value 진행 상태 값 (0~100)
    */
   progress: (value: number) => void;
+
+  /**
+   * 매칭된 라우트 체인의 병합된 메타데이터
+   * - 부모 라우트에서 자식 라우트 순서로 병합됩니다.
+   */
+  meta: Record<string, unknown>;
 }
 
 export interface FallbackRouteContext extends RouteContext {
