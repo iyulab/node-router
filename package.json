@@ -40,17 +40,31 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@lit/react": "^1.0.8",
     "lit": "^3.3.2",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "quill": "2.0.2"
+  },
+  "peerDependencies": {
+    "@lit/react": ">=1.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@lit/react": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "@types/node": "^25.0.9",
-    "@types/react": "^19.2.9",
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^2.3.0"
   }
 }
