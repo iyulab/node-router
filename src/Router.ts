@@ -1,14 +1,14 @@
 import { UErrorPage } from './components/UErrorPage.js';
-import type { UOutlet } from './components/UOutlet.js';
+import { UOutlet } from './components/UOutlet.js';
 import { getRandomID } from './internals/crypto-helpers.js';
-import { findAnchorFrom, findOutlet, findOutletOrThrow, waitOutlet } from './internals/element-helpers.js';
+import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
 import { ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
 import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
 import type { RouteContext } from './types/RouteContext.js';
 import type { RouterConfig } from './types/RouterConfig.js';
-import type { FallbackRouteConfig, RenderResult, RouteConfig } from './types/RouteConfig.js';
+import type { FallbackRouteConfig, RouteConfig } from './types/RouteConfig.js';
 
 /**
  * `lit-element`, `react`를 지원하는 SPA 클라이언트 라우터 객체입니다.
@@ -119,7 +119,7 @@ export class Router {
       // Outlet 준비(부모 route부터 u-outlet을 찾아서 렌더링합니다.)
       outlet = findOutletOrThrow(this._rootElement);
       let title = undefined;
-      let content: RenderResult | false | null = null;
+      let content = null;
 
       // 일치하는 라우트가 없으면 404 에러 발생
       if (routes.length === 0) {
@@ -163,8 +163,8 @@ export class Router {
       // 이벤트 생성 및 에러 로깅
       const routeError = error instanceof RouteError ? error
       : new RouteError(
-        error.status || error.code || 'UNKNOWN_ERROR',
-        error.message || 'An unexpected error occurred',
+        error?.status || error?.code || 'UNKNOWN_ERROR',
+        error?.message || 'An unexpected error occurred',
         error
       );
       window.dispatchEvent(new RouteErrorEvent(context, routeError));

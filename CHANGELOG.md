@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.7.3 (March 5, 2026)
+
+### Breaking Changes
+- `RenderResult`, `FallbackRenderResult` 타입 제거 — `render` 함수 반환 타입이 `unknown`으로 변경
+- React (`react`, `react-dom`, `@lit/react`)를 optional `peerDependencies`로 이동 — Lit-only 프로젝트에서 React 설치 불필요
+
+### Fixed
+- `UOutlet`에서 `react-dom/client`를 동적 import로 변경하여 React 미설치 환경에서의 import 실패 해결
+- `UErrorPage` 에러 코드 문자열 불일치 수정 (`OUTLET_NOT_FOUND` → `OUTLET_MISSING`, `RENDER_FAILED` → `CONTENT_RENDER_FAILED`)
+- `catchBasepath`에서 `restPath`가 빈 문자열일 때 falsy로 판정되어 trailing slash가 잘리는 엣지케이스 수정
+- `ULink`의 `getBasepath()` fallback을 빈 문자열 `""`에서 `"/"`로 변경하여 초기 접근 시 잘못된 경로 생성 방지
+- `Router.go()` catch 블록에서 원시 타입 throw 시 속성 접근 오류 방지 (옵셔널 체이닝 적용)
+
+### Improved
+- `findOutlet` 함수 단순화 — shadowRoot/일반 DOM 분기 및 중복 `querySelector` 탐색 제거
+
+## 0.7.2 (February 9, 2026)
+
+### Changed
+- Dependencies version bump
+
 ## 0.7.1 (February 9, 2026)
 
 ### Fixed

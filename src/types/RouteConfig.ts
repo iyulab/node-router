@@ -1,9 +1,4 @@
-import type { TemplateResult } from "lit";
-import type { ReactElement } from "react";
 import type { RouteContext, FallbackRouteContext } from "./RouteContext";
-
-export type RenderResult = HTMLElement | ReactElement | TemplateResult<1> | false;
-export type FallbackRenderResult = HTMLElement | ReactElement | TemplateResult<1>;
 
 /**
  * 공통 라우트 속성
@@ -51,7 +46,7 @@ interface BaseRouteConfig {
    * }
    * ```
    */
-  render?: (ctx: RouteContext) => Promise<RenderResult> | RenderResult;
+  render?: (ctx: RouteContext) => Promise<unknown> | unknown;
 
   /**
    * 라우터 URL 변경시 렌더링을 강제할지 여부
@@ -123,5 +118,5 @@ export interface FallbackRouteConfig {
    * }
    * ```
    */
-  render?: (ctx: FallbackRouteContext) => Promise<FallbackRenderResult> | FallbackRenderResult;
+  render?: (ctx: FallbackRouteContext) => Promise<unknown> | unknown;
 }

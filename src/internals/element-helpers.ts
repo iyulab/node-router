@@ -8,34 +8,15 @@ import { OutletMissingError } from "../types/RouteError";
  * @returns 찾은 UOutlet 엘리먼트 또는 undefined
  */
 export function findOutlet(element: HTMLElement): UOutlet | undefined {
-  if (!element) return undefined;
-
-  // element 자체가 u-outlet인 경우 바로 반환
   if (element.tagName === 'U-OUTLET') return element as UOutlet;
 
-  let outlet: UOutlet | undefined = undefined;
+  const root = element.shadowRoot ?? element;
 
-  if (element.shadowRoot) {
-    // Shadow DOM에서 찾기
-    outlet = element.shadowRoot.querySelector('u-outlet') as UOutlet;
-    if (outlet) return outlet;
-
-    for (const child of Array.from(element.shadowRoot.children)) {
-      outlet = findOutlet(child as HTMLElement);
-      if (outlet) return outlet;
-    }
-  } else {
-    // 일반 DOM에서 찾기
-    outlet = element.querySelector('u-outlet') as UOutlet;
-    if (outlet) return outlet;
-
-    for (const child of Array.from(element.children)) {
-      outlet = findOutlet(child as HTMLElement);
-      if (outlet) return outlet;
-    }
+  for (const child of Array.from(root.children)) {
+    const result = findOutlet(child as HTMLElement);
+    if (result) return result;
   }
 
-  // 없으면 undefined 반환
   return undefined;
 }
 

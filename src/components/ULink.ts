@@ -143,7 +143,7 @@ export class ULink extends LitElement {
 
   /** basepath를 state에서 꺼내는 헬퍼 */
   private getBasepath(): string {
-    return window.history.state?.basepath || "";
+    return window.history.state?.basepath || "/";
   };
 
   static styles = css`

@@ -35,11 +35,11 @@ export class UErrorPage extends LitElement {
     
     // 문자열 에러 코드 처리
     switch (codeStr) {
-      case 'OUTLET_NOT_FOUND':
+      case 'OUTLET_MISSING':
         return '📦';
       case 'CONTENT_LOAD_FAILED':
         return '📡';
-      case 'RENDER_FAILED':
+      case 'CONTENT_RENDER_FAILED':
         return '🎨';
     }
     

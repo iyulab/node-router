@@ -73,6 +73,9 @@ export function getRoutes(routes: RouteConfig[], pathname: string): RouteConfig[
       if (childRoutes.length > 0) {
         return [route, ...childRoutes];
       }
+      // 자식 매칭 실패 시 부모 자체의 URLPattern 매칭으로 fall-through.
+      // 부모 경로에 직접 접근하면 부모만 매칭되므로, 자식 outlet이 비어있을 수 있음.
+      // 이를 방지하려면 children이 있는 라우트에 index route를 반드시 정의해야 함.
     }
     
     // 라우트 매칭 확인

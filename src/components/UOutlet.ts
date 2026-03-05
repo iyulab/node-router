@@ -1,9 +1,4 @@
-import { render as renderTemplate } from 'lit';
-import type { TemplateResult, RootPart } from 'lit';
-import { createRoot, Root } from 'react-dom/client';
-import type { ReactElement } from 'react';
-
-import type { RenderResult } from '../types/RouteConfig';
+import { render } from 'lit';
 
 /** 렌더링 옵션 */
 interface RenderOption {
@@ -12,26 +7,29 @@ interface RenderOption {
   /** 강제 렌더링 여부 */
   force?: boolean;
   /** 렌더링할 값 */
-  value: RenderResult;
+  value: unknown;
 }
 
-/** 
- * LitElement 또는 React 컴포넌트를 렌더링해주는 웹컴포넌트 입니다. 
+/**
+ * LitElement 또는 React 컴포넌트를 렌더링해주는 웹컴포넌트 입니다.
  */
 class UOutlet extends HTMLElement {
   /** 교차 렌더링 방지 id */
   private routeId?: string;
   /** 실제 렌더링 컨텐츠 */
-  private root?: Root | RootPart;
+  private root?: any;
 
   /**
    * 주어진 렌더링 옵션에 따라 컨텐츠를 렌더링합니다.
    */
-  public render({ id, value, force }: RenderOption) {
+  public async render({ id, value, force }: RenderOption) {
     if (this.routeId === id && force === false) return;
     this.routeId = id;
     this.reset();
-    
+
+    if (value === null) {
+      throw new Error('Content is null and cannot be rendered.');
+    }
     if (typeof value !== 'object') {
       throw new Error('Content is not a valid renderable object.');
     }
@@ -42,11 +40,12 @@ class UOutlet extends HTMLElement {
       this.root = undefined;
     } else if ("_$litType$" in value) {
       // TemplateResult인 경우
-      this.root = renderTemplate(value as TemplateResult<1>, this);
+      this.root = render(value, this);
     } else if ('$$typeof' in value) {
-      // ReactElement인 경우
+      // ReactElement인 경우 동적 import
+      const { createRoot } = await import('react-dom/client');
       this.root = createRoot(this);
-      this.root.render(value as ReactElement);
+      this.root.render(value);
     } else {
       throw new Error('not supported content type for Outlet rendering.');
     }

@@ -103,7 +103,9 @@ export function catchBasepath(basepath: string): string {
   if (match) {
     const rawPath = match.pathname.input;
     const restPath = match.pathname.groups?.["0"];
-    return restPath ? rawPath.replace("/" + restPath, '') : rawPath.slice(0, -1);
+    return restPath !== undefined && restPath !== ''
+      ? rawPath.replace("/" + restPath, '')
+      : rawPath.replace(/\/$/, '');
   }
 
   // basepath가 경로의 끝에 올수도 있으므로 /? 패턴으로도 검사
