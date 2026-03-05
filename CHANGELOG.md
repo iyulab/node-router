@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.4 (March 5, 2026)
+
+### Fixed
+- `element-helper`에서 shadow DOM과 일반 DOM을 모두 탐색하도록 개선
+
 ## 0.7.3 (March 5, 2026)
 
 ### Breaking Changes

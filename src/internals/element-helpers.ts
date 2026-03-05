@@ -10,11 +10,16 @@ import { OutletMissingError } from "../types/RouteError";
 export function findOutlet(element: HTMLElement): UOutlet | undefined {
   if (element.tagName === 'U-OUTLET') return element as UOutlet;
 
-  const root = element.shadowRoot ?? element;
+  // Shadow DOM과 Light DOM 모두 탐색
+  const roots = element.shadowRoot
+    ? [element.shadowRoot, element]
+    : [element];
 
-  for (const child of Array.from(root.children)) {
-    const result = findOutlet(child as HTMLElement);
-    if (result) return result;
+  for (const root of roots) {
+    for (const child of Array.from(root.children)) {
+      const result = findOutlet(child as HTMLElement);
+      if (result) return result;
+    }
   }
 
   return undefined;
