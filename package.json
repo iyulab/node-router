@@ -40,10 +40,10 @@
     "build": "vite build"
   },
   "dependencies": {
-    "lit": "^3.3.2"
+    "lit": "^3.3.2",
+    "@lit/react": "^1.0.8"
   },
   "peerDependencies": {
-    "@lit/react": ">=1.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
@@ -52,9 +52,6 @@
       "optional": true
     },
     "react-dom": {
-      "optional": true
-    },
-    "@lit/react": {
       "optional": true
     }
   },
