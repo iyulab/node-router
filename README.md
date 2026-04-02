@@ -2,15 +2,6 @@
 
 A modern, lightweight client-side router for web applications with support for both Lit and React components.
 
-## Features
-
-- 🚀 **Modern URLPattern-based routing** - Uses native URLPattern API for powerful path matching
-- 🔧 **Unified Framework Support** - Works with both Lit and React components using render functions
-- 📱 **Client-Side Navigation** - History API integration with browser back/forward support
-- 🎯 **Nested Routing** - Support for deeply nested route hierarchies with index and path routes
-- 📊 **Route Events** - Track navigation progress with route-begin, route-done, and route-error events
-- ⚠️ **Enhanced Error Handling** - Built-in ErrorPage component with improved styling
-
 ## Installation
 
 ```bash
@@ -93,6 +84,22 @@ const routes: RouteConfig[] = [
     ]
   }
 ];
+```
+
+## Skills Usage
+
+Install the `iyulab-router` skill to give your AI agent knowledge of this package's API and patterns.
+
+**Using GitHub shorthand:**
+
+```bash
+npx skills add iyulab/node-router
+```
+
+**Using local path (after `npm install`):**
+
+```bash
+npx skills add ./node_modules/@iyulab/router
 ```
 
 ## Usage Examples

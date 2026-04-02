@@ -1,111 +1,150 @@
 # Changelog
 
-## 0.7.4 (March 5, 2026)
-
-### Fixed
-- `element-helper`에서 shadow DOM과 일반 DOM을 모두 탐색하도록 개선
-
-## 0.7.3 (March 5, 2026)
-
-### Breaking Changes
-- `RenderResult`, `FallbackRenderResult` 타입 제거 — `render` 함수 반환 타입이 `unknown`으로 변경
-- React (`react`, `react-dom`, `@lit/react`)를 optional `peerDependencies`로 이동 — Lit-only 프로젝트에서 React 설치 불필요
-
-### Fixed
-- `UOutlet`에서 `react-dom/client`를 동적 import로 변경하여 React 미설치 환경에서의 import 실패 해결
-- `UErrorPage` 에러 코드 문자열 불일치 수정 (`OUTLET_NOT_FOUND` → `OUTLET_MISSING`, `RENDER_FAILED` → `CONTENT_RENDER_FAILED`)
-- `catchBasepath`에서 `restPath`가 빈 문자열일 때 falsy로 판정되어 trailing slash가 잘리는 엣지케이스 수정
-- `ULink`의 `getBasepath()` fallback을 빈 문자열 `""`에서 `"/"`로 변경하여 초기 접근 시 잘못된 경로 생성 방지
-- `Router.go()` catch 블록에서 원시 타입 throw 시 속성 접근 오류 방지 (옵셔널 체이닝 적용)
-
-### Improved
-- `findOutlet` 함수 단순화 — shadowRoot/일반 DOM 분기 및 중복 `querySelector` 탐색 제거
-
-## 0.7.2 (February 9, 2026)
+## [0.7.5] - 2026-04-02
 
 ### Changed
-- Dependencies version bump
+- `@lit/react` promoted from optional peer dependency to direct dependency — React integration now works without a separate `@lit/react` install
+- Added Agent Skills definition (`skills/iyulab-router`) for AI agent tooling support
 
-## 0.7.1 (February 9, 2026)
+## [0.7.4] - 2026-03-05
+
+### Fixed
+- `findOutlet()` now searches both shadow DOM and light DOM simultaneously
+
+## [0.7.3] - 2026-03-05
+
+### Changed
+- **Breaking:** Removed `RenderResult` and `FallbackRenderResult` types — `render` function return type is now `unknown`
+- **Breaking:** Moved React dependencies (`react`, `react-dom`, `@lit/react`) to optional peer dependencies — Lit-only projects no longer require a React install
+- Simplified `findOutlet` — removed shadow/light DOM branching and redundant `querySelector` traversal
+
+### Fixed
+- `UOutlet` now dynamically imports `react-dom/client` — prevents import failure in React-free environments
+- Corrected `UErrorPage` error code string mismatches (`OUTLET_NOT_FOUND` → `OUTLET_MISSING`, `RENDER_FAILED` → `CONTENT_RENDER_FAILED`)
+- Fixed edge case in `catchBasepath` where an empty `restPath` was treated as falsy, causing trailing slashes to be dropped
+- Changed `ULink.getBasepath()` fallback from `""` to `"/"` to prevent incorrect path generation on initial access
+- Applied optional chaining in `Router.go()` catch block to prevent property access errors when a primitive value is thrown
+
+## [0.7.2] - 2026-02-09
+
+### Changed
+- Updated dependencies to latest versions
+
+## [0.7.1] - 2026-02-09
 
 ### Fixed
 - Fixed silent failure when passing `<u-outlet>` element directly as `Router` root (#1)
 - `findOutlet()` now recognizes the root element itself as a valid outlet
 - Improved `waitOutlet()` timeout error message with root element context for easier debugging
 
-## 0.6.2 (January 21, 2026)
-
-### Breaking Changes
-- Refactored `UOutlet` from LitElement to native HTMLElement (improved performance and reduced dependencies)
-
-### Changed
-- Changed `ULink` click event handling to host element level for better encapsulation
-- Changed `@lit-react` devDependency to dependency for proper React integration
-- Enhanced all helpers and types for better TypeScript support
-
-## 0.6.1 (January 20, 2026)
-- Fixed `UErrorPage` CSS syntax error (trailing semicolon in CSS block)
-- Enhanced initial route loading to wait for outlet element readiness
-- Changed click event listener from rootElement to document level for better event handling
-- Added `global.d.ts` import to main entry point
-- Removed unnecessary `computedHref` state from `ULink` component
-
-## 0.6.0 (January 15, 2026)
-- Refactored internal module organization
-- Renamed web-components: `ErrorPage` → `UErrorPage`, `Link` → `ULink`, `Outlet` → `UOutlet`
-- Added dedicated `react.ts` export for React-compatible components(`ULink`, `UOutlet`)
-- Improved `ULink` to support `target` attribute for anchor tags, allowing standard browser behavior for links like `_blank`, etc.
-
-## 0.5.3 (December 4, 2025)
-- Removed logic that prevented routing when navigating to the same URL
-
-## 0.5.2 (November 17, 2025)
-- Changed `RouteInfo` to `RouteContext` and added progress callback support
-- Added `initialLoad` option to RouterConfig to control initial route loading behavior
-- Added `fallback` option to RouterConfig for custom fallback rendering
-- Added `RouteProgressEvent` to notify route loading progress
-- Removed `children` in `NonIndexRouteConfig` to simplify route definitions
-- Removed `route` in `window` object to reduce global namespace pollution
-- Improved error handling and logging in ErrorPage component
-
-## 0.5.1 (November 13, 2025)
-- route error handling improvements
-
-## 0.5.0 (November 12, 2025)
-- Changed route rendering to support both synchronous and asynchronous `render` methods in route config
-- Removed commonjs build output, now only ESM is supported
-
-## 0.4.0 (November 11, 2025)
-- Added global declarations
-- Added `destroy` method to Router class
-- Added `useIntercept`(whether to intercept anchor tag clicks) option to RouterConfig
-
-## 0.3.0 (October 28, 2025)
-
-### Breaking Changes
-- Complete router architecture overhaul
-- Split RouteConfig type into `IndexRouteConfig` and `PathRouteConfig`
-- Changed `RouteError` to class and added `NotFoundRouteError`
-- Simplified `Outlet` component rendering (unified renderContent method)
-- Changed route event names (`route-start` → `route-begin`, `route-end` → `route-done`)
+## [0.7.0] - 2026-02-09
 
 ### Added
-- Improved ErrorPage component styling and usability
+- `meta` field on `RouteConfig` — attach arbitrary key-value data to any route
+- `RouteContext.meta` — populated at navigation time with metadata merged from the full matched route chain (parent → child order, child overrides parent)
+
+## [0.6.2] - 2026-01-21
+
+### Changed
+- **Breaking:** Refactored `UOutlet` from `LitElement` to native `HTMLElement` for improved performance and reduced bundle size
+- **Breaking:** `UErrorPage` CSS custom properties renamed: `--route-icon-color` → `--error-icon-color`, `--route-code-color` → `--error-code-color`, `--route-message-color` → `--error-message-color`
+- `ULink` click event handling moved to host element level for better encapsulation
+- `@lit/react` moved from devDependency to dependency for proper React integration
+- `UErrorPage` replaced inline SVG icon imports with emoji icons; SVG asset files removed
+
+## [0.6.1] - 2026-01-20
+
+### Added
+- Added `global.d.ts` import to main entry point
+
+### Changed
+- Moved click event listener from root element to document level for more reliable event handling
+
+### Fixed
+- Fixed `UErrorPage` CSS syntax error (trailing semicolon in CSS block)
+- Fixed initial route loading to wait for outlet element readiness before navigation
+
+### Removed
+- Removed unused `computedHref` reactive state from `ULink`
+
+## [0.6.0] - 2026-01-15
+
+### Added
+- Dedicated `react.ts` export entry providing React-compatible `UOutlet` and `ULink` wrappers
+- `ULink` now supports the `target` attribute, enabling standard browser behavior (e.g. `_blank`)
+
+### Changed
+- Renamed custom elements: `ErrorPage` → `UErrorPage`, `Link` → `ULink`, `Outlet` → `UOutlet`
+- Refactored internal module organization
+
+## [0.5.3] - 2025-12-04
+
+### Changed
+- Removed restriction that prevented re-navigation to the current URL
+
+## [0.5.2] - 2025-11-17
+
+### Added
+- `initialLoad` option on `RouterConfig` — controls whether the router navigates to the current URL on initialization
+- `fallback` option on `RouterConfig` — defines a custom render function for error and not-found states
+- `RouteProgressEvent` dispatched during async route loading
+
+### Changed
+- Renamed `RouteInfo` to `RouteContext`; added `progress` callback to context for reporting load progress
+- Improved error handling and display in the built-in error page component
+
+### Removed
+- Removed `children` from `NonIndexRouteConfig` to simplify the type interface
+- Removed `route` property from the `window` object to reduce global namespace pollution
+
+## [0.5.1] - 2025-11-13
+
+### Fixed
+- Improved route error handling
+
+## [0.5.0] - 2025-11-12
+
+### Changed
+- Route `render` functions now support both synchronous and asynchronous return values
+
+### Removed
+- Dropped CommonJS build output — ESM only
+
+## [0.4.0] - 2025-11-11
+
+### Added
+- `destroy()` method on `Router` to cleanly remove event listeners
+- `useIntercept` option on `RouterConfig` — controls whether anchor tag clicks are intercepted for client-side routing
+- Global type declarations (`global.d.ts`)
+
+## [0.3.0] - 2025-10-28
+
+### Changed
+- **Breaking:** Complete router architecture overhaul
+- **Breaking:** `RouteConfig` split into `IndexRouteConfig` and `PathRouteConfig`
+- **Breaking:** `RouteError` converted to a class; added `NotFoundRouteError`
+- **Breaking:** Route event names changed: `route-start` → `route-begin`, `route-end` → `route-done`
+- Simplified `Outlet` rendering via a unified `renderContent` method
+
+### Added
+- Improved `ErrorPage` component styling and usability
 - Unified route rendering using render functions
 
-## 0.2.1 (October 27, 2025)
+## [0.2.1] - 2025-10-27
 
-### Major Updates
+### Changed
 - Refactored routing mechanism for improved performance
 - Enhanced error handling with custom error pages
 
-### Changed
-- removed `connect()` and `disconnect()` methods
-- removed `notfound` configuration option
-- removed Old route progress events
+### Removed
+- Removed `connect()` and `disconnect()` methods from `Router`
+- Removed `notfound` configuration option
+- Removed legacy route progress events
 - added ErrorPage component for error handling
 - added Route events: `route-start`, `route-end`, `route-error`
 - improved TypeScript types and interfaces
 
-## 0.1.0 (April 25, 2025)
-- Initial library version release
+## [0.1.0] - 2025-04-25
+
+### Added
+- Initial release
