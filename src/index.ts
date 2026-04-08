@@ -2,6 +2,7 @@
 import './global.d.ts';
 
 // types exports
+export * from './types/NavigateOptions';
 export * from './types/RouteConfig';
 export * from './types/RouteContext';
 export * from './types/RouteError';

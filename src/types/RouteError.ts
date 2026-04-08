@@ -49,6 +49,15 @@ export class NotFoundError extends RouteError {
 }
 
 /**
+ * enter 가드가 false를 반환하여 접근이 거부되었을 때 발생하는 에러
+ */
+export class AccessDeniedError extends RouteError {
+  constructor(path: string) {
+    super(403, `Access denied: ${path}`);
+  }
+}
+
+/**
  * u-outlet 요소를 찾을 수 없을 때 발생하는 에러
  */
 export class OutletMissingError extends RouteError {

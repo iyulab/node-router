@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0] - 2026-04-08
+
+### Added
+- `NavigateOptions` — new optional second parameter for `go()` with `isRedirect`, `replace`, and `state` fields
+- `replace` option — navigate without pushing a new browser history entry (`replaceState`)
+- `state` option — attach custom state object to `history.pushState` / `replaceState`
+- `AccessDeniedError` — new error class (HTTP 403) thrown when an `enter` guard returns `false`; renders an error page with `ACCESS_DENIED` code
+- Redirect cycle detection — logs an error and halts routing if the same URL is visited more than once within a single navigation chain
+- `UErrorPage` now accepts an optional `RouteError` in its constructor for direct instantiation
+
+### Changed
+- **Breaking:** `enter` returning `false` now throws `AccessDeniedError` and renders a 403 error page instead of silently aborting navigation
+- Redirect navigations (`isRedirect: true`) use `replaceState` — intermediate redirect URLs are no longer pushed onto the browser history stack
+- Global `enter` guard is skipped on redirect hops — runs only once per user-initiated navigation
+- Route-level `enter` hooks are deduplicated within a redirect chain — each route's `enter` executes at most once per navigation cycle
+- `document.title` is now updated in a `finally` block — title is set regardless of whether routing succeeds or fails
+
 ## [0.8.0] - 2026-04-08
 
 ### Added

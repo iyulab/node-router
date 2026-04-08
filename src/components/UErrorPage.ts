@@ -9,6 +9,11 @@ import { RouteError } from '../types/RouteError.js';
 @customElement('u-error-page')
 export class UErrorPage extends LitElement {
 
+  constructor(error?: RouteError) {
+    super();
+    this.error = error;
+  }
+
   /** 표시할 에러 정보 */
   @property({ type: Object }) error?: RouteError;
 
@@ -30,21 +35,20 @@ export class UErrorPage extends LitElement {
 
   /** 에러 코드에 따른 기본 아이콘 반환 */
   private getErrorIcon(code: number | string) {
-    const codeStr = String(code);
-    const numericCode = typeof code === 'string' ? parseInt(code) : code;
-    
     // 문자열 에러 코드 처리
-    switch (codeStr) {
+    switch (String(code)) {
       case 'OUTLET_MISSING':
         return '📦';
       case 'CONTENT_LOAD_FAILED':
         return '📡';
       case 'CONTENT_RENDER_FAILED':
         return '🎨';
+      case 'ACCESS_DENIED':
+        return '🚫';
     }
     
     // 숫자 에러 코드 처리
-    switch (numericCode) {
+    switch (typeof code === 'string' ? parseInt(code) : code) {
       case 404:
         return '🔍';
       case 403:
