@@ -81,7 +81,8 @@ export class Router {
     this._requestID = requestID;
     const context = parseUrl(href, this._basepath);
 
-    if (this._tracker.visit(context.href)) return;
+    // 리다이렉트 체인에서만 사이클 감지 (최초 진입은 항상 허용)
+    if (options?.isRedirect && this._tracker.visit(context.href)) return;
 
     // 히스토리 업데이트: isRedirect/replace면 replaceState (뒤로가기에서 경유지 제거)
     const useReplace = options?.isRedirect || options?.replace || context.href === window.location.href;

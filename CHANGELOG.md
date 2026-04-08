@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.9.1] - 2026-04-08
+
+### Fixed
+- Redirect cycle detection no longer triggers false positives on initial navigation — `visit()` check is now skipped for the first `go()` call and only applied within redirect chains (`isRedirect: true`)
+
 ## [0.9.0] - 2026-04-08
 
 ### Added
