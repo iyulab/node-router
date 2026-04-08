@@ -68,7 +68,7 @@ export function parseUrl(url: string, basepath: string): RouteContext {
     hash: urlObj.hash,
     params: {},
     progress: () => {},
-    meta: {}
+    metadata: {}
   };
 }
 

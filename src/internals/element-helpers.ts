@@ -1,14 +1,15 @@
-import type { UOutlet } from "../components/UOutlet";
+import { UOutlet } from "../components/UOutlet";
 import { OutletMissingError } from "../types/RouteError";
 
 /** 
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 
  * 
  * @param element 검색을 시작할 HTMLElement
+ * @param skip element 자신을 검사에서 제외할지 여부 (기본값: false)
  * @returns 찾은 UOutlet 엘리먼트 또는 undefined
  */
-export function findOutlet(element: HTMLElement): UOutlet | undefined {
-  if (element.tagName === 'U-OUTLET') return element as UOutlet;
+export function findOutlet(element: HTMLElement, skip = false): UOutlet | undefined {
+  if (!skip && element instanceof UOutlet) return element;
 
   // Shadow DOM과 Light DOM 모두 탐색
   const roots = element.shadowRoot

@@ -18,6 +18,7 @@ export class Router {
   private readonly _basepath: string;
   private readonly _routes: RouteConfig[];
   private readonly _fallback?: FallbackRouteConfig;
+  private readonly _enter?: RouterConfig['enter'];
   
   /** 현재 라우팅 요청 ID */
   private _requestID?: string;
@@ -31,6 +32,7 @@ export class Router {
     this._basepath = absolutePath(config.basepath || '/');
     this._routes = setRoutes(config.routes || [], this._basepath);
     this._fallback = config.fallback;
+    this._enter = config.enter;
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
@@ -94,6 +96,14 @@ export class Router {
     
     let outlet: UOutlet | undefined = undefined;
     try {
+      // 글로벌 enter 실행
+      if (this._enter) {
+        const result = await this._enter(context);
+        if (this._requestID !== requestID) return;
+        if (typeof result === 'string') return void this.go(result);
+        if (result === false) return;
+      }
+
       // 라우트 시작 이벤트 발생
       if(this._requestID !== requestID) return;
       window.dispatchEvent(new RouteBeginEvent(context));
@@ -107,12 +117,12 @@ export class Router {
         context.params = lastRoute.path.exec({ pathname: context.pathname })?.pathname.groups || {};
       }
 
-      // 매칭된 라우트들의 meta 병합 (부모 → 자식 순서로 override)
+      // 매칭된 라우트들의 metadata 병합 (부모 → 자식 순서로 override)
       const mergedMeta: Record<string, unknown> = {};
       for (const route of routes) {
-        if (route.meta) Object.assign(mergedMeta, route.meta);
+        if (route.metadata) Object.assign(mergedMeta, route.metadata);
       }
-      context.meta = mergedMeta;
+      context.metadata = mergedMeta;
 
       this._context = context;
 
@@ -130,6 +140,14 @@ export class Router {
       for (const route of routes) {
         // 오래된 요청은 무시, 현재 시점의 요청만 처리
         if(this._requestID !== requestID) return;
+        // 라우트별 enter 실행
+        if (route.enter) {
+          const result = await route.enter(context);
+          if (this._requestID !== requestID) return;
+          if (typeof result === 'string') return void this.go(result);
+          if (result === false) return;
+        }
+
         // 렌더링 함수가 없으면 건너뜀
         if(!route.render) continue;
 
@@ -145,13 +163,13 @@ export class Router {
         
         // Outlet에 실제 컨텐츠 렌더링 수행, 실패시 에러 발생
         try {
-          outlet.render({ id: route.id, value: content, force: route.force });
+          outlet.render(content, { id: route.id, force: route.force });
         } catch (renderError) {
           throw new ContentRenderError(renderError);
         }
         
-        // 다음 라우트를 위한 outlet 찾기
-        outlet = findOutlet(outlet) || outlet;
+        // 다음 라우트를 위한 outlet 찾기 (현재 outlet 내부의 자식에서 탐색)
+        outlet = findOutlet(outlet, true) || outlet;
         title = route.title || title;
       }
 
@@ -174,13 +192,13 @@ export class Router {
       try {
         if (this._fallback && this._fallback.render && outlet) {
           const fallbackContent = await this._fallback.render({ ...context, error: routeError });
-          outlet.render({ id: '#fallback', value: fallbackContent, force: true });
+          outlet.render(fallbackContent, { id: '#fallback', force: true });
           document.title = this._fallback.title || document.title;
         } else {
           const errorContent = new UErrorPage();
           errorContent.error = error;
           if (outlet) {
-            outlet.render({ id: '#error', value: errorContent, force: true });
+            outlet.render(errorContent, { id: '#error', force: true });
           } else {
             document.body.innerHTML = '';
             document.body.appendChild(errorContent);

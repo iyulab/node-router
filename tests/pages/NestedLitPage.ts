@@ -5,41 +5,44 @@ import { customElement } from 'lit/decorators.js';
 export class NestedLitPage extends LitElement {
   render() {
     return html`
-      <h3>🎨 Nested Content <span class="badge">Lit</span></h3>
-      <p>This is a Lit component rendered inside a nested outlet!</p>
-      <p>Parent layout + Lit child content working correctly. ✅</p>
-      <p><strong>Framework:</strong> Lit Element</p>
+      <div class="card">
+        <div class="badge">Lit Element</div>
+        <h3>Nested Lit Component</h3>
+        <p>2-level 중첩 라우트의 Lit 자식 컴포넌트입니다.</p>
+        <p>부모 <code>&lt;nested-layout&gt;</code> 안의 <code>&lt;u-outlet&gt;</code>에 렌더링됩니다.</p>
+        <div class="info">
+          <span>Current path: <code>/nested/lit</code></span>
+        </div>
+      </div>
     `;
   }
 
   static styles = css`
-    :host {
-      display: block;
-      padding: 1rem;
-      background: #e3f2fd;
-      border-radius: 8px;
-      margin-top: 1rem;
+    :host { display: block; }
+    .card {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 1.5rem;
     }
-
-    h3 {
-      margin: 0 0 1rem 0;
-      color: #1976d2;
-    }
-
     .badge {
       display: inline-block;
-      background: #1976d2;
+      background: #3b82f6;
       color: white;
-      padding: 0.25rem 0.75rem;
+      padding: 0.2rem 0.8rem;
       border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      margin-left: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
     }
-
-    p {
-      margin: 0.5rem 0;
-      color: #555;
+    h3 { margin: 0 0 0.5rem; color: #1d4ed8; }
+    p  { margin: 0.4rem 0; color: #3730a3; font-size: 0.9rem; }
+    .info { margin-top: 1rem; font-size: 0.85rem; color: #6b7280; }
+    code {
+      background: #dbeafe;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #1e40af;
     }
   `;
 }

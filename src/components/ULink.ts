@@ -24,6 +24,17 @@ export class ULink extends LitElement {
    */
   @property({ type: String }) target?: string;
 
+  /** 
+   * 링크 관계 rel 속성
+   * 
+   * - `noopener`: target이 _blank인 경우 보안 강화 (window.opener 차단)
+   * - `noreferrer`: target이 _blank인 경우 보안 강화 + Referer 헤더 제거
+   * - `external`: 외부 링크임을 명시 (SEO/접근성에 도움)
+   * - `nofollow`: 검색 엔진이 링크를 따라가지 않도록 지시 (SEO에 영향)
+   * - 그 외 rel 값도 그대로 전달됩니다. 
+   */
+  @property({ type: String }) rel?: string;
+
   /**
    * 링크 대상 URL, 다음 사항에 따라 SPA 라우팅 또는 브라우저 네비게이션이 결정됩니다.
    * 
@@ -56,7 +67,11 @@ export class ULink extends LitElement {
 
   render() {
     return html`
-      <a target=${ifDefined(this.target)} href=${this.compute(this.href)}>
+      <a
+        href=${this.compute(this.href)}
+        target=${ifDefined(this.target)}
+        rel=${ifDefined(this.rel)}
+      >
         <slot></slot>
       </a>
     `;

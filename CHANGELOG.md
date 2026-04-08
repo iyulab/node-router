@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0] - 2026-04-08
+
+### Added
+- Added navigation guards via `enter` hooks at both router level (`RouterConfig.enter`) and route level (`RouteConfig.enter`) with redirect/cancel flow support
+- Added `rel` attribute support to `<u-link>` for secure external navigation patterns (for example `noopener noreferrer`)
+
+### Changed
+- **Breaking:** Renamed route metadata fields from `meta` to `metadata` (`RouteConfig.metadata`, `RouteContext.metadata`)
+- Updated nested outlet resolution to prefer child outlet discovery inside the current outlet, improving deep nested route rendering behavior
+
 ## [0.7.6] - 2026-04-02
 
 ### Fixed

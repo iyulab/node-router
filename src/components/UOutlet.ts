@@ -6,8 +6,6 @@ interface RenderOption {
   id?: string;
   /** 강제 렌더링 여부 */
   force?: boolean;
-  /** 렌더링할 값 */
-  value: unknown;
 }
 
 /**
@@ -22,9 +20,9 @@ class UOutlet extends HTMLElement {
   /**
    * 주어진 렌더링 옵션에 따라 컨텐츠를 렌더링합니다.
    */
-  public async render({ id, value, force }: RenderOption) {
-    if (this.routeId === id && force === false) return;
-    this.routeId = id;
+  public async render(value: unknown, options?: RenderOption) {
+    if (this.routeId === options?.id && options?.force === false) return;
+    this.routeId = options?.id;
     this.reset();
 
     if (value === null) {

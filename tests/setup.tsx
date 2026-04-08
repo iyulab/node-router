@@ -2,93 +2,160 @@ import { html } from 'lit';
 import { Router } from '../src';
 import './layout';
 import './pages/HomePage';
-import './pages/ErrorPage';
-import './pages/ContextPage';
+import './pages/LoginPage';
+import './pages/ForbiddenPage';
+import './pages/ParamsPage';
+import './pages/AsyncPage';
+import './pages/AdminPage';
+import './pages/NestedLayout';
+import './pages/NestedIndexPage';
 import './pages/NestedLitPage';
+import './pages/DeepLayout';
+import './pages/DeepIndexPage';
+import './pages/DeepPage';
+import './pages/ErrorPage';
 import { NestedReactPage } from './pages/NestedReactPage';
+import { auth } from './auth';
+
+const sleep = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
 const router = new Router({
-  // 라우팅 결과를 렌더링될 루트 요소 지정
   root: document.querySelector('preview-layout') as HTMLElement,
-
-  // 기본 경로 설정
   basepath: '/',
 
-  // 라우트 설정
+  // ─── 글로벌 enter: 인증 체크 ────────────────────────────
+  // 공개 경로가 아니면 /login으로 redirect
+  enter: (ctx) => {
+    const publicPaths = ['/', '/login', '/forbidden'];
+    if (publicPaths.includes(ctx.pathname)) return true;
+    if (!auth.isAuthenticated) return '/login';
+    return true;
+  },
+
   routes: [
+    // ─── 공개 라우트 ──────────────────────────────────────
     {
-      path: '/',
+      index: true,
       title: 'Home',
       render: () => html`<home-page></home-page>`,
     },
     {
-      path: '/context/:id?',
-      title: 'Context Viewer',
-      render: async (ctx) => {
-        
-        // 진행 상태 전달 예제 (window의 route-progress 이벤트와 연동)
-        ctx.progress(10);
-        await new Promise(res => setTimeout(res, 300));
-        ctx.progress(30);
-        await new Promise(res => setTimeout(res, 300));
-        ctx.progress(50);
-        await new Promise(res => setTimeout(res, 300));
-        ctx.progress(100);
-
-        // 컨텍스트 정보를 ContextPage 컴포넌트에 전달하여 렌더링
-        // URLPattern으로 :id와 :name 파라미터를 추출
-        // 예: /context/123/john -> { id: '123', name: 'john' }
-        return html`<context-page .context=${ctx}></context-page>`;
-      }
+      path: '/login',
+      title: 'Login',
+      render: () => html`<login-page></login-page>`,
     },
     {
-      path: '/nested',
-      render: () => {
-        const layout = document.createElement('div');
-        layout.innerHTML = '<h2>Nested Layout</h2><u-outlet></u-outlet>';
-        return layout;
+      path: '/forbidden',
+      title: 'Access Denied',
+      render: () => html`<forbidden-page></forbidden-page>`,
+    },
+
+    // ─── 인증 필요 라우트 ────────────────────────────────
+    // path: ':id?' → optional param (/params or /params/hello)
+    {
+      path: '/params/:id?',
+      title: 'Params Viewer',
+      metadata: { requiresAuth: true, section: 'tools' },
+      render: (ctx) => html`<params-page .context=${ctx}></params-page>`,
+    },
+
+    // progress 콜백 시연: 여러 단계의 비동기 작업
+    {
+      path: '/async',
+      title: 'Async Loading',
+      metadata: { requiresAuth: true, section: 'tools' },
+      render: async (ctx) => {
+        ctx.progress(10);
+        await sleep(400);
+        ctx.progress(35);
+        await sleep(400);
+        ctx.progress(65);
+        await sleep(300);
+        ctx.progress(90);
+        await sleep(200);
+        ctx.progress(100);
+        return html`<async-page></async-page>`;
       },
+    },
+
+    // ─── 라우트별 enter: 역할 기반 접근 제어 ─────────────
+    // global enter 통과 후 per-route enter 추가 실행
+    {
+      path: '/admin',
+      title: 'Admin Panel',
+      metadata: { requiresAuth: true, role: 'admin', section: 'admin' },
+      enter: () => auth.role === 'admin' || '/forbidden',
+      render: () => html`<admin-page></admin-page>`,
+    },
+
+    // ─── 중첩 라우트 (2-level) ────────────────────────────
+    // 부모: <nested-layout> 렌더링 → 내부 <u-outlet> 에 자식 렌더링
+    {
+      path: '/nested',
+      title: 'Nested',
+      metadata: { requiresAuth: true, section: 'nested' },
+      render: () => html`<nested-layout></nested-layout>`,
       children: [
         {
           index: true,
-          title: 'Nested Page (Lit)',
+          title: 'Nested – Overview',
+          render: () => html`<nested-index-page></nested-index-page>`,
+        },
+        {
+          path: 'lit',
+          title: 'Nested – Lit',
           render: () => html`<nested-lit-page></nested-lit-page>`,
         },
         {
           path: 'react',
-          title: 'Nested Page (React)',
-          render: () => {
-            return (
-              <NestedReactPage></NestedReactPage>
-            )
-          }
-        }
+          title: 'Nested – React',
+          render: () => (
+            <NestedReactPage />
+          ),
+        },
+
+        // ─── 3-level 중첩 라우트 ───────────────────────
+        // /nested/deep → <deep-layout> → 내부 <u-outlet>
+        // /nested/deep/:id → deep-layout 유지, item만 교체
+        {
+          path: 'deep',
+          title: 'Deep Nested',
+          metadata: { requiresAuth: true, section: 'nested', depth: 3 },
+          render: () => html`<deep-layout></deep-layout>`,
+          children: [
+            {
+              index: true,
+              title: 'Deep – Overview',
+              render: () => html`<deep-index-page></deep-index-page>`,
+            },
+            {
+              path: ':id',
+              title: 'Deep – Item',
+              render: (ctx) => html`
+                <deep-page .itemId=${ctx.params['id']}></deep-page>
+              `,
+            },
+          ],
+        },
       ],
     },
+
+    // ─── 에러 핸들링: render 중 throw ──────────────────
     {
       path: '/error',
       title: 'Error Test',
       render: () => {
-        throw new Error('This is a test error');
-      }
+        throw new Error('Intentional render error for testing');
+      },
     },
   ],
 
-  // 오류 발생 시 표시할 페이지 설정
+  // ─── fallback: 404 / 에러 표시 ──────────────────────
   fallback: {
-    title: 'Error Occurred',
-    render: (ctx) => {
-      return html`<error-page .error=${ctx.error}></error-page>`;
-    },
+    title: 'Error',
+    render: (ctx) => html`<error-page .error=${ctx.error}></error-page>`,
   },
-  
-  // a 태그 기본 동작 차단 및 SPA 라우팅 사용
-  useIntercept: true,
-
-  // 초기 로드 시 라우터 시작
-  initialLoad: true,
 });
 
-// Expose router for debugging
 (window as any).router = router;
 console.log('Router app initialized');

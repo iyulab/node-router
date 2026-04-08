@@ -49,6 +49,18 @@ interface BaseRouteConfig {
   render?: (ctx: RouteContext) => Promise<unknown> | unknown;
 
   /**
+   * 이 라우트 진입 전에 호출되는 enter 함수입니다.
+   * - `string` 반환: 해당 경로로 redirect
+   * - `false` 반환: 네비게이션 취소
+   * - `true` 반환: 통과
+   * @example
+   * ```typescript
+   * { path: '/admin', enter: (ctx) => ctx.metadata.role === 'admin' || '/forbidden' }
+   * ```
+   */
+  enter?: (ctx: RouteContext) => Promise<string | boolean> | string | boolean;
+
+  /**
    * 라우터 URL 변경시 렌더링을 강제할지 여부
    * - 기본값으로 children을 가질때 false로 설정되며, children이 없을 경우 true로 설정됩니다.
    * - true로 설정하면 기존 렌더링을 무시하고 새로 렌더링합니다.
@@ -66,10 +78,10 @@ interface BaseRouteConfig {
    * - 인증, SEO, 분석 등의 용도로 사용할 수 있습니다.
    * @example
    * ```typescript
-   * { path: '/admin', meta: { requiresAuth: true, role: 'admin' } }
+   * { path: '/admin', metadata: { requiresAuth: true, role: 'admin' } }
    * ```
    */
-  meta?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 interface IndexRouteConfig extends BaseRouteConfig {

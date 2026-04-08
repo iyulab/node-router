@@ -1,4 +1,5 @@
 import type { FallbackRouteConfig, RouteConfig } from "./RouteConfig";
+import type { RouteContext } from "./RouteContext";
 
 /**
  * 라우터 설정
@@ -23,6 +24,20 @@ export interface RouterConfig {
    * - 라우트는 렌더링할 엘리먼트 또는 컴포넌트를 지정합니다.
    */
   routes?: RouteConfig[];
+
+  /**
+   * 모든 라우트 전환 전에 호출되는 글로벌 enter 함수입니다.
+   * - `string` 반환: 해당 경로로 redirect
+   * - `false` 반환: 네비게이션 취소
+   * - `true` 반환: 통과
+   * @example
+   * ```typescript
+   * enter: async (ctx) => {
+   *   if (!isAuthenticated() && ctx.pathname !== '/login') return '/login';
+   * }
+   * ```
+   */
+  enter?: (ctx: RouteContext) => Promise<string | boolean> | string | boolean;
 
   /**
    * 라우트 매칭 실패 또는 오류 발생 시 대체 라우트 설정

@@ -3,39 +3,33 @@ import React from 'react';
 export const NestedReactPage: React.FC = () => {
   return (
     <div style={{
-      display: 'block',
-      padding: '1rem',
-      background: '#fce4ec',
-      borderRadius: '8px',
-      marginTop: '1rem',
+      background: '#fdf2f8',
+      border: '1px solid #f9a8d4',
+      borderRadius: '10px',
+      padding: '1.5rem',
     }}>
-      <h3 style={{
-        margin: '0 0 1rem 0',
-        color: '#c2185b',
+      <span style={{
+        display: 'inline-block',
+        background: '#ec4899',
+        color: 'white',
+        padding: '0.2rem 0.8rem',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        marginBottom: '0.75rem',
       }}>
-        ⚛️ Nested Content{' '}
-        <span style={{
-          display: 'inline-block',
-          background: '#c2185b',
-          color: 'white',
-          padding: '0.25rem 0.75rem',
-          borderRadius: '12px',
-          fontSize: '0.85rem',
-          fontWeight: 'bold',
-          marginLeft: '0.5rem',
-        }}>
-          React
-        </span>
-      </h3>
-      <p style={{ margin: '0.5rem 0', color: '#555' }}>
-        This is a real React component rendered inside a nested outlet!
+        React
+      </span>
+      <h3 style={{ margin: '0 0 0.5rem', color: '#be185d' }}>Nested React Component</h3>
+      <p style={{ margin: '0.4rem 0', color: '#9d174d', fontSize: '0.9rem' }}>
+        2-level 중첩 라우트의 React 자식 컴포넌트입니다.
       </p>
-      <p style={{ margin: '0.5rem 0', color: '#555' }}>
-        Parent layout + React child content working correctly. ✅
+      <p style={{ margin: '0.4rem 0', color: '#9d174d', fontSize: '0.9rem' }}>
+        Lit 레이아웃(<code style={{ background: '#fce7f3', padding: '1px 4px', borderRadius: 3 }}>&lt;nested-layout&gt;</code>) 안의 <code style={{ background: '#fce7f3', padding: '1px 4px', borderRadius: 3 }}>&lt;u-outlet&gt;</code>에 렌더링됩니다.
       </p>
-      <p style={{ margin: '0.5rem 0', color: '#555' }}>
-        <strong>Framework:</strong> React (Functional Component)
-      </p>
+      <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#6b7280' }}>
+        Current path: <code style={{ background: '#fce7f3', padding: '1px 4px', borderRadius: 3 }}>/nested/react</code>
+      </div>
     </div>
   );
 };

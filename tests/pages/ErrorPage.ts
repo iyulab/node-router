@@ -4,69 +4,48 @@ import { RouteError } from '../../src';
 
 @customElement('error-page')
 export class ErrorPage extends LitElement {
-  
-  @property({ type: Object }) 
+
+  @property({ type: Object })
   error: RouteError | null = null;
 
   render() {
-    if (!this.error) {
-      return html`<div>No error information available.</div>`;
-    }
-    
+    const code = this.error?.code ?? 'ERROR';
+    const message = this.error?.message ?? 'Something went wrong';
+    const isNotFound = code === 'NOT_FOUND';
+
     return html`
-      <div class="container">
-        <h1>😢</h1>
-        <div class="code">${this.error.code || 'ERROR'}</div>
-        <div class="message">${this.error.message || 'Something went wrong'}</div>
-        <a href="/">← Back to Home</a>
+      <div class="card ${isNotFound ? 'not-found' : 'error'}">
+        <div class="icon">${isNotFound ? '🔍' : '💥'}</div>
+        <div class="code">${code}</div>
+        <div class="message">${message}</div>
+        <a href="/" class="back">← 홈으로</a>
       </div>
     `;
   }
 
   static styles = css`
-    :host {
-      display: block;
-      padding: 2rem;
-    }
-
-    .container {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 3rem;
+    :host { display: block; }
+    .card {
       border-radius: 16px;
-      color: white;
+      padding: 3rem;
       text-align: center;
+      color: white;
     }
-
-    h1 {
-      font-size: 4rem;
-      margin: 0 0 1rem 0;
-    }
-
-    .code {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      opacity: 0.9;
-    }
-
-    .message {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-      opacity: 0.8;
-    }
-
-    a {
+    .not-found { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .error     { background: linear-gradient(135deg, #ef4444, #f97316); }
+    .icon  { font-size: 3.5rem; margin-bottom: 1rem; }
+    .code  { font-size: 1.4rem; font-weight: 800; opacity: 0.9; margin-bottom: 0.5rem; }
+    .message { font-size: 1rem; opacity: 0.85; margin-bottom: 2rem; }
+    .back {
       display: inline-block;
-      background: white;
-      color: #667eea;
-      padding: 0.75rem 2rem;
-      border-radius: 8px;
+      background: rgba(255,255,255,0.2);
+      color: white;
       text-decoration: none;
-      font-weight: bold;
-      transition: transform 0.2s;
+      padding: 0.5rem 1.5rem;
+      border-radius: 20px;
+      font-weight: 600;
+      transition: background 0.2s;
     }
-    a:hover {
-      transform: translateY(-2px);
-    }
+    .back:hover { background: rgba(255,255,255,0.35); }
   `;
 }

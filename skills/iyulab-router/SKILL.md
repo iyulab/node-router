@@ -1,16 +1,16 @@
 ---
 name: iyulab-router
-description: Client-side SPA router for Lit and React with URLPattern-based matching, nested routes, fallback handling, and route events. Use when working with @iyulab/router — setting up routing, defining routes, handling navigation, nested layouts with <u-outlet>, or listening to route lifecycle events.
+description: Client-side SPA router for Lit and React with URLPattern matching, nested routes, route guards, metadata merging, fallback handling, and route events. Use when working with @iyulab/router to define routes, add guards, handle navigation, or integrate <u-outlet>/<u-link>.
 license: MIT
 compatibility: Browser environments only (requires URLPattern and History API)
 metadata:
   author: iyulab
-  version: "0.7.4"
+  version: "0.8.0"
 ---
 
 # @iyulab/router
 
-Client-side router supporting Lit and React renders, nested routes, and URLPattern-based matching.
+Client-side router supporting Lit and React renders, nested routes, route guards, and URLPattern-based matching.
 
 ## Install
 
@@ -40,9 +40,19 @@ import { html } from 'lit';
 const router = new Router({
   root: document.body,       // required — mount element containing <u-outlet>
   basepath: '/',             // optional
+  enter: (ctx) => {
+    if (!isAuthenticated() && ctx.pathname !== '/login') return '/login';
+    return true;
+  },
   routes: [
     { index: true, render: () => html`<home-page></home-page>` },
     { path: '/user/:id', render: (ctx) => html`<user-page .id=${ctx.params.id}></user-page>` },
+    {
+      path: '/admin',
+      metadata: { role: 'admin' },
+      enter: (ctx) => ctx.metadata.role === 'admin' || '/forbidden',
+      render: () => html`<admin-page></admin-page>`,
+    },
   ],
   fallback: {
     render: (ctx) => html`<error-page .error=${ctx.error}></error-page>`
@@ -57,9 +67,10 @@ const router = new Router({
 | `path` | `string \| URLPattern` | URLPattern path; omit when `index: true` |
 | `index` | `true` | Marks route as index of its parent path |
 | `render` | `(ctx) => unknown` | Returns Lit `TemplateResult`, React element, or `HTMLElement` |
+| `enter` | `(ctx) => string \| boolean \| Promise<string \| boolean>` | Guard before route render (`false` cancel, `string` redirect) |
 | `children` | `RouteConfig[]` | Nested routes; parent must render `<u-outlet>` |
 | `title` | `string` | Sets `document.title` on match |
-| `meta` | `Record<string, unknown>` | Arbitrary metadata (auth, layout, analytics) |
+| `metadata` | `Record<string, unknown>` | Arbitrary metadata (auth, layout, analytics) |
 | `force` | `boolean` | Force re-render on URL change (default `true` for leaf routes) |
 
 ## RouteContext Fields
@@ -69,7 +80,7 @@ ctx.params     // URLPattern captured params
 ctx.pathname   // path without query/hash
 ctx.path       // full path including query + hash
 ctx.query      // URLSearchParams
-ctx.meta       // merged meta from matched route chain
+ctx.metadata   // merged metadata from matched route chain
 ctx.progress   // (value: number) => void — report 0–100 loading progress
 ```
 
@@ -103,6 +114,12 @@ import { ULink } from '@iyulab/router/react';
 <ULink href="/about">About</ULink>
 ```
 
+`<u-link>` supports `href`, `target`, and `rel`.
+
+```html
+<u-link href="https://example.com" target="_blank" rel="noopener noreferrer">External</u-link>
+```
+
 ## Route Events (window)
 
 | Event | Fired when |
@@ -120,4 +137,9 @@ import { ULink } from '@iyulab/router/react';
 | `CONTENT_LOAD_ERROR` | `ContentLoadError` |
 | `CONTENT_RENDER_ERROR` | `ContentRenderError` |
 
-See [references/REFERENCE.md](references/REFERENCE.md) for URL parameter patterns, React usage, and advanced examples.
+References:
+- [references/routing-basics.md](references/routing-basics.md)
+- [references/url-pattern.md](references/url-pattern.md)
+- [references/guards-and-metadata.md](references/guards-and-metadata.md)
+- [references/components.md](references/components.md)
+- [references/events-and-errors.md](references/events-and-errors.md)
