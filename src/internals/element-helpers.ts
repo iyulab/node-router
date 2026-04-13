@@ -30,11 +30,13 @@ export function findOutlet(element: HTMLElement, skip = false): UOutlet | undefi
  * `u-outlet` 엘리먼트를 찾아 반환합니다. 없으면 에러를 던집니다. 
  * 
  * @param element 검색을 시작할 HTMLElement
+ * @param skip element 자신을 검사에서 제외할지 여부 (기본값: false)
+ * 
  * @returns 찾은 UOutlet 엘리먼트
  * @throws OutletMissingError `u-outlet` 엘리먼트를 찾지 못한 경우
  */
-export function findOutletOrThrow(element: HTMLElement): UOutlet {
-  const outlet = findOutlet(element);
+export function findOutletOrThrow(element: HTMLElement, skip = false): UOutlet {
+  const outlet = findOutlet(element, skip);
   if (!outlet) {
     throw new OutletMissingError();
   }
@@ -46,17 +48,29 @@ export function findOutletOrThrow(element: HTMLElement): UOutlet {
  * 
  * @param element 대기할 엘리먼트
  * @param timeout 타임아웃 시간(밀리초, 기본값: 10_000ms)
+ * @param skip element 자신을 검사에서 제외할지 여부 (기본값: false)
+ * 
  * @returns 준비된 `u-outlet` 엘리먼트
  */
-export async function waitOutlet(element: HTMLElement, timeout = 10_000): Promise<UOutlet> {
+export async function waitOutlet(element: HTMLElement, timeout = 10_000, skip = false): Promise<UOutlet> {
   const start = performance.now();
 
   while (performance.now() - start < timeout) {
-    const outlet = findOutlet(element);
+    const outlet = findOutlet(element, skip);
     if (outlet) return outlet;
 
-    // 다음 체크까지 잠깐 대기
-    await new Promise<void>(r => setTimeout(r, 50));
+    // 커스텀 엘리먼트 정의 완료 대기
+    if (element.localName.includes('-')) {
+      await customElements.whenDefined(element.localName);
+    }
+
+    // Lit 계열 updateComplete 대기
+    if ('updateComplete' in element) {
+      await (element as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+    }
+
+    // DOM 연결/렌더 반영을 위해 다음 프레임까지 대기
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
   }
 
   throw new Error(

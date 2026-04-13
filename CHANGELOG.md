@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2] - 2026-04-13
+
+### Fixed
+- Nested route rendering now waits for child outlet readiness after parent render, preventing children from being rendered into the previous outlet when the next `<u-outlet>` is created inside a component shadow root
+- `Router.go()` now awaits `UOutlet.render()` before resolving the next outlet in the matched route chain
+- `waitOutlet()` now prefers component lifecycle-aware readiness checks (`customElements.whenDefined`, `updateComplete`, next animation frame) during outlet discovery
+
 ## [0.9.1] - 2026-04-08
 
 ### Fixed

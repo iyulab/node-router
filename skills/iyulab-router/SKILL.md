@@ -5,7 +5,7 @@ license: MIT
 compatibility: Browser environments only (requires URLPattern and History API)
 metadata:
   author: iyulab
-  version: "0.9.1"
+  version: "0.9.2"
 ---
 
 # @iyulab/router

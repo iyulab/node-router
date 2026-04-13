@@ -151,12 +151,18 @@ export class Router {
         }
 
         try {
-          outlet.render(content, { id: route.id, force: route.force });
+          await outlet.render(content, { id: route.id, force: route.force });
         } catch (e) {
           throw new ContentRenderError(e);
         }
 
-        outlet = findOutlet(outlet, true) || outlet;
+        if ('children' in route && route.children && route.children.length > 0) {
+          // 자식 라우트가 있는 경우, 렌더링된 컨텐츠 내의 outlet이 준비될 때까지 대기
+          outlet = await waitOutlet(outlet, 2_000, true);
+        } else {
+          // 자식 라우트가 없는 경우, 다음 라우트에서 같은 outlet이 재사용될 수 있도록 skip 옵션으로 다시 찾기
+          outlet = findOutlet(outlet, true) || outlet;
+        }
         title = route.title || title;
       }
       // 라우트 완료 이벤트 발생
