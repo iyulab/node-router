@@ -21,6 +21,7 @@ export class Router {
   private readonly _routes: RouteConfig[];
   private readonly _fallback?: FallbackRouteConfig;
   private readonly _enter?: RouterConfig['enter'];
+  private readonly _externalPrefixes: string[];
   private readonly _tracker = new RouteTracker();
 
   /** 현재 라우팅 요청 ID */
@@ -36,6 +37,9 @@ export class Router {
     this._routes = setRoutes(config.routes || [], this._basepath);
     this._fallback = config.fallback;
     this._enter = config.enter;
+    this._externalPrefixes = (config.externalPrefixes ?? [])
+      .map((p) => p.replace(/\/+$/, ''))
+      .filter((p) => p.length > 0);
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
@@ -218,10 +222,33 @@ export class Router {
       if (anchor.getAttribute('rel') === 'external') return;
       if (anchor.target && anchor.target !== '') return;
 
+      // 이 라우터의 관할 밖으로 향하는 same-origin 앵커는 가로채지 않고
+      // 브라우저 기본 네비게이션(전체 페이지 로드)에 위임합니다.
+      // - basepath가 '/'가 아니면 basepath 밖 경로는 자동으로 외부 취급.
+      // - basepath가 '/'인 경우 `externalPrefixes`로 형제 SPA의 경로를
+      //   명시해야 외부 취급됩니다.
+      const targetPathname = new URL(anchor.href, window.location.origin).pathname;
+      if (this._isOutsideScope(targetPathname)) return;
+
       e.preventDefault();
       await this.go(anchor.href);
     } catch {
       // 예외는 무시하고 기본 동작 유지
     }
   };
+
+  /** 주어진 경로가 이 라우터의 관할 밖인지 판단합니다. */
+  private _isOutsideScope(pathname: string): boolean {
+    if (this._basepath !== '/' && !this._isWithin(pathname, this._basepath)) {
+      return true;
+    }
+    for (const prefix of this._externalPrefixes) {
+      if (this._isWithin(pathname, prefix)) return true;
+    }
+    return false;
+  }
+
+  private _isWithin(pathname: string, prefix: string): boolean {
+    return pathname === prefix || pathname.startsWith(prefix + '/');
+  }
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- `RouterConfig.externalPrefixes` — 이 라우터의 관할 밖으로 취급할 경로 접두사 목록. 동일 origin에 여러 SPA가 서로 다른 경로 아래에 병렬 배포된 상황에서, 형제 SPA 경로로 향하는 앵커 클릭이 현재 라우터의 fallback으로 흘러 들어가는 것을 막습니다.
+
+### Fixed
+- Document-level click 핸들러가 라우터의 `basepath` 밖 same-origin 경로까지 가로채 fallback을 렌더하던 문제 수정. 이제 `basepath`가 `/`가 아닐 때 `basepath` 밖 경로는 자동으로 브라우저 네비게이션에 위임되며, `basepath: '/'`는 `externalPrefixes`로 형제 SPA 경로를 명시할 수 있습니다. `<u-link>`가 이미 수행하던 경계 검사와 동작이 일관되게 정렬됩니다.
+
 ## [0.9.2] - 2026-04-13
 
 ### Fixed
