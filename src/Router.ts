@@ -39,7 +39,7 @@ export class Router {
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
-      document.addEventListener('click', this.handleDocumentClick);
+      this._rootElement.addEventListener('click', this.handleRootElementClick);
     }
     if (config.initialLoad !== false) {
       void waitOutlet(this._rootElement).then(() => {
@@ -51,7 +51,7 @@ export class Router {
   /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
   public destroy() {
     window.removeEventListener('popstate', this.handleWindowPopstate);
-    document.removeEventListener('click', this.handleDocumentClick);
+    this._rootElement?.removeEventListener('click', this.handleRootElementClick);
     this._requestID = undefined;
     this._context = undefined;
   }
@@ -203,7 +203,7 @@ export class Router {
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */
-  private handleDocumentClick = async (e: MouseEvent) => {
+  private handleRootElementClick = async (e: MouseEvent) => {
     try {
       if (e.defaultPrevented) return;
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
@@ -217,6 +217,7 @@ export class Router {
       if (anchor.hasAttribute('download')) return;
       if (anchor.getAttribute('rel') === 'external') return;
       if (anchor.target && anchor.target !== '') return;
+      if (this._basepath !== '/' && !new URL(anchor.href).pathname.startsWith(this._basepath)) return;
 
       e.preventDefault();
       await this.go(anchor.href);

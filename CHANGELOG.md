@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.3] - 2026-04-24
+
+### Fixed
+- Document click handler now scopes interception to the router's `_rootElement` instead of `document`, preventing accidental capture of clicks outside the router's DOM subtree
+- Click handler no longer intercepts same-origin anchors pointing outside `basepath` — when `basepath` is not `/`, links targeting paths outside the basepath are passed through to browser navigation instead of falling through to the fallback route
+
 ## [0.9.2] - 2026-04-13
 
 ### Fixed
