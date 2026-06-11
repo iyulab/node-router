@@ -217,7 +217,12 @@ export class Router {
       if (anchor.hasAttribute('download')) return;
       if (anchor.getAttribute('rel') === 'external') return;
       if (anchor.target && anchor.target !== '') return;
-      if (this._basepath !== '/' && !new URL(anchor.href).pathname.startsWith(this._basepath)) return;
+
+      const pathname = new URL(anchor.href).pathname;
+      if (this._basepath !== '/' && !pathname.startsWith(this._basepath)) return;
+      // 등록된 라우트에 매칭되지 않는 경로는 가로채지 않고 네이티브 내비게이션에 맡깁니다.
+      // (특히 basepath '/'에서 다른 앱의 경로를 soft-404로 렌더하는 것을 방지)
+      if (getRoutes(this._routes, pathname).length === 0) return;
 
       e.preventDefault();
       await this.go(anchor.href);

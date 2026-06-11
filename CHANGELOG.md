@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0] - 2026-06-11
+
+### Changed
+- Click interception now checks route matching before `preventDefault()`: same-origin anchors that do not match any registered route are passed through to native browser navigation instead of rendering the fallback (soft-404). This fixes apps with `basepath: '/'` greedily intercepting every same-origin link — e.g. cross-app links on a shared host (ISSUE-1781049600-router-basepath-root-greedy-intercept)
+
+### Added
+- Vitest-based test infrastructure (`npm test`) with coverage for anchor click interception behavior
+
 ## [0.9.3] - 2026-04-24
 
 ### Fixed
