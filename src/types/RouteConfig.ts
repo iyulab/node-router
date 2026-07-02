@@ -29,7 +29,7 @@ interface BaseRouteConfig {
   path?: string | URLPattern;
 
   /**
-   * 라우트 정보를 받아 렌더링 결과를 반환합니다. 
+   * 라우트 정보를 받아 렌더링 결과를 반환합니다.
    * @param ctx 현재 라우팅 정보 및, 진행 상태 콜백을 포함하는 Context 객체가 인자로 전달됩니다.
    * @example
    * ```typescript
@@ -44,6 +44,18 @@ interface BaseRouteConfig {
    *      return html`<user-profile .data=${userData}></user-profile>`;
    *   }
    * }
+   * ```
+   * @remarks
+   * `render`는 Lit `TemplateResult`, `HTMLElement`, **또는 React 엘리먼트**를 반환할 수 있습니다.
+   * React 엘리먼트를 직접 반환하면 내부 `<u-outlet>`이 `createRoot`/`root.unmount()`를
+   * 자동으로 관리합니다 — React 루트를 직접 만들어 컨테이너 `HTMLElement`로 감싸 반환하면
+   * 이 자동 해제 지점을 우회하게 되어 라우트 전환마다 unmount가 호출되지 않는 누수가 생깁니다.
+   * @example
+   * ```tsx
+   * const route = {
+   *   path: '/users/:id',
+   *   render: (ctx) => <UserProfilePage userId={ctx.params.id} />, // React 엘리먼트를 직접 반환
+   * };
    * ```
    */
   render?: (ctx: RouteContext) => Promise<unknown> | unknown;

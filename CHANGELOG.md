@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.10.1] - 2026-07-02
+
+### Documentation
+- `RouteConfig.render` JSDoc: clarified that returning a React element directly lets `<u-outlet>` auto-manage `createRoot`/`root.unmount()` — wrapping it in a manually-created container `HTMLElement` bypasses this and leaks the React root on route change. Added a React `@example` alongside the existing Lit one.
+
 ## [0.10.0] - 2026-06-11
 
 ### Changed
