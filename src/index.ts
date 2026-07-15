@@ -1,6 +1,3 @@
-// global.d.ts reference
-import './global.d.ts';
-
 // types exports
 export * from './types/NavigateOptions';
 export * from './types/RouteConfig';

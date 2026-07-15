@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.2] - 2026-07-15
+
+### Changed
+- Click interception now reuses the route match computed while deciding whether to intercept an anchor, instead of recomputing it inside `go()` — avoids a duplicate `getRoutes` call per intercepted click
+- Bumped `@types/node`, `@types/react`, `happy-dom`, `vite`, `vite-plugin-dts`, `vitest` devDependencies
+
 ## [0.10.1] - 2026-07-02
 
 ### Documentation

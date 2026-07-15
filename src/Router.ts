@@ -73,8 +73,11 @@ export class Router {
    * 지정한 경로의 클라이언트 라우팅을 수행합니다. 상대경로일 경우 basepath와 조합되어 이동합니다.
    * @param href 이동할 경로
    * @param options 네비게이션 옵션
+   * @param routes (internal) 호출자가 이미 계산한 라우트 매칭 결과가 있으면 재사용합니다.
+   *   `handleRootElementClick`이 가로채기 여부 판단을 위해 미리 계산한 결과를 전달해
+   *   동일 pathname에 대한 getRoutes 중복 호출을 피하는 용도입니다. 외부에서 사용하지 마세요.
    */
-  public async go(href: string, options?: NavigateOptions) {
+  public async go(href: string, options?: NavigateOptions, routes?: RouteConfig[]) {
     if (!options?.isRedirect) this._tracker.reset();
 
     const requestID = getRandomID();
@@ -100,7 +103,7 @@ export class Router {
       
       // 라우트 매칭 및 context 완성 (params, metadata)
       // → enter/이벤트 실행 전에 context를 완전히 채웁니다.
-      const routes = getRoutes(this._routes, context.pathname);
+      routes ??= getRoutes(this._routes, context.pathname);
       if (routes.length === 0) throw new NotFoundError(context.href);
 
       const lastRoute = routes[routes.length - 1];
@@ -222,10 +225,12 @@ export class Router {
       if (this._basepath !== '/' && !pathname.startsWith(this._basepath)) return;
       // 등록된 라우트에 매칭되지 않는 경로는 가로채지 않고 네이티브 내비게이션에 맡깁니다.
       // (특히 basepath '/'에서 다른 앱의 경로를 soft-404로 렌더하는 것을 방지)
-      if (getRoutes(this._routes, pathname).length === 0) return;
+      const routes = getRoutes(this._routes, pathname);
+      if (routes.length === 0) return;
 
       e.preventDefault();
-      await this.go(anchor.href);
+      // 위에서 계산한 매칭 결과를 그대로 전달해 go() 내부의 getRoutes 재계산을 생략합니다.
+      await this.go(anchor.href, undefined, routes);
     } catch {
       // 예외는 무시하고 기본 동작 유지
     }
