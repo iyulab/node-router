@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.3] - 2026-07-24
+
+### Fixed
+- **root 안에 `<u-outlet>` 이 없을 때 초기화 실패가 삼켜지던 문제 수정** (U-CMMS React+Vite E2E 실측, ISSUE-20260722-router-react-consumption #1). `waitOutlet` 은 타임아웃 시 서술적 오류로 reject 하지만, `Router` 생성자가 `void waitOutlet(...).then(...)` 로 거부를 처리하지 않아 폴링 타임아웃(최대 10초) 뒤 unhandled rejection 으로만 새어 나갔다 — 소비자에겐 원인 없는 빈 화면이었다. 이제 `.catch()` 로 `console.error('Router initialization failed:', …)` 에 명시적으로 표면화한다.
+
+### Documentation
+- README에 "React + Vite" 섹션 추가 — 아웃렛의 `react-dom/client` 동적 import 가 Vite dev 사전번들(`optimizeDeps`)에서 깨지는 CJS interop 을 `optimizeDeps.exclude: ['@iyulab/router']` + `include: ['react-dom/client']` 로 해소하는 소비 설정 명시(초안 #2).
+- Quick Start 에 root 의 `<u-outlet>` 요구 + 부재 시 로그 메시지 명시.
+
 ## [0.10.2] - 2026-07-15
 
 ### Changed

@@ -29,6 +29,35 @@ const router = new Router({
 router.go('/users/1');
 ```
 
+> The router renders matched output into a `<u-outlet>` inside `root`. Make sure one exists:
+>
+> ```html
+> <div id="app"><u-outlet></u-outlet></div>
+> ```
+>
+> If `root` contains no `<u-outlet>`, the router logs
+> `Router initialization failed: Timed out waiting for <u-outlet>` and renders nothing.
+
+## React + Vite
+
+The outlet renders React content by dynamically importing `react-dom/client` when a route
+returns a React element. Under Vite's dev pre-bundling (`optimizeDeps`), this CommonJS
+interop can break — `TypeError: createRoot is not a function` by default, or
+`ReferenceError: module is not defined` if only the router is excluded. Pre-bundle
+`react-dom/client` while leaving the router itself unbundled:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ['@iyulab/router'],
+    include: ['react-dom/client'],
+  },
+});
+```
+
 ## Skills Usage
 
 Install the `iyulab-router` skill for agent-friendly package guidance.

@@ -42,9 +42,16 @@ export class Router {
       this._rootElement.addEventListener('click', this.handleRootElementClick);
     }
     if (config.initialLoad !== false) {
-      void waitOutlet(this._rootElement).then(() => {
-        this.go(window.location.href);
-      });
+      // waitOutlet 은 root 안에서 <u-outlet> 을 못 찾으면 타임아웃 후 reject 한다.
+      // .catch() 가 없으면 이 거부가 unhandled rejection 으로만 새어 나가(초기 폴링
+      // 시간만큼 지연된 뒤) 소비자는 빈 화면의 원인을 진단하기 어렵다. 명시적으로 표면화한다.
+      waitOutlet(this._rootElement)
+        .then(() => {
+          this.go(window.location.href);
+        })
+        .catch((error) => {
+          console.error('Router initialization failed:', error instanceof Error ? error.message : error);
+        });
     }
   }
 
