@@ -9,7 +9,10 @@ export class LoginPage extends LitElement {
   private login() {
     auth.isAuthenticated = true;
     auth.role = this._role;
-    window.navigation.reload();
+    // Navigation API(`window.navigation`)가 아니라 location 을 쓴다 — router 자신이 Navigation API 를
+    // 쓰지 않으므로(구현은 History API 기반) 데모 픽스처만 아직 표준 lib 에 없는 API 에 의존할
+    // 이유가 없다. 이 한 줄이 패키지 전체 `tsc --noEmit` 을 TS2551 로 깨뜨리고 있었다.
+    window.location.reload();
   }
 
   render() {
