@@ -3,7 +3,7 @@
 ## [0.10.3] - 2026-07-24
 
 ### Fixed
-- **root 안에 `<u-outlet>` 이 없을 때 초기화 실패가 삼켜지던 문제 수정** (U-CMMS React+Vite E2E 실측, ISSUE-20260722-router-react-consumption #1). `waitOutlet` 은 타임아웃 시 서술적 오류로 reject 하지만, `Router` 생성자가 `void waitOutlet(...).then(...)` 로 거부를 처리하지 않아 폴링 타임아웃(최대 10초) 뒤 unhandled rejection 으로만 새어 나갔다 — 소비자에겐 원인 없는 빈 화면이었다. 이제 `.catch()` 로 `console.error('Router initialization failed:', …)` 에 명시적으로 표면화한다.
+- **root 안에 `<u-outlet>` 이 없을 때 초기화 실패가 삼켜지던 문제 수정** (React + Vite 소비 앱의 E2E 실측). `waitOutlet` 은 타임아웃 시 서술적 오류로 reject 하지만, `Router` 생성자가 `void waitOutlet(...).then(...)` 로 거부를 처리하지 않아 폴링 타임아웃(최대 10초) 뒤 unhandled rejection 으로만 새어 나갔다 — 소비자에겐 원인 없는 빈 화면이었다. 이제 `.catch()` 로 `console.error('Router initialization failed:', …)` 에 명시적으로 표면화한다.
 
 ### Documentation
 - README에 "React + Vite" 섹션 추가 — 아웃렛의 `react-dom/client` 동적 import 가 Vite dev 사전번들(`optimizeDeps`)에서 깨지는 CJS interop 을 `optimizeDeps.exclude: ['@iyulab/router']` + `include: ['react-dom/client']` 로 해소하는 소비 설정 명시(초안 #2).
@@ -23,7 +23,7 @@
 ## [0.10.0] - 2026-06-11
 
 ### Changed
-- Click interception now checks route matching before `preventDefault()`: same-origin anchors that do not match any registered route are passed through to native browser navigation instead of rendering the fallback (soft-404). This fixes apps with `basepath: '/'` greedily intercepting every same-origin link — e.g. cross-app links on a shared host (ISSUE-1781049600-router-basepath-root-greedy-intercept)
+- Click interception now checks route matching before `preventDefault()`: same-origin anchors that do not match any registered route are passed through to native browser navigation instead of rendering the fallback (soft-404). This fixes apps with `basepath: '/'` greedily intercepting every same-origin link — e.g. cross-app links on a shared host
 
 ### Added
 - Vitest-based test infrastructure (`npm test`) with coverage for anchor click interception behavior
