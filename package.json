@@ -32,7 +32,7 @@
   },
   "sideEffects": [
     "./src/components/*.ts",
-    "./dist/index.js"
+    "./dist/*.js"
   ],
   "exports": {
     ".": {
