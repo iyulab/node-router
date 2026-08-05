@@ -27,14 +27,21 @@
   ],
   "type": "module",
   "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": [
+    "./src/components/*.ts",
+    "./dist/index.js"
+  ],
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
       "import": "./src/index.js"
     },
     "./react": {
-      "types": "./dist/react.d.ts",
-      "import": "./dist/react.js"
+      "types": "./src/react.d.ts",
+      "import": "./src/react.js"
     }
   },
   "scripts": {
