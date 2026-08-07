@@ -47,6 +47,28 @@ export class ULink extends LitElement {
    */
   @property({ type: String }) href?: string;
 
+  /**
+   * 이 링크를 라우터가 처리할지, 브라우저의 문서 이동에 맡길지.
+   *
+   * - `router`(기본): 종전 동작 그대로 — 같은 오리진이면 SPA 이동, 아니면 브라우저에 맡긴다.
+   * - `document`: 라우터가 **가로채지 않는다.** 같은 오리진이지만 SPA 라우트가 아닌 경로
+   *   (정적 문서 사이트, 서버 렌더 페이지, 파일 다운로드 엔드포인트, 인증 리다이렉트)를 가리킬 때 쓴다.
+   *
+   * ⚠**「외부 오리진」이 아니라 「다른 문서」다.** 종전에는 이 구분이 **오리진 비교 하나**로만
+   * 결정돼서, 같은 오리진의 비-SPA 경로를 가리킬 수단이 없었다 — 라우터가 클릭을 가로채고
+   * 등록되지 않은 라우트이므로 화면이 not-found 로 떨어졌다. 빠져나갈 길이 셋뿐이었고
+   * (다른 오리진 · `target="_blank"` · `#` 프래그먼트) 셋 다 요구와 다르다:
+   * 같은 오리진이어야 하고(쿠키·세션·역방향 프록시), **같은 탭**이어야 하며, 다른 문서다.
+   *
+   * ```html
+   * <u-link href="/help/" navigate="document">Help</u-link>
+   * ```
+   *
+   * ⚠**자동 판정을 넓히지 않는다.** 「등록된 라우트와 대조해 미등록이면 문서 이동」도 가능하지만
+   * 라우트가 늦게 등록되면 판정이 **시점에 의존**하게 된다. 명시 선언이 예측 가능하다.
+   */
+  @property({ type: String }) navigate?: "router" | "document";
+
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener("click", this.handleClick);
@@ -71,6 +93,7 @@ export class ULink extends LitElement {
         href=${this.compute(this.href)}
         target=${ifDefined(this.target)}
         rel=${ifDefined(this.rel)}
+        data-navigate=${ifDefined(this.navigate)}
       >
         <slot></slot>
       </a>
@@ -109,6 +132,9 @@ export class ULink extends LitElement {
 
     // target이 _blank 등으로 지정되면 브라우저 동작 유지
     if (this.target && this.target.toLowerCase() !== "_self") return;
+
+    // 문서 이동으로 선언됐으면 라우터는 손대지 않는다 (같은 오리진의 비-SPA 경로)
+    if (this.navigate === "document") return;
 
     const basepath = this.getBasepath();
 

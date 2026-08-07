@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`<u-link navigate="document">` — link to a same-origin path the router does not own.**
+  Whether a link was "external" was decided by an origin comparison alone, so there was no way to
+  point at a same-origin path that is not a SPA route: a static docs site, a server-rendered page,
+  a download endpoint, an auth redirect. The router intercepted the click and, with no matching
+  route, the screen fell through to not-found.
+
+  The three available escapes all meant something else: a different origin (the requirement is the
+  *same* origin — cookies, session, reverse proxy), `target="_blank"` (forces a new tab; same-tab
+  navigation was unexpressible), and a `#` fragment (not another document).
+
+  `navigate` defaults to `router`, so existing behaviour is unchanged. The rendered anchor carries
+  `data-navigate="document"`, which the router's global anchor delegation also honours — the
+  element handler alone is not enough, since a link pointing at a *registered* route would
+  otherwise be intercepted there instead.
+
+  The name is deliberately not `external`: this module already uses `isExternalUrl`/`isExternal`
+  with origin semantics, and the question here is about the document, not the origin.
+
 ### Fixed
 
 - **`sideEffects` omitted the source-resolved entry barrel.** The allowlist covered the built

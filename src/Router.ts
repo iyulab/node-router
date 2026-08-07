@@ -226,6 +226,11 @@ export class Router {
       if (isExternalUrl(href)) return;
       if (anchor.hasAttribute('download')) return;
       if (anchor.getAttribute('rel') === 'external') return;
+      // 「이 링크는 다른 문서다」 — 같은 오리진의 비-SPA 경로. `u-link[navigate="document"]` 가
+      // 렌더하는 앵커에 붙고, 평범한 `<a>` 에 직접 써도 동작한다.
+      // ⚠ULink 의 핸들러만 고치면 부족하다: 그쪽이 preventDefault 를 하지 않아도 이 전역
+      //   위임이 뒤이어 받으므로, 등록된 라우트를 가리키는 경우 여기서 다시 가로채진다.
+      if (anchor.getAttribute('data-navigate') === 'document') return;
       if (anchor.target && anchor.target !== '') return;
 
       const pathname = new URL(anchor.href).pathname;

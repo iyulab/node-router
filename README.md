@@ -141,12 +141,31 @@ const routes = [
 - `<u-link>`: SPA-aware anchor element
 - `<u-outlet>`: render target for matched route output
 
-`<u-link>` supports `href`, `target`, and `rel`.
+`<u-link>` supports `href`, `target`, `rel`, and `navigate`.
 
 ```html
 <u-link href="/docs">Docs</u-link>
 <u-link href="https://example.com" target="_blank" rel="noopener noreferrer">External</u-link>
 ```
+
+### Linking to a path the router does not own
+
+Not every path on your origin is a SPA route. A static docs site, a server-rendered
+page, a report endpoint, an auth redirect — these live alongside your routes and must
+open as documents, in the same tab. Declare that with `navigate="document"`:
+
+```html
+<u-link href="/help/" navigate="document">Help</u-link>
+```
+
+The router leaves the click alone and the browser navigates normally. The same works
+on a plain anchor via `data-navigate="document"`, which is what the element renders.
+
+`navigate` defaults to `router`: same-origin links are handled as SPA navigation, as
+before. Note that `navigate` asks a different question than the automatic origin check
+— not *"is this another origin?"* but *"is this another document?"* Without it the only
+escapes were a different origin, `target="_blank"` (which forces a new tab), or a `#`
+fragment (which is not another document at all).
 
 React wrappers:
 
