@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "lit",
@@ -54,7 +54,8 @@
   },
   "dependencies": {
     "@lit/react": "^1.0.8",
-    "lit": "^3.3.3"
+    "lit": "^3.3.3",
+    "urlpattern-polyfill": "^10.1.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.11.1] - 2026-08-20
+
+### Fixed
+
+- **Route matching threw `ReferenceError: URLPattern is not defined` on browsers that ship
+  without the URL Pattern API.** The router constructs routes with the global `URLPattern`
+  constructor directly; browsers that have not yet shipped it (older Safari and Firefox
+  releases are still common in the field) failed synchronously in `new Router(...)`, before
+  any route could render. A guarded polyfill (`urlpattern-polyfill`, self-installs only when
+  `globalThis.URLPattern` is absent) is now imported by the router's internals, so browsers
+  without native support get a working fallback and browsers with native support are
+  unaffected at runtime.
+
+### Internal
+
+- Router's own `URLPattern` construction now runs through a small local type shim — the
+  polyfill package's bundled types have not yet caught up to the constructor's `options`
+  argument (`ignoreCase`), even though its runtime implementation already supports it.
+
 ## [0.11.0] - 2026-08-07
 
 ### Added

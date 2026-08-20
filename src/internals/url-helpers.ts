@@ -1,3 +1,5 @@
+import "urlpattern-polyfill";
+
 import type { RouteContext } from "../types/RouteContext";
 
 /**

@@ -1,7 +1,19 @@
+import "urlpattern-polyfill";
+
 import { getRandomID } from "./crypto-helpers";
 import { absolutePath } from "./url-helpers";
 
 import type { RouteConfig } from "../types/RouteConfig";
+
+/**
+ * `urlpattern-polyfill`의 번들 타입 선언이 `options` 인자를 아직 반영하지 않는다(런타임
+ * 구현은 WHATWG 스펙대로 `ignoreCase`를 지원한다 — `dist/index.js`의 3항 생성자 실측
+ * 확인됨). 그 타입 공백만 좁혀서 캐스트한다.
+ */
+const createURLPattern = URLPattern as unknown as new (
+  init: { pathname: string },
+  options?: { ignoreCase?: boolean }
+) => URLPattern;
 
 /**
  * 라우트들을 다음 사항에 따라 재귀적으로 재설정합니다.
@@ -20,7 +32,7 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
     
     if (route.index === true) {
       // 인덱스 라우트는 현재 basepath를 URLPattern으로 설정
-      route.path = new URLPattern({ pathname: `${basepath}{/}?` }, {
+      route.path = new createURLPattern({ pathname: `${basepath}{/}?` }, {
         ignoreCase: route.ignoreCase,
       });
       route.force ||= true;
@@ -28,14 +40,14 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
       if (typeof route.path === 'string') {
         // 경로 라우트 처리 - string이면 URLPattern으로 변환
         const absolutePathStr = absolutePath(basepath, route.path);
-        route.path = new URLPattern({ pathname: `${absolutePathStr}{/}?` }, {
+        route.path = new createURLPattern({ pathname: `${absolutePathStr}{/}?` }, {
           ignoreCase: route.ignoreCase,
         });
       } else if (route.path instanceof URLPattern) {
         // 이미 URLPattern인 경우, 아무것도 하지 않음
       } else {
         // 경로가 설정되지 않은 경우 현재 basepath를 사용
-        route.path = new URLPattern({ pathname: `${basepath}{/}?` }, {
+        route.path = new createURLPattern({ pathname: `${basepath}{/}?` }, {
           ignoreCase: route.ignoreCase,
         });
       }
