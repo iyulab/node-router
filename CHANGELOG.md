@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.2] - 2026-08-25
+
+### Fixed
+
+- **`aria-current`/`aria-label` set on `<u-link>` never reached the accessibility tree.** The
+  host attribute was present, but the actual interactive node exposed to assistive technology
+  is the native `<a>` rendered inside the shadow root — ARIA content attributes on a shadow
+  host do not cross the shadow boundary to label or mark current a descendant. Navigation
+  links relying on `aria-current="page"` to announce the active item, or on `aria-label` for
+  their accessible name, were exposed with neither. `render()` now forwards both host
+  attributes onto the internal `<a>`, and changes made after connection are observed and
+  re-rendered.
+
 ## [0.11.1] - 2026-08-20
 
 ### Fixed

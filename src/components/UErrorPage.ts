@@ -5,6 +5,15 @@ import { RouteError } from '../types/RouteError.js';
 
 /**
  * 라우팅 중 발생한 에러 정보를 사용자에게 전달하기 위한 기본 컴포넌트 입니다.
+ *
+ * `Router`가 `fallback`을 지정하지 않았을 때 내부적으로 그리는 기본 화면이라
+ * `src/index.ts`에서 공개 export되지 않는다 — 직접 import해 쓰는 컴포넌트가
+ * 아니다. 다만 라우팅 실패 시 실제 DOM에 렌더되므로, 기본 화면의 색만 가볍게
+ * 맞추고 싶은 소비자를 위해 세 색상 훅을 남겨 둔다(전체 교체는 `fallback.render`).
+ *
+ * @cssprop --error-icon-color - 아이콘 색. 기본값 없음(미지정 시 상속된 색 사용)
+ * @cssprop --error-code-color - 에러 코드 텍스트 색. 기본값 없음(미지정 시 상속된 색 사용)
+ * @cssprop --error-message-color - 에러 메시지 텍스트 색. 기본값 없음(미지정 시 상속된 색 사용)
  */
 @customElement('u-error-page')
 export class UErrorPage extends LitElement {

@@ -79,6 +79,27 @@ export class ULink extends LitElement {
     super.disconnectedCallback();
   }
 
+  /**
+   * 호스트에 세팅된 `aria-current`/`aria-label`은 실제 접근 가능한(포커스 대상)
+   * 엘리먼트가 아니라 — 그 안쪽 shadow DOM 의 네이티브 `<a>`다. 섀도우 경계를
+   * 넘지 않으므로 접근성 트리에 자동 반영되지 않는다(docket #45 실측 — 속성은
+   * 붙어 있는데 접근성 트리의 `aria-current`는 계속 비어 있음). `render()`가 이
+   * 값을 읽어 내부 `<a>`에 직접 옮긴다.
+   *
+   * 둘 다 Lit 리액티브 프로퍼티로 선언돼 있지 않아 `observedAttributes`에 없다 —
+   * 그 목록에 없는 속성은 `attributeChangedCallback` 자체가 호출되지 않는다
+   * (커스텀 엘리먼트 표준 동작). 초기 렌더는 되지만 연결 후 동적 변경은 반영되지
+   * 않았다 — 목록에 명시적으로 추가해야 한다.
+   */
+  static get observedAttributes(): string[] {
+    return [...super.observedAttributes, 'aria-current', 'aria-label'];
+  }
+
+  attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    super.attributeChangedCallback(name, old, value);
+    if (name === 'aria-current' || name === 'aria-label') this.requestUpdate();
+  }
+
   protected willUpdate(changedProperties: PropertyValues): void {
     super.willUpdate(changedProperties);
 
@@ -94,6 +115,8 @@ export class ULink extends LitElement {
         target=${ifDefined(this.target)}
         rel=${ifDefined(this.rel)}
         data-navigate=${ifDefined(this.navigate)}
+        aria-current=${ifDefined(this.getAttribute('aria-current') ?? undefined)}
+        aria-label=${ifDefined(this.getAttribute('aria-label') ?? undefined)}
       >
         <slot></slot>
       </a>
