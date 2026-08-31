@@ -54,8 +54,9 @@ export function findOutletOrThrow(element: HTMLElement, skip = false): UOutlet {
  */
 export async function waitOutlet(element: HTMLElement, timeout = 10_000, skip = false): Promise<UOutlet> {
   const start = performance.now();
+  const deadline = start + timeout;
 
-  while (performance.now() - start < timeout) {
+  while (performance.now() < deadline) {
     const outlet = findOutlet(element, skip);
     if (outlet) return outlet;
 
@@ -69,9 +70,25 @@ export async function waitOutlet(element: HTMLElement, timeout = 10_000, skip = 
       await (element as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
     }
 
-    // DOM 연결/렌더 반영을 위해 다음 프레임까지 대기
-    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    // DOM 연결/렌더 반영을 위해 다음 프레임까지 대기.
+    //
+    // 완전히 suspend된(백그라운드) 탭에서는 requestAnimationFrame이 영원히 발화하지
+    // 않을 수 있다 — rAF에만 의존하면 이 while 루프 자체를 못 빠져나온다(performance.now()
+    // 재평가가 rAF resolve 이후에만 일어나므로). 남은 시간으로 만든 타이머와 경합시켜
+    // 루프가 항상 빠져나오도록 한다(setTimeout은 백그라운드에서도 스로틀만 될 뿐 rAF처럼
+    // 완전히 멈추지 않는다).
+    const remaining = deadline - performance.now();
+    if (remaining <= 0) break;
+    await Promise.race([
+      new Promise<void>(resolve => requestAnimationFrame(() => resolve())),
+      new Promise<void>(resolve => setTimeout(resolve, remaining)),
+    ]);
   }
+
+  // 루프를 막 빠져나온 프레임에 아웃렛이 이미 준비됐을 수 있다 — 마지막 재확인 없이
+  // 곧장 throw하면 그 경쟁 상태에서 오탐(false timeout)이 난다.
+  const outlet = findOutlet(element, skip);
+  if (outlet) return outlet;
 
   throw new Error(
     `Timed out waiting for <u-outlet> inside <${element.tagName.toLowerCase()}>. ` +
