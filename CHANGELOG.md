@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.3] - 2026-08-31
+
+### Fixed
+
+- **`waitOutlet()` could hang forever in a backgrounded tab.** The wait loop
+  only re-checked for the outlet after each `requestAnimationFrame`
+  resolved, and a fully suspended tab can stop firing `rAF` entirely (not
+  just throttle it), so the loop never exited. It now races each `rAF`
+  wait against a `setTimeout` for the remaining budget, and does one more
+  outlet check immediately before throwing — the deadline can pass in the
+  exact frame the outlet became ready, and without that final check that
+  read as a false timeout.
+
 ## [0.11.2] - 2026-08-25
 
 ### Fixed
