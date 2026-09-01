@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.4] - 2026-09-01
+
+### Fixed
+
+- **Three error messages gave no way to act on the failure.** `UOutlet.render()`
+  threw a generic "not supported content type" without saying what type it
+  actually received or what's supported; `getRoutes()` threw a garbled,
+  comma-spliced message that leaked an internal function name
+  (`setRoutes`) instead of the actual `path` value; and a route whose
+  `render()` returned a non-renderable value threw "Failed to load content
+  for the route." with no route path or id to identify which route failed.
+  All three now interpolate the actual value/route and name the expected
+  shape.
+
 ## [0.11.3] - 2026-08-31
 
 ### Fixed
