@@ -45,7 +45,11 @@ class UOutlet extends HTMLElement {
       this.root = createRoot(this);
       this.root.render(value);
     } else {
-      throw new Error('not supported content type for Outlet rendering.');
+      const receivedType = value?.constructor?.name ?? typeof value;
+      throw new Error(
+        `Unsupported content type for Outlet rendering: received ${receivedType}. ` +
+          `Expected an HTMLElement, a Lit TemplateResult, or a React element.`,
+      );
     }
   }
 

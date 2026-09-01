@@ -95,7 +95,12 @@ export function getRoutes(routes: RouteConfig[], pathname: string): RouteConfig[
       const isMatch = route.path.test({ pathname: pathname });
       if (isMatch) return [route];
     } else {
-      throw new Error('Route path must be an instance of URLPattern, Something wrong in setRoutes function.');
+      throw new Error(
+        `Route "path" must be a URLPattern, but got ${JSON.stringify(route.path)}. ` +
+          `Routes passed to the Router must go through its normal config flow ` +
+          `(new Router({ routes: [...] })), which normalizes string paths into ` +
+          `URLPattern before matching — a route object was matched before that step ran.`,
+      );
     }
   }
   return [];

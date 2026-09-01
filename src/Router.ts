@@ -154,7 +154,11 @@ export class Router {
         try {
           content = await route.render(context);
           if (content === false || content === undefined || content === null) {
-            throw new Error('Failed to load content for the route.');
+            throw new Error(
+              `Route render() returned ${content === false ? 'false' : String(content)} for ` +
+                `"${context.pathname}"${route.id ? ` (route id: "${route.id}")` : ''} — ` +
+                `a route's render() must return an HTMLElement, a Lit TemplateResult, or a React element.`,
+            );
           }
         } catch (e) {
           throw new ContentLoadError(e);
