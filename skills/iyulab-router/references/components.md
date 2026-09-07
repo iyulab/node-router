@@ -49,11 +49,16 @@ A parent route must render `<u-outlet>` to host child route content.
 custom properties are available to lightly restyle it without replacing
 `fallback.render` entirely:
 
-| Custom Property | Description | Default |
-| --- | --- | --- |
-| `--error-icon-color` | Icon color | none — inherits the ambient text color |
-| `--error-code-color` | Error code text color | none — inherits the ambient text color |
-| `--error-message-color` | Error message text color | none — inherits the ambient text color |
+| Custom Property | Description | Default (light) | Default (dark) |
+| --- | --- | --- | --- |
+| `--error-icon-color` | Icon color | `#4a5568` | `#a0aec0` |
+| `--error-code-color` | Error code text color | `#1a202c` | `#f7fafc` |
+| `--error-message-color` | Error message text color | `#718096` | `#cbd5e0` |
+
+The defaults are concrete colors set on `:host`, not inherited — the dark column applies
+under `prefers-color-scheme: dark`. Because they are literals rather than design tokens,
+this page does not follow a host application's theme; set the three properties (or supply
+your own `fallback.render`) if it has to.
 
 ```css
 u-error-page {

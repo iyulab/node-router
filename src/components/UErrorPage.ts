@@ -11,9 +11,13 @@ import { RouteError } from '../types/RouteError.js';
  * 아니다. 다만 라우팅 실패 시 실제 DOM에 렌더되므로, 기본 화면의 색만 가볍게
  * 맞추고 싶은 소비자를 위해 세 색상 훅을 남겨 둔다(전체 교체는 `fallback.render`).
  *
- * @cssprop --error-icon-color - 아이콘 색. 기본값 없음(미지정 시 상속된 색 사용)
- * @cssprop --error-code-color - 에러 코드 텍스트 색. 기본값 없음(미지정 시 상속된 색 사용)
- * @cssprop --error-message-color - 에러 메시지 텍스트 색. 기본값 없음(미지정 시 상속된 색 사용)
+ * @cssprop --error-icon-color - 아이콘 색. 기본값 `#4a5568`(다크 `#a0aec0`)
+ * @cssprop --error-code-color - 에러 코드 텍스트 색. 기본값 `#1a202c`(다크 `#f7fafc`)
+ * @cssprop --error-message-color - 에러 메시지 텍스트 색. 기본값 `#718096`(다크 `#cbd5e0`)
+ *
+ * ⚠세 값은 아래 `static styles` 의 `:host` 에서 **구체적인 색으로 선언된다** — 지정하지
+ * 않으면 주변 색을 상속하는 것이 아니라 위 기본값이 적용된다. 리터럴이므로 이 페이지는
+ * 호스트 앱의 디자인 토큰을 따르지 않는다.
  */
 @customElement('u-error-page')
 export class UErrorPage extends LitElement {
