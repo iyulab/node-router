@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.5] - 2026-09-10
+
+### Fixed
+
+- **`u-error-page`'s three colour hooks were documented as having no default.** They were
+  described as falling back to the inherited colour, when the host block in fact declares a
+  concrete colour for each — `--error-icon-color` `#4a5568` (dark `#a0aec0`),
+  `--error-code-color` `#1a202c` (dark `#f7fafc`), `--error-message-color` `#718096`
+  (dark `#cbd5e0`). A consumer reading the old text would expect the page to pick up the
+  surrounding colour and find that it does not. The documentation now also states the
+  consequence those literals carry: this page does not follow the host application's design
+  tokens, and replacing it wholesale is what `fallback.render` is for. No behaviour changed.
+
 ## [0.11.4] - 2026-09-01
 
 ### Fixed
