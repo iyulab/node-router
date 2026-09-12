@@ -71,7 +71,8 @@ const router = new Router({
 | `children` | `RouteConfig[]` | Nested routes; parent must render `<u-outlet>` |
 | `title` | `string` | Sets `document.title` on match |
 | `metadata` | `Record<string, unknown>` | Arbitrary metadata (auth, layout, analytics) |
-| `force` | `boolean` | Force re-render on URL change (default `true` for leaf routes) |
+| `key` | `(ctx) => string` | When to remount: content is kept and re-rendered in place while the key is unchanged (Lit: same part, React: same root, `HTMLElement`: instance kept). Default `ctx => ctx.href` for leaf routes, a constant for routes with `children`. `key: ctx => ctx.pathname` keeps a page across query-string changes |
+| `force` | `boolean` | **Deprecated** — use `key`. `false` ≡ constant key (keep), `true` ≡ default |
 
 ## RouteContext Fields
 

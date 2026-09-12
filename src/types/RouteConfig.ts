@@ -73,9 +73,35 @@ interface BaseRouteConfig {
   enter?: (ctx: RouteContext) => Promise<string | boolean> | string | boolean;
 
   /**
-   * 라우터 URL 변경시 렌더링을 강제할지 여부
-   * - 기본값으로 children을 가질때 false로 설정되며, children이 없을 경우 true로 설정됩니다.
-   * - true로 설정하면 기존 렌더링을 무시하고 새로 렌더링합니다.
+   * 이 라우트의 콘텐츠를 **언제 새로 만들 것인가**를 정하는 식별 키입니다.
+   *
+   * 네비게이션마다 `key(ctx)`를 계산해 직전 값과 비교합니다.
+   * - 키가 **바뀌면** 기존 콘텐츠를 내리고 새로 마운트합니다.
+   * - 키가 **같으면** 콘텐츠를 유지한 채 `render(ctx)`의 결과로 **제자리 갱신**합니다 —
+   *   Lit 템플릿은 같은 파트에 다시 렌더(DOM·요소 상태 유지, 바인딩만 갱신), React 엘리먼트는
+   *   같은 root에 다시 렌더(컴포넌트 상태 유지, props만 갱신), `HTMLElement`는 기존 인스턴스를
+   *   그대로 둡니다(조정할 수단이 없습니다). 새 `ctx`는 따로 전달되지 않고 `render(ctx)`를
+   *   통해 도달합니다.
+   *
+   * 기본값: 자식 라우트가 없으면 `ctx => ctx.href`(URL이 조금이라도 바뀌면 새로), 자식 라우트가
+   * 있으면 상수(레이아웃은 유지하고 자식만 바뀝니다).
+   *
+   * @example
+   * ```typescript
+   * // 쿼리스트링만 바뀌면 페이지를 유지하고 prop만 갱신 — 목록 상태·스크롤이 살아남습니다
+   * { path: '/orders', key: ctx => ctx.pathname,
+   *   render: ctx => html`<orders-page .selectedId=${ctx.query.get('id')}></orders-page>` }
+   * // params가 바뀌어도 유지
+   * { path: '/orders/:id', key: () => 'orders', render: ctx => html`...` }
+   * ```
+   */
+  key?: (ctx: RouteContext) => string;
+
+  /**
+   * @deprecated `key`로 표현하세요 — `force: false`는 `key: () => ''`(상수 키)와 같고 `force: true`는
+   * 기본값과 같습니다. 이 판에서는 동작을 유지하며, 다음 minor에서 제거됩니다.
+   * ⚠이전 판에서는 자식이 없는 라우트에 `force: false`를 줘도 무시됐습니다(기본값 적용 순서의 결함).
+   * 이제 `force: false`는 모든 라우트에서 «유지»를 뜻합니다.
    */
   force?: boolean;
 

@@ -4,6 +4,7 @@ import { getRandomID } from "./crypto-helpers";
 import { absolutePath } from "./url-helpers";
 
 import type { RouteConfig } from "../types/RouteConfig";
+import type { RouteContext } from "../types/RouteContext";
 
 /**
  * `urlpattern-polyfill`의 번들 타입 선언이 `options` 인자를 아직 반영하지 않는다(런타임
@@ -14,6 +15,20 @@ const createURLPattern = URLPattern as unknown as new (
   init: { pathname: string },
   options?: { ignoreCase?: boolean }
 ) => URLPattern;
+
+/**
+ * `key` 가 없을 때의 기본 식별 키 — «언제 새로 만드는가» 의 기본 규칙.
+ *
+ * 자식이 없는 라우트는 URL(`href`) 이 조금이라도 바뀌면 새로 마운트하고, 자식을 가진 라우트
+ * (레이아웃)는 상수 키로 유지된다 — 종전의 `force` 기본값(leaf true · parent false)과 같은
+ * 결과다. 다만 종전 코드는 `route.force ||= true` 라서 소비자가 leaf 에 `force: false` 를
+ * 명시해도 `true` 로 덮였다(`false || true`). `force` 는 deprecate 됐지만 이 판에서는
+ * 존중한다: `false` 는 «유지», `true` 는 «새로».
+ */
+function defaultKey(route: RouteConfig, hasChildren: boolean): (ctx: RouteContext) => string {
+  const keep = route.force === false || (hasChildren && route.force !== true);
+  return keep ? () => '' : (ctx) => ctx.href;
+}
 
 /**
  * 라우트들을 다음 사항에 따라 재귀적으로 재설정합니다.
@@ -35,7 +50,7 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
       route.path = new createURLPattern({ pathname: `${basepath}{/}?` }, {
         ignoreCase: route.ignoreCase,
       });
-      route.force ||= true;
+      route.key ??= defaultKey(route, false);
     } else {
       if (typeof route.path === 'string') {
         // 경로 라우트 처리 - string이면 URLPattern으로 변환
@@ -57,12 +72,9 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
         // URLPattern에서 자식 route에 맞는 basepath 추출
         const childBasepath = route.path.pathname.replace('{/}?', '');
         route.children = setRoutes(route.children, childBasepath);
-
-        // 자식 라우트가 있으면 강제 렌더링 false
-        route.force ||= false;
+        route.key ??= defaultKey(route, true);
       } else {
-        // 자식 라우트가 없으면 강제 렌더링 true
-        route.force ||= true;
+        route.key ??= defaultKey(route, false);
       }
     }
   }

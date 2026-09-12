@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.12.0] - 2026-09-13
+
+### Added
+
+- **`RouteConfig.key` — the route decides when its content is remounted.** Each navigation
+  computes `key(ctx)`; while it is unchanged the outlet keeps the mounted content and re-renders
+  it in place with the new `ctx` — a Lit template is rendered into the same part (elements and
+  their state survive, only bindings change), a React element into the same root (component
+  state survives, props change), and an `HTMLElement` is left as it is. A changed key unmounts
+  and mounts fresh, as every navigation did before. Click interception, `go()` and `popstate`
+  all follow the one rule because it lives on the route, not on the call. The default is
+  `ctx => ctx.href` for leaf routes, so nothing changes until a route opts in:
+  `{ path: '/orders', key: ctx => ctx.pathname, render: ctx => html`<orders-page .selectedId=${ctx.query.get('id')}></orders-page>` }`
+  keeps the list — its scroll, selection and loaded rows — while `?id=` opens and closes a
+  detail overlay.
+
+### Changed
+
+- **A layout route (one with `children`) is now re-rendered in place when a child changes.** It
+  was already kept across child navigations, but its `render(ctx)` result was thrown away, so a
+  layout could never react to the current `ctx` (an active-menu highlight, a breadcrumb). It now
+  receives the new `ctx` through the same in-place path; its inner `<u-outlet>` and the child
+  content are untouched.
+- **Outlet renders are serialised.** A render that arrives while a React mount is still awaiting
+  its dynamic import now waits for that mount instead of racing it.
+
+### Fixed
+
+- **`force: false` on a leaf route was silently ignored.** Defaults were applied with
+  `route.force ||= true`, which turns an explicit `false` into `true` — the documented option
+  could not be set on the routes it was documented for. `force` is now deprecated in favour of
+  `key` (`false` ≡ a constant key, `true` ≡ the default) and, for this release, honoured as
+  written on every route.
+
+### Deprecated
+
+- `RouteConfig.force` — use `key`. Still honoured in this release; removed in the next minor.
+
 ## [0.11.5] - 2026-09-10
 
 ### Fixed

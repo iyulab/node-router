@@ -165,7 +165,7 @@ export class Router {
         }
 
         try {
-          await outlet.render(content, { id: route.id, force: route.force });
+          await outlet.render(content, { id: route.id, key: route.key?.(context) });
         } catch (e) {
           throw new ContentRenderError(e);
         }
@@ -196,7 +196,7 @@ export class Router {
           ? await this._fallback.render({ ...context, error: routeError }) 
           : new UErrorPage(routeError);
         if (outlet) {
-          outlet.render(content, { id: getRandomID(), force: true });
+          outlet.render(content, { id: getRandomID() });
         } else {
           document.body.innerHTML = '';
           document.body.appendChild(content instanceof Node ? content : new UErrorPage(routeError));
