@@ -14,7 +14,7 @@ import type { RouteConfig } from '../src/types/RouteConfig.js';
  *
  * ★NEGATIVE 셋: 기본값(leaf 는 href) 은 종전과 같이 새로 마운트한다 · 부모 레이아웃은 자식이
  *   바뀌어도 유지된다(종전과 같다) · 콘텐츠 종류가 바뀌면 같은 키여도 새로 마운트한다.
- * ★회귀 하나: leaf 의 `force: false` 가 종전에는 `||= true` 로 덮여 «설정할 수 없는» 값이었다.
+ * ★회귀 하나: leaf 에 상수 키를 주면 «유지» 다 — 예전 `force: false` 가 표현하려던 값이고, 그 불리언은 0.13.0 에서 제거됐다.
  */
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -83,9 +83,9 @@ describe('RouteConfig.key — 같은 키면 제자리 갱신', () => {
     expect(second.getAttribute('data-id')).toBe('42');
   });
 
-  it('회귀: leaf 의 force:false 는 이제 «유지» 를 뜻한다 (종전에는 ||= true 로 덮였다)', async () => {
+  it('회귀: leaf 에 상수 key 를 주면 «유지» 다 (예전 force:false 의 자리)', async () => {
     const r = make([
-      { path: '/orders', force: false, render: (ctx) => html`<p class="orders" data-id=${ctx.query.get('id') ?? ''}>orders</p>` },
+      { path: '/orders', key: () => 'orders', render: (ctx) => html`<p class="orders" data-id=${ctx.query.get('id') ?? ''}>orders</p>` },
     ]);
     await settle(r, '/orders');
     const first = outlet.querySelector('p.orders')!;

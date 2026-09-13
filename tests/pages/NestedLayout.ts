@@ -15,7 +15,7 @@ export class NestedLayout extends LitElement {
           <h2>Nested Route Layout</h2>
           <p class="desc">
             이 레이아웃은 부모 라우트 <code>/nested</code>에서 한 번 렌더링되며,
-            자식 경로가 변경되어도 유지됩니다. (force=false)
+            자식 경로가 변경되어도 유지됩니다. (레이아웃의 상수 key)
           </p>
         </div>
 

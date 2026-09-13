@@ -20,14 +20,12 @@ const createURLPattern = URLPattern as unknown as new (
  * `key` 가 없을 때의 기본 식별 키 — «언제 새로 만드는가» 의 기본 규칙.
  *
  * 자식이 없는 라우트는 URL(`href`) 이 조금이라도 바뀌면 새로 마운트하고, 자식을 가진 라우트
- * (레이아웃)는 상수 키로 유지된다 — 종전의 `force` 기본값(leaf true · parent false)과 같은
- * 결과다. 다만 종전 코드는 `route.force ||= true` 라서 소비자가 leaf 에 `force: false` 를
- * 명시해도 `true` 로 덮였다(`false || true`). `force` 는 deprecate 됐지만 이 판에서는
- * 존중한다: `false` 는 «유지», `true` 는 «새로».
+ * (레이아웃)는 상수 키로 유지된다. 그 밖의 규칙은 소비자가 `key` 로 직접 준다 — 예전의
+ * `force` 불리언은 이 두 값(«유지»·«새로»)밖에 표현하지 못해 `key` 로 대체됐고 0.13.0 에서
+ * 제거됐다(`force: false` ≡ `key: () => ''` · `force: true` ≡ 기본값).
  */
-function defaultKey(route: RouteConfig, hasChildren: boolean): (ctx: RouteContext) => string {
-  const keep = route.force === false || (hasChildren && route.force !== true);
-  return keep ? () => '' : (ctx) => ctx.href;
+function defaultKey(hasChildren: boolean): (ctx: RouteContext) => string {
+  return hasChildren ? () => '' : (ctx) => ctx.href;
 }
 
 /**
@@ -50,7 +48,7 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
       route.path = new createURLPattern({ pathname: `${basepath}{/}?` }, {
         ignoreCase: route.ignoreCase,
       });
-      route.key ??= defaultKey(route, false);
+      route.key ??= defaultKey(false);
     } else {
       if (typeof route.path === 'string') {
         // 경로 라우트 처리 - string이면 URLPattern으로 변환
@@ -72,9 +70,9 @@ export function setRoutes(routes: RouteConfig[], basepath: string): RouteConfig[
         // URLPattern에서 자식 route에 맞는 basepath 추출
         const childBasepath = route.path.pathname.replace('{/}?', '');
         route.children = setRoutes(route.children, childBasepath);
-        route.key ??= defaultKey(route, true);
+        route.key ??= defaultKey(true);
       } else {
-        route.key ??= defaultKey(route, false);
+        route.key ??= defaultKey(false);
       }
     }
   }

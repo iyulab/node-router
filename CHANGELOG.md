@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.13.0] - 2026-09-13
+
+### Removed
+
+- **`RouteConfig.force`** — deprecated in 0.12.0, removed as announced. It only ever expressed
+  the two values `key` already covers: `force: false` is `key: () => ''` (keep the mounted
+  content across every navigation that matches the route), `force: true` is the default
+  (`ctx => ctx.href` — remount when the URL changes at all). Replace one with the other; a
+  route that never set `force` is unaffected. The property is gone from the type, so a stale
+  usage fails at compile time rather than silently doing nothing.
+
 ## [0.12.0] - 2026-09-13
 
 ### Added

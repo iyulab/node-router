@@ -15,7 +15,7 @@ export class DeepPage extends LitElement {
         <p>3-level 중첩 라우트 <code>/nested/deep/:id</code>의 아이템 페이지입니다.</p>
         <p class="hint">
           <code>nested-layout</code> → <code>deep-layout</code> 은 유지된 채로
-          이 컴포넌트만 교체됩니다. (force=true)
+          이 컴포넌트만 교체됩니다. (leaf 의 기본 key)
         </p>
         <div class="nav">
           ${['item-1', 'item-2', 'item-3'].filter(i => i !== this.itemId).map(id => html`

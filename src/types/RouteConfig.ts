@@ -98,14 +98,6 @@ interface BaseRouteConfig {
   key?: (ctx: RouteContext) => string;
 
   /**
-   * @deprecated `key`로 표현하세요 — `force: false`는 `key: () => ''`(상수 키)와 같고 `force: true`는
-   * 기본값과 같습니다. 이 판에서는 동작을 유지하며, 다음 minor에서 제거됩니다.
-   * ⚠이전 판에서는 자식이 없는 라우트에 `force: false`를 줘도 무시됐습니다(기본값 적용 순서의 결함).
-   * 이제 `force: false`는 모든 라우트에서 «유지»를 뜻합니다.
-   */
-  force?: boolean;
-
-  /**
    * 경로 매칭시 대소문자 구분 여부
    * @default false
    */
