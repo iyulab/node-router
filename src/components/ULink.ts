@@ -82,7 +82,7 @@ export class ULink extends LitElement {
   /**
    * 호스트에 세팅된 `aria-current`/`aria-label`은 실제 접근 가능한(포커스 대상)
    * 엘리먼트가 아니라 — 그 안쪽 shadow DOM 의 네이티브 `<a>`다. 섀도우 경계를
-   * 넘지 않으므로 접근성 트리에 자동 반영되지 않는다(docket #45 실측 — 속성은
+   * 넘지 않으므로 접근성 트리에 자동 반영되지 않는다(실측 — 속성은
    * 붙어 있는데 접근성 트리의 `aria-current`는 계속 비어 있음). `render()`가 이
    * 값을 읽어 내부 `<a>`에 직접 옮긴다.
    *
