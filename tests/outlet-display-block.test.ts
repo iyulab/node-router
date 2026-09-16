@@ -45,10 +45,15 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
     document.body.appendChild(outlet);
 
     expect(rulesIn(document)).toMatch(/u-outlet/);
-    expect(rulesIn(document)).toMatch(/display:\s*block/);
+    expect(rulesIn(document)).toMatch(/display:\s*grid/);
     // `display` 만으로는 부족하다 — 백분율 높이의 기준 상자가 아웃렛 자신으로 바뀌므로,
-    // `height` 가 없으면 «화면을 채우는» 레이아웃이 내용 높이로 무너진다(cycle-628 실측).
-    expect(rulesIn(document)).toMatch(/height:\s*100%/);
+    // 채우기 선언이 없으면 «화면을 채우는» 레이아웃이 내용 높이로 무너진다(cycle-628 실측).
+    // 🔴그리고 그 선언은 `height` 가 아니라 `min-height` 여야 한다 — `height` 는 넘치는 화면에서
+    //   아웃렛을 못 박아 셸의 끝 거터를 먹는다(cycle-645 · docket #308 2차 실측).
+    //   ⚠happy-dom 은 레이아웃을 계산하지 않으므로 이 파일은 «규칙이 실렸는가» 까지만 말할 수
+    //   있다 — «그래서 어떻게 배치되는가» 는 `tests/browser/outlet-box-model.browser.test.ts`.
+    expect(rulesIn(document)).toMatch(/min-height:\s*100%/);
+    expect(rulesIn(document)).not.toMatch(/[^-]height:\s*100%/);
   });
 
   it('규칙의 특이도가 0 이다 — 소비자의 `u-outlet {…}` 가 이긴다', () => {
@@ -67,7 +72,7 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
     shadow.appendChild(document.createElement('u-outlet'));
 
     // 문서 시트는 섀도 경계를 넘지 못하므로, 규칙은 섀도 루트 자신에 있어야 한다.
-    expect(rulesIn(shadow)).toMatch(/display:\s*block/);
+    expect(rulesIn(shadow)).toMatch(/display:\s*grid/);
   });
 
   it('같은 트리에 아웃렛이 여럿이어도 규칙은 한 벌만 실린다', () => {
