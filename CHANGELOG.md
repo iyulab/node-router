@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.15.0] - 2026-09-16
+
+### Changed
+
+- **`<u-outlet>` now grows when a screen overflows a fixed-height parent.** 0.14.0 declared
+  `display: block; height: 100%`, which gives a screen the height it needs to fill a sized
+  parent but also pins the outlet to exactly that height. A screen taller than the parent
+  therefore overflowed the outlet's box instead of growing it, and a scrolling ancestor adds
+  its end padding to the scrollable area of its *in-flow children*, not of what those children
+  overflow with. The end gutter dropped out of the scrollable area: scrolling to the bottom of
+  a long screen left the content flush against the container's edge, while the gutter survived
+  on the other three sides.
+
+  Swapping `height` for `min-height` is not the fix. A percentage height only resolves against
+  a parent whose `height` is specified, and a minimum does not satisfy that — so on a block (or
+  flex) box a descendant's `height: 100%` computes to `auto`, and every layout built to fill the
+  viewport collapses to its content height.
+
+  A grid container gives both behaviors at once. A grid item stretches to its area by default,
+  which fills without resolving a percentage, so the chain survives while the container's own
+  height is indefinite — and because that height is `auto`, the box grows past the minimum when
+  content demands it. The rule is now:
+
+  ```css
+  :where(u-outlet) { display: grid; min-height: 100%; }
+  ```
+
+  Multiple children behave as before: a track stretches, but an item with a definite height does
+  not. The rule deliberately omits `align-content` and relies on the initial `normal` — setting
+  `align-content: start` stops the track from stretching and silently voids the fill chain.
+
+  Specificity is still zero, so an application's own `u-outlet { … }` rule wins without
+  `!important`, exactly as in 0.14.0. `u-outlet { display: block; height: 100% }` restores the
+  0.14.0 box model and `u-outlet { display: inline }` restores the pre-0.14.0 one.
+
+### Contract addition
+
+- **Making the outlet *smaller* now takes two declarations.** `min-height` is a floor, so
+  `u-outlet { height: 200px }` on its own still measures the parent's height. Write
+  `u-outlet { min-height: 0; height: 200px }`. Making the outlet larger, or replacing its
+  `display`, needs nothing extra. This is the only behavioral difference for an application
+  that was already overriding the rule.
+
+### Tests
+
+- The browser suite covering the outlet's box model grows from 9 cases to 15. The overflow
+  topology — a parent with a definite height holding a taller child — was not covered before,
+  which is why the previous rule shipped green: the suite pinned "an auto-height parent leaves
+  the outlet auto" but never its opposite. Also pinned now: the two-declaration override above,
+  multiple children keeping their own heights, and `align-content` breaking the fill chain.
+
 ## [0.14.0] - 2026-09-16
 
 ### Changed

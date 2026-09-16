@@ -143,33 +143,62 @@ const routes = [
 
 ## Outlet Layout
 
-`<u-outlet>` declares its own `display: block`. A custom element's UA default is
-`inline`, which would put a route's block-level screen inside an inline box — so the
-outlet adopts a single rule on whichever tree it is connected to (the document, or the
-shadow root if it lives in one):
+`<u-outlet>` declares its own box model. A custom element's UA default is `inline`, which
+would put a route's block-level screen inside an inline box — so the outlet adopts a single
+rule on whichever tree it is connected to (the document, or the shadow root if it lives in
+one):
 
 ```css
-:where(u-outlet) { display: block; height: 100%; }
+:where(u-outlet) { display: grid; min-height: 100%; }
 ```
 
-`height: 100%` is part of the same rule for a reason. A percentage height resolves against
-the nearest block container, so making the outlet a block moves that reference from the box
-*above* the outlet onto the outlet itself — and an `auto` height there voids the percentage
-silently, collapsing a full-height screen to its content height. Declaring `height: 100%`
-keeps the chain intact, and resolves to `auto` whenever the parent's height is `auto`, so
-ordinary document flow and printing are unaffected.
+The outlet has to be two things at once, and no single declaration gives both:
 
-The `:where()` wrapper makes the rule's specificity zero, so **any** `u-outlet { … }`
-rule your application writes wins, regardless of sheet order and without `!important`:
+1. **It passes a sized parent's height down**, so a screen's `height: 100%` resolves here.
+2. **It grows with a screen taller than the parent**, so the overflow stays inside the
+   outlet's box rather than escaping it.
+
+`height: 100%` gives only the first. It pins the outlet to the parent's height, so a taller
+screen overflows the outlet — and a scrolling ancestor adds its end padding to the scrollable
+area of its in-flow children, not of what those children overflow with. The end gutter drops
+out: scrolling to the bottom of a long screen leaves the content flush against the container's
+edge while the gutter survives on the other three sides.
+
+`min-height: 100%` alone breaks the first. A percentage height only resolves against a parent
+whose `height` is specified, and a minimum does not satisfy that — so on a block (or flex) box
+a descendant's `height: 100%` computes to `auto` and every fill-the-viewport layout collapses
+to its content height.
+
+A grid container gives both. A grid item stretches to its area by default, which fills without
+resolving a percentage, so the chain survives while the container's own height is indefinite —
+and because that height is `auto`, the box grows past the minimum when content demands it.
+Multiple children are unaffected: a track stretches, but an item with a definite height does not.
+
+The rule deliberately omits `align-content`; it relies on the initial `normal`. Setting
+`align-content: start` stops the track from stretching and silently voids case 1.
+
+When the parent's own height is `auto`, `min-height: 100%` resolves to `auto` too, so ordinary
+document flow and printing are unaffected.
+
+### Overriding it
+
+The `:where()` wrapper makes the rule's specificity zero, so **any** `u-outlet { … }` rule your
+application writes wins, regardless of sheet order and without `!important`:
 
 ```css
-u-outlet { display: flex; }          /* wins */
-u-outlet { height: auto; }           /* keep the box, drop the fill */
-u-outlet { display: inline; }        /* restores the pre-0.14.0 behavior */
-@media print { u-outlet { … } }      /* wins */
+u-outlet { display: flex; }                    /* wins */
+u-outlet { display: contents; }                /* remove the box entirely */
+u-outlet { display: block; height: 100%; }     /* restores the 0.14.0 behavior */
+u-outlet { display: inline; }                  /* restores the pre-0.14.0 behavior */
+@media print { u-outlet { … } }                /* wins */
 ```
 
-The rule is not media-scoped: the outlet is a block box on screen and in print alike.
+> **Making the outlet *smaller* takes two declarations, not one.** `min-height` is a floor, so
+> `u-outlet { height: 200px }` on its own still measures the parent's height. Write
+> `u-outlet { min-height: 0; height: 200px }`. Making it *larger*, or replacing `display`, needs
+> nothing extra. This is the only contract addition in 0.15.0.
+
+The rule is not media-scoped: the outlet is a block-level box on screen and in print alike.
 
 `<u-link>` supports `href`, `target`, `rel`, and `navigate`.
 
