@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "lit",
@@ -71,6 +71,7 @@
     }
   },
   "devDependencies": {
+    "@vitest/browser-playwright": "^5.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

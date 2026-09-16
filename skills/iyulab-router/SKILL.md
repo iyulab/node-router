@@ -27,7 +27,7 @@ npm install @iyulab/router
 | `RouterConfig` | Constructor config type |
 | `RouteContext` | Passed to every `render()` call |
 | `FallbackRouteConfig` | Error/404 fallback definition |
-| `<u-outlet>` | Renders the matched route output |
+| `<u-outlet>` | Renders the matched route output (a block box — see `references/components.md`) |
 | `<u-link>` | Client-side navigation anchor |
 | `UOutlet`, `ULink` | React wrappers (from `@iyulab/router/react`) |
 

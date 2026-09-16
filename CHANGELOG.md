@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.14.0] - 2026-09-16
+
+### Changed
+
+- **`<u-outlet>` now declares its own `display: block`.** A custom element's UA default is
+  `inline`, and the outlet had no styles of its own — so a container meant to hold a route's
+  block-level screen generated an inline box. Consumers had to restate `u-outlet { display: block }`
+  in every application that cared, which is a rule only the package that defines the element can
+  reasonably own.
+
+  Two independent applications reported this from opposite directions on the same day — one
+  through printing (a short document gaining a blank trailing page), one through screen layout
+  (a table not reaching the bottom of the viewport). Both traced it to the same missing
+  declaration.
+
+  The declaration is `display: block; height: 100%`. The height half is not cosmetic: changing
+  `display` alone also changes which box a percentage height resolves against. While the outlet
+  was inline it was not a block container, so a screen's `height: 100%` resolved against the
+  block above it; making the outlet a block moves that reference onto the outlet itself, whose
+  height is `auto`, which silently voids the percentage and collapses full-height layouts to
+  their content height (measured: 747px → 60px for a screen built on
+  `@iyulab/modern-app`'s master-detail layout). `height: 100%` restores the chain, and resolves
+  to `auto` whenever the parent's height is `auto` — so ordinary document flow and printing,
+  where the shell releases its height, are unaffected.
+
+  The rule is adopted as a constructable stylesheet on whichever tree the outlet is connected to
+  (the document, or the shadow root when the outlet lives in one), written as
+  `:where(u-outlet)` so its specificity is zero — any `u-outlet { … }` rule an application writes
+  still wins without `!important`, regardless of sheet order. Where constructable sheets are not
+  available the rule is added as a `<style>` element instead.
+
+  **This changes layout in normal flow**, not only when printing: an inline box and a block box
+  differ in margin collapsing, and a block outlet can be given a height or a percentage size,
+  which an inline one silently ignored. Applications that place the outlet inside a flex or grid
+  container see no change — flex and grid items were already blockified. To keep the previous
+  behavior, set `u-outlet { display: inline }`; to keep the box but not the height, set
+  `u-outlet { height: auto }`. Neither needs `!important`.
+
 ## [0.13.0] - 2026-09-13
 
 ### Removed
