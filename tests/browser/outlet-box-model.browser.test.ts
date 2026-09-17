@@ -1,5 +1,6 @@
 /// <reference types="@vitest/browser-playwright" />
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { cdp } from 'vitest/browser';
 import '../../src/components/UOutlet.js';
 import '../../src/components/UErrorPage.js';
 
@@ -248,5 +249,103 @@ describe('u-outlet — 넘치는 화면과 셸 거터 (docket #308 2차)', () =>
     await settle();
     expect(h(outlet)).toBe(SHELL - PAD * 2);
     expect(main.scrollHeight).toBe(main.clientHeight);
+  });
+});
+
+/**
+ * **인쇄 매체에서는 아웃렛이 `block` 이다 — 끝 블록의 아래 여백이 아웃렛을 뚫고 접힌다**
+ * (cycle-659 · docket `#302` 3차 실측).
+ *
+ * 🔴`0.15.0` 의 `grid` 는 **자기 안에서 여백 접힘을 막는다.** 라우트 화면의 마지막 블록이
+ *   `margin-bottom` 을 가지면 그 여백이 아웃렛 높이 «안으로» 들어오고, 내용 끝이 쪽 경계에서
+ *   그 여백 이내에 있으면 **빈 꼬리 쪽**이 생긴다. `block` 에서는 여백이 문서 끝까지 접혀 나가고
+ *   쪽 경계에 닿은 여백은 조각화에서 잘린다(CSS Fragmentation §5.2) — 그래서 1쪽이다.
+ *   소비자 실측(긴 청구서, 끝 블록 `margin-bottom: 24px`): `block` 1105.5px·1쪽 ↔
+ *   `grid` **1129.5px·2쪽**, 그 여백만 0 으로 하면 grid 도 1쪽.
+ *
+ * ⚠인쇄에서 `grid` 가 줄 수 있던 것은 «정해진 부모 높이를 자손에게» 뿐인데, 셸은 뷰포트 높이를
+ *   `@media screen` 안에서만 건다 — 인쇄에서 부모 높이는 `auto` 이고 그 이득은 없다.
+ *   이 스위트는 그 셸 형태(화면에서만 고정 높이)를 그대로 세운다.
+ *
+ * ⚠우리 스위트가 **여섯 번** 이 증상을 재현하지 못한 이유가 정확히 이 조건이었다 — 재현
+ *   픽스처의 끝 블록에 아래 여백이 없었다. ⇒ 쪽수가 아니라 **그 기전(여백이 상자 안에 갇히는가)**
+ *   을 잰다. 쪽수는 내용 높이와 용지 크기에 따라 갈리지만 기전은 갈리지 않는다.
+ */
+describe('u-outlet — 인쇄 매체 상자 모델 (docket #302 3차)', () => {
+  const CONTENT = 300;
+  const MARGIN = 24;
+  let shell: HTMLDivElement;
+  let outlet: HTMLElement;
+  let last: HTMLDivElement;
+  let screenOnly: HTMLStyleElement;
+
+  const setMedia = async (media: 'print' | '') => {
+    await cdp().send('Emulation.setEmulatedMedia', { media });
+    await settle();
+  };
+
+  beforeEach(async () => {
+    // 실제 셸처럼 «화면에서만» 고정 높이를 준다.
+    screenOnly = document.createElement('style');
+    screenOnly.textContent = '@media screen { .print-shell { height: 700px; } }';
+    document.head.appendChild(screenOnly);
+    shell = document.createElement('div');
+    shell.className = 'print-shell';
+    shell.style.width = '600px';
+    document.body.appendChild(shell);
+    outlet = document.createElement('u-outlet');
+    shell.appendChild(outlet);
+    const route = document.createElement('div');
+    last = document.createElement('div');
+    last.style.cssText = `height: ${CONTENT}px; margin-bottom: ${MARGIN}px;`;
+    route.appendChild(last);
+    outlet.appendChild(route);
+    await settle();
+  });
+
+  afterEach(async () => {
+    await setMedia('');
+    document.body.replaceChildren();
+    screenOnly.remove();
+  });
+
+  it('인쇄 매체에서 블록 상자다', async () => {
+    await setMedia('print');
+    expect(getComputedStyle(outlet).display).toBe('block');
+  });
+
+  it('🔴인쇄 매체에서 끝 블록의 아래 여백이 아웃렛 «밖» 으로 접힌다 — 상자 높이에 들어오지 않는다', async () => {
+    await setMedia('print');
+    // 네거티브 컨트롤: 인쇄 규칙을 빼면(= grid 그대로) 324 가 나온다.
+    expect(h(outlet)).toBe(CONTENT);
+    expect(h(shell)).toBe(CONTENT);
+  });
+
+  it('인쇄 매체에서 `min-height:100%` 가 아웃렛을 셸 높이로 늘리지 않는다 — 셸 높이가 화면 전용이다', async () => {
+    await setMedia('print');
+    const extra = document.createElement('div');
+    extra.style.height = '10px';
+    outlet.firstElementChild!.prepend(extra);
+    await settle();
+    expect(h(outlet)).toBe(CONTENT + 10);
+  });
+
+  it('인쇄 매체에서도 소비자 규칙이 `!important` 없이 이긴다', async () => {
+    const consumer = document.createElement('style');
+    consumer.textContent = 'u-outlet { display: flex; }';
+    document.head.appendChild(consumer);
+    try {
+      await setMedia('print');
+      expect(getComputedStyle(outlet).display).toBe('flex');
+    } finally {
+      consumer.remove();
+    }
+  });
+
+  it('화면 매체로 돌아오면 종전 모델이다 — grid 로 셸을 채우고 여백은 상자 안에 있다', async () => {
+    await setMedia('print');
+    await setMedia('');
+    expect(getComputedStyle(outlet).display).toBe('grid');
+    expect(h(outlet)).toBe(700);
   });
 });

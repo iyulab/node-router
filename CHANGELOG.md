@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.15.1] - 2026-09-17
+
+### Fixed
+
+- **Printing no longer adds a trailing blank page when a screen's last block has a bottom
+  margin.** 0.15.0 made `<u-outlet>` a grid container in every medium. A grid container keeps
+  its children's margins inside its own box, so the last block's bottom margin added to the
+  outlet's height; when the content ended within that margin of a page boundary, the outlet
+  spilled onto a page that held only the margin. In print media the outlet is now a block box,
+  which lets the margin collapse past it and be truncated at the page break:
+
+  ```css
+  @media print { :where(u-outlet) { display: block; } }
+  ```
+
+  Screen layout is unchanged. The grid only matters when the parent has a definite height, and
+  an application shell normally sets one for screen media only.
+
 ## [0.15.0] - 2026-09-16
 
 ### Changed

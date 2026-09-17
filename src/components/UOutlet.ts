@@ -10,9 +10,10 @@ import { render } from 'lit';
  *   무관하게 `!important` 없이 이긴다.
  * ⚠constructable 시트(`adoptedStyleSheets`)를 쓴다 — `<style>` 요소와 달리 CSP 의 인라인
  *   스타일 제한에 걸리지 않는다. 지원하지 않는 환경에서는 `<style>` 로 대신한다.
- * ⚠매체를 가르지 않는다 — 인라인 컨테이너는 화면에서도 의도된 적이 없다(라인 박스 때문에
- *   높이를 줄 수도, 백분율로 채울 수도 없었다). 인쇄에만 한정하면 화면·인쇄가 서로 다른
- *   상자 모델을 갖게 되어 같은 부류의 차이가 다음에 또 난다.
+ * ⚠«인라인이 아니다» 는 매체를 가르지 않는다 — 인라인 컨테이너는 화면에서도 의도된 적이 없다
+ *   (라인 박스 때문에 높이를 줄 수도, 백분율로 채울 수도 없었다). 인라인 결함을 인쇄에만 고치면
+ *   화면에 같은 결함이 남는다.
+ * 🔴**그러나 «어떤 블록 레벨 상자인가» 는 매체를 가른다** — 아래 「인쇄 매체」 절.
  *
  * ## 왜 `grid` + `min-height` 인가 — 두 요구가 한 선언으로는 안 된다
  *
@@ -54,8 +55,23 @@ import { render } from 'lit';
  *   가두지 않는다.
  * 🔴**소비자가 아웃렛을 «줄이려면» `height` 만으로는 부족하고 `min-height: 0` 이 함께 필요하다**
  *   — 0.14.0 대비 유일한 계약 추가이며 README·CHANGELOG·참조 문서에 적혀 있다.
+ *
+ * ## 인쇄 매체 — `block` 으로 돌아간다 (0.15.1)
+ *
+ * 🔴**grid 는 자기 안에서 여백 접힘을 막는다.** 라우트 화면의 마지막 블록이 `margin-bottom` 을
+ *   가지면 그 여백이 아웃렛 높이 «안으로» 들어온다(실측: 내용 300 + 여백 24 → 아웃렛 324).
+ *   화면에서는 무해하지만, 인쇄에서는 내용 끝이 쪽 경계에서 그 여백 이내에 있으면 **빈 꼬리 쪽**
+ *   이 생긴다. `block` 이면 여백이 문서 끝까지 접혀 나가고, 쪽 경계에 닿은 여백은 조각화에서
+ *   잘린다(CSS Fragmentation §5.2) — 소비자 실측: `block` 1쪽 ↔ `grid` 2쪽.
+ * ✅**인쇄에서 grid 가 주던 이득은 없다.** grid 의 존재 이유는 ⑴(정해진 부모 높이를 자손에게)
+ *   인데, 셸은 뷰포트 높이를 `@media screen` 안에서만 건다 — 인쇄에서 부모 높이는 `auto` 이고
+ *   `min-height: 100%` 도 0 으로 풀린다. ⇒ 인쇄에서 grid 는 **여백을 가두기만** 한다.
+ * ⚠같은 `:where()` 라 특이도 0 그대로다 — 소비자 규칙은 인쇄에서도 `!important` 없이 이긴다.
  */
-const OUTLET_DISPLAY_CSS = ':where(u-outlet) { display: grid; min-height: 100%; }';
+const OUTLET_DISPLAY_CSS = [
+  ':where(u-outlet) { display: grid; min-height: 100%; }',
+  '@media print { :where(u-outlet) { display: block; } }',
+].join('\n');
 
 /** 시트를 이미 채택한 트리 — 같은 트리에 두 번 넣지 않는다. */
 const styledRoots = new WeakSet<Document | ShadowRoot>();

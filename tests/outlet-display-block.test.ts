@@ -81,7 +81,17 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
       document.body.appendChild(outlet);
     }
 
+    // 한 벌 = 화면 규칙 하나 + 인쇄 규칙 하나(cycle-659). 아웃렛 수에 비례하면 안 된다.
     const occurrences = rulesIn(document).match(/u-outlet/g) ?? [];
-    expect(occurrences).toHaveLength(1);
+    expect(occurrences).toHaveLength(2);
+  });
+
+  it('인쇄 매체 규칙이 함께 실린다 — 인쇄에서는 `block` 이다 (docket #302 3차)', () => {
+    const outlet = track(document.createElement('u-outlet'));
+    document.body.appendChild(outlet);
+
+    // grid 는 끝 블록의 아래 여백을 상자 안에 가둬 인쇄에서 빈 꼬리 쪽을 만든다.
+    // 배치 자체는 `tests/browser/outlet-box-model.browser.test.ts` 가 잰다.
+    expect(rulesIn(document)).toMatch(/@media print\s*\{\s*:where\(\s*u-outlet\s*\)\s*\{\s*display:\s*block/);
   });
 });

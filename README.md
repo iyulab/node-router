@@ -144,12 +144,13 @@ const routes = [
 ## Outlet Layout
 
 `<u-outlet>` declares its own box model. A custom element's UA default is `inline`, which
-would put a route's block-level screen inside an inline box — so the outlet adopts a single
-rule on whichever tree it is connected to (the document, or the shadow root if it lives in
+would put a route's block-level screen inside an inline box — so the outlet adopts its
+rules on whichever tree it is connected to (the document, or the shadow root if it lives in
 one):
 
 ```css
 :where(u-outlet) { display: grid; min-height: 100%; }
+@media print { :where(u-outlet) { display: block; } }
 ```
 
 The outlet has to be two things at once, and no single declaration gives both:
@@ -178,11 +179,25 @@ The rule deliberately omits `align-content`; it relies on the initial `normal`. 
 `align-content: start` stops the track from stretching and silently voids case 1.
 
 When the parent's own height is `auto`, `min-height: 100%` resolves to `auto` too, so ordinary
-document flow and printing are unaffected.
+document flow is unaffected.
+
+### Printing
+
+In print media the outlet is a plain block box instead of a grid container. A grid container is
+an independent formatting context, so the bottom margin of a screen's last block cannot collapse
+through it — the margin lands *inside* the outlet's box and adds to its height. On screen that is
+harmless. On paper it is not: when content ends within that margin of a page boundary, the box
+spills onto a new page that holds nothing but the margin. As a block box, the outlet lets the
+margin collapse past it to the end of the document, and a margin that meets a page break is
+truncated there, so no trailing blank page appears.
+
+Print loses nothing by this. The grid exists to pass a *sized* parent's height down, and an
+application shell normally sizes itself to the viewport only for screen media; in print the
+parent's height is `auto`, and `min-height: 100%` resolves to nothing.
 
 ### Overriding it
 
-The `:where()` wrapper makes the rule's specificity zero, so **any** `u-outlet { … }` rule your
+The `:where()` wrapper makes both rules' specificity zero, so **any** `u-outlet { … }` rule your
 application writes wins, regardless of sheet order and without `!important`:
 
 ```css
@@ -190,7 +205,7 @@ u-outlet { display: flex; }                    /* wins */
 u-outlet { display: contents; }                /* remove the box entirely */
 u-outlet { display: block; height: 100%; }     /* restores the 0.14.0 behavior */
 u-outlet { display: inline; }                  /* restores the pre-0.14.0 behavior */
-@media print { u-outlet { … } }                /* wins */
+@media print { u-outlet { display: grid; } }  /* restores the 0.15.0 print behavior */
 ```
 
 > **Making the outlet *smaller* takes two declarations, not one.** `min-height` is a floor, so
@@ -198,7 +213,6 @@ u-outlet { display: inline; }                  /* restores the pre-0.14.0 behavi
 > `u-outlet { min-height: 0; height: 200px }`. Making it *larger*, or replacing `display`, needs
 > nothing extra. This is the only contract addition in 0.15.0.
 
-The rule is not media-scoped: the outlet is a block-level box on screen and in print alike.
 
 `<u-link>` supports `href`, `target`, `rel`, and `navigate`.
 
