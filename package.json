@@ -71,10 +71,11 @@
     }
   },
   "devDependencies": {
-    "@vitest/browser-playwright": "^5.0.0",
+    "@microsoft/api-extractor": "^7.58.8",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@vitest/browser-playwright": "^5.0.0",
     "happy-dom": "^20.10.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
