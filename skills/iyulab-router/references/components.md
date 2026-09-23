@@ -46,7 +46,7 @@ rules on whichever tree it is connected to (the document, or the shadow root if 
 one):
 
 ```css
-:where(u-outlet) { display: grid; min-height: 100%; }
+:where(u-outlet) { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100%; }
 @media print { :where(u-outlet) { display: block; } }
 ```
 
@@ -78,6 +78,13 @@ The rule deliberately omits `align-content`; it relies on the initial `normal`. 
 When the parent's own height is `auto`, `min-height: 100%` resolves to `auto` too, so ordinary
 document flow is unaffected.
 
+The column track is bound to the outlet's width with `minmax(0, 1fr)`. Without it the implicit
+column is `auto`, and a grid item's default `min-width: auto` passes its content's minimum width up
+to the track — so a wide table inside a screen widened the whole screen past the outlet, even when
+the table sat in an `overflow-x: auto` box, and anything aligned to the screen's right edge (a
+toolbar's last button) ended up off screen. With the track bound, the screen is exactly as wide as
+the outlet, a narrow screen still fills it, and wide content scrolls inside its own box.
+
 ### Printing
 
 In print media the outlet is a plain block box instead of a grid container. A grid container is
@@ -99,6 +106,7 @@ application writes wins, regardless of sheet order and without `!important`:
 
 ```css
 u-outlet { display: flex; }                    /* wins */
+u-outlet { grid-template-columns: auto; }      /* restores the 0.15.1 column track */
 u-outlet { display: contents; }                /* remove the box entirely */
 u-outlet { display: block; height: 100%; }     /* restores the 0.14.0 behavior */
 u-outlet { display: inline; }                  /* restores the pre-0.14.0 behavior */

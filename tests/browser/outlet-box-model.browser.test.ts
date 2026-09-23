@@ -349,3 +349,67 @@ describe('u-outlet — 인쇄 매체 상자 모델 (docket #302 3차)', () => {
     expect(h(outlet)).toBe(700);
   });
 });
+
+describe('u-outlet — 가로 폭 (docket #419)', () => {
+  let parent: HTMLDivElement;
+  let outlet: HTMLElement;
+
+  beforeEach(async () => {
+    parent = document.createElement('div');
+    parent.style.cssText = 'width: 600px; height: 400px;';
+    document.body.appendChild(parent);
+    outlet = document.createElement('u-outlet');
+    parent.appendChild(outlet);
+    await settle();
+  });
+
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  const w = (el: Element) => Math.round(el.getBoundingClientRect().width);
+
+  it('🔴넓은 자손이 라우트 화면을 아웃렛 폭 너머로 늘리지 않는다 — 표는 자기 가로 스크롤로 굴러간다', async () => {
+    // 라우트 화면 > (툴바, 가로 스크롤 상자 > 2000px 내용). 격자 항목의 기본 `min-width: auto` 가
+    // 스크롤 상자의 최소 내용 폭을 트랙까지 올려 보내면 화면이 2000 으로 늘어난다.
+    const screen = document.createElement('div');
+    const toolbar = document.createElement('div');
+    toolbar.style.cssText = 'display: flex; justify-content: space-between;';
+    toolbar.innerHTML = '<span>Title</span><button>Add</button>';
+    const scroller = document.createElement('div');
+    scroller.style.overflowX = 'auto';
+    const table = document.createElement('div');
+    table.style.cssText = 'width: 2000px; height: 40px;';
+    scroller.appendChild(table);
+    screen.append(toolbar, scroller);
+    outlet.appendChild(screen);
+    await settle();
+
+    expect(w(screen)).toBe(600);
+    expect(scroller.scrollWidth).toBeGreaterThan(scroller.clientWidth);
+    const add = toolbar.querySelector('button')!.getBoundingClientRect();
+    expect(Math.round(add.right)).toBeLessThanOrEqual(Math.round(parent.getBoundingClientRect().right));
+  });
+
+  it('좁은 내용이어도 라우트 화면은 아웃렛 폭을 채운다 — 트랙이 내용에 맞춰 줄지 않는다', async () => {
+    const screen = document.createElement('div');
+    screen.textContent = 'short';
+    outlet.appendChild(screen);
+    await settle();
+    expect(w(screen)).toBe(600);
+  });
+
+  it('소비자의 열 트랙이 `!important` 없이 이긴다', async () => {
+    const style = document.createElement('style');
+    style.textContent = 'u-outlet { grid-template-columns: 200px; }';
+    document.head.appendChild(style);
+    const screen = document.createElement('div');
+    outlet.appendChild(screen);
+    await settle();
+    try {
+      expect(w(screen)).toBe(200);
+    } finally {
+      style.remove();
+    }
+  });
+});

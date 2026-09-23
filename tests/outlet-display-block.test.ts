@@ -54,6 +54,8 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
     //   있다 — «그래서 어떻게 배치되는가» 는 `tests/browser/outlet-box-model.browser.test.ts`.
     expect(rulesIn(document)).toMatch(/min-height:\s*100%/);
     expect(rulesIn(document)).not.toMatch(/[^-]height:\s*100%/);
+    // 열 트랙을 아웃렛 폭에 묶는다 — 없으면 넓은 자손이 라우트 화면을 늘린다(docket #419).
+    expect(rulesIn(document)).toMatch(/grid-template-columns:\s*minmax\(0(px)?,\s*1fr\)/);
   });
 
   it('규칙의 특이도가 0 이다 — 소비자의 `u-outlet {…}` 가 이긴다', () => {

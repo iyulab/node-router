@@ -56,6 +56,16 @@ import { render } from 'lit';
  * 🔴**소비자가 아웃렛을 «줄이려면» `height` 만으로는 부족하고 `min-height: 0` 이 함께 필요하다**
  *   — 0.14.0 대비 유일한 계약 추가이며 README·CHANGELOG·참조 문서에 적혀 있다.
  *
+ * ## 가로 — 열 트랙은 아웃렛 폭에 묶는다 (0.15.2)
+ *
+ * 🔴**grid 는 세로만이 아니라 가로에도 격자 규칙을 들여온다.** 열 트랙을 선언하지 않으면 암묵적
+ *   열은 `auto` 이고, 격자 항목(라우트 화면)의 기본 `min-width: auto` 가 자손의 최소 내용 폭을
+ *   트랙까지 올려 보낸다 — 넓은 표가 `overflow-x: auto` 상자 안에 있어도 라우트 화면 전체가 표
+ *   폭만큼 늘어나 아웃렛을 넘친다(소비자 실측: 아웃렛 972 · 화면 1,945 · 툴바 끝 버튼이 뷰포트 밖).
+ *   `block` 이던 시절(0.14.x)에는 없던 부작용이고, `display` 를 바꾼 우리 몫이다.
+ * ✅`minmax(0, 1fr)` — 최소 0 이라 내용이 트랙을 밀어 넓히지 못하고, `1fr` 이라 좁은 내용이어도
+ *   아웃렛 폭을 채운다(격자 항목의 `min-width: 0` 을 대신 줄 수는 없다 — 항목은 소비자의 요소다).
+ *
  * ## 인쇄 매체 — `block` 으로 돌아간다 (0.15.1)
  *
  * 🔴**grid 는 자기 안에서 여백 접힘을 막는다.** 라우트 화면의 마지막 블록이 `margin-bottom` 을
@@ -69,7 +79,7 @@ import { render } from 'lit';
  * ⚠같은 `:where()` 라 특이도 0 그대로다 — 소비자 규칙은 인쇄에서도 `!important` 없이 이긴다.
  */
 const OUTLET_DISPLAY_CSS = [
-  ':where(u-outlet) { display: grid; min-height: 100%; }',
+  ':where(u-outlet) { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100%; }',
   '@media print { :where(u-outlet) { display: block; } }',
 ].join('\n');
 
