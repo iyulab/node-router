@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.2] - 2026-09-23
+
+### Fixed
+
+- **A wide descendant no longer widens the route screen past the outlet.** 0.15.0 made
+  `<u-outlet>` a grid container without declaring a column track. The implicit column is `auto`,
+  and a grid item's default `min-width: auto` passes its content's minimum width up to the track,
+  so a wide table widened the whole screen — even inside an `overflow-x: auto` box — and anything
+  aligned to the screen's right edge, such as a toolbar's last button, was pushed off screen. The
+  track is now `minmax(0, 1fr)`: the screen is exactly as wide as the outlet, a narrow screen still
+  fills it, and wide content scrolls inside its own box. Print is unaffected (the outlet is a block
+  box there). The rule keeps zero specificity, so `u-outlet { grid-template-columns: auto; }`
+  restores the previous track.
+
 ## [0.15.1] - 2026-09-17
 
 ### Fixed
