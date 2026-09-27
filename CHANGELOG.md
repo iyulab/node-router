@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.16.0] - 2026-09-27
+
+### Changed
+
+- **`<u-outlet>` no longer creates a box: its rule is now `display: contents`.** A route screen
+  lays out as if it were a direct child of the element that contains the outlet. The 0.15 rule
+  (`display: grid; min-height: 100%`) broke the most common list screen: a screen that fills the
+  area with `height: 100%` and holds a table with `flex: 1; min-height: 0` and more rows than fit.
+  A grid track is sized from its item's content, and during that sizing the screen's
+  `height: 100%` counts as `auto` — so the track, the screen and the table grew to every row, and
+  the table never scrolled. The 0.14 rule (`height: 100%`) handled that screen but pinned the
+  outlet, so a long flowing screen overflowed it and the container's bottom padding dropped out of
+  the scroll. No single box gives the parent's height to filling screens and the content's height
+  to flowing ones; with no box, each screen gets its parent directly.
+  **What changes for you:** `padding`, `background` or `border` on `u-outlet` no longer apply, and
+  its `getBoundingClientRect()` is all zeros — style the containing element or the screen instead.
+  To give the outlet a box again, write `u-outlet { display: block; }` (specificity zero, no
+  `!important` needed). The 0.15 print rule and column track are gone with the box: there is no
+  box to trap a last block's margin in print, or to widen past its parent.
+
 ## [0.15.2] - 2026-09-23
 
 ### Fixed
