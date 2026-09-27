@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.1] - 2026-09-28
+
+### Fixed
+
+- **`route-done` now fires after a React route has committed.** `<u-outlet>` handed React
+  content to `root.render()`, which only schedules the commit, and reported the route done right
+  away — so anything listening for `route-done` (a layout placing focus on the new screen, a
+  title or analytics hook reading the page) saw an empty outlet, and an `autofocus` field in a
+  React screen was never found. The outlet now commits the React tree before it returns, and for
+  Lit content waits for the top-level elements' first render, so `route-done` means the new
+  screen is on the page.
+
 ## [0.16.0] - 2026-09-27
 
 ### Changed

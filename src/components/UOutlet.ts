@@ -161,8 +161,9 @@ class UOutlet extends HTMLElement {
     if (inPlace) {
       if (kind === 'lit') {
         this.root = render(value, this);
+        await this.childrenRendered();
       } else if (kind === 'react') {
-        this.root.render(value);
+        await commitReact(this.root, value);
       }
       // 'element': 조정할 수단이 없으므로 기존 인스턴스를 유지한다 — 새 ctx 는 창의
       // RouteDoneEvent 로만 도달한다(RouteConfig.key 참조).
@@ -177,11 +178,22 @@ class UOutlet extends HTMLElement {
       this.root = undefined;
     } else if (kind === 'lit') {
       this.root = render(value, this);
+      await this.childrenRendered();
     } else {
       const { createRoot } = await import('react-dom/client');
       this.root = createRoot(this);
-      this.root.render(value);
+      await commitReact(this.root, value);
     }
+  }
+
+  /**
+   * 방금 그린 최상위 요소들의 첫 렌더를 기다린다 — `render()` 가 끝났다는 것은 «내용이 그려졌다» 여야
+   * `route-done` 을 듣는 쪽(포커스 배치 등)이 화면을 읽을 수 있다. Lit 요소는 연결된 뒤 자기 템플릿을 비동기로 그린다.
+   */
+  private async childrenRendered(): Promise<void> {
+    await Promise.all(
+      Array.from(this.children, (el) => (el as { updateComplete?: Promise<unknown> }).updateComplete),
+    );
   }
 
   /**
@@ -203,6 +215,15 @@ class UOutlet extends HTMLElement {
     this.kind = undefined;
     this.innerHTML = "";
   }
+}
+
+/**
+ * React 트리를 커밋까지 렌더한다. `root.render()` 는 커밋을 «예약» 만 하므로, 그대로 두면 `route-done` 이
+ * 빈 컨테이너를 보고 난다. `flushSync` 가 그 자리에서 커밋한다.
+ */
+async function commitReact(root: { render(value: unknown): void }, value: unknown): Promise<void> {
+  const { flushSync } = await import('react-dom');
+  flushSync(() => root.render(value));
 }
 
 /** 렌더 가능한 세 종류 중 무엇인가 — 아니면 서술적으로 던진다. */
