@@ -40,84 +40,50 @@ export function AppRoot() {
 
 ## Outlet Layout
 
-`<u-outlet>` declares its own box model. A custom element's UA default is `inline`, which
-would put a route's block-level screen inside an inline box — so the outlet adopts its
-rules on whichever tree it is connected to (the document, or the shadow root if it lives in
-one):
+`<u-outlet>` has **no box of its own**: it is a mount point, and a route's screen lays out as
+if it were a direct child of the element that contains the outlet. The rule is adopted on
+whichever tree the outlet is connected to (the document, or the shadow root if it lives in one):
 
 ```css
-:where(u-outlet) { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100%; }
-@media print { :where(u-outlet) { display: block; } }
+:where(u-outlet) { display: contents; }
 ```
 
-The outlet has to be two things at once, and no single declaration gives both:
+That is what makes all three kinds of screen behave in a sized, scrolling container (an app
+shell's content area) — each measured in a real engine:
 
-1. **It passes a sized parent's height down**, so a screen's `height: 100%` resolves here.
-2. **It grows with a screen taller than the parent**, so the overflow stays inside the
-   outlet's box rather than escaping it.
+| Screen | What it needs | With `contents` |
+|---|---|---|
+| **Fills the area** — `height: 100%`, a layout that stretches to the viewport | the parent's height, passed down | resolves against the parent directly |
+| **Fills the area with more content than fits** — a table with `flex: 1; min-height: 0` holding more rows than the viewport | the parent's height, **not** its own content height | the table scrolls inside itself |
+| **Flows** — a form or document taller than the area | to grow, with the container scrolling | the container scrolls, and its end padding stays at the end of the scroll |
 
-`height: 100%` gives only the first. It pins the outlet to the parent's height, so a taller
-screen overflows the outlet — and a scrolling ancestor adds its end padding to the scrollable
-area of its in-flow children, not of what those children overflow with. The end gutter drops
-out: scrolling to the bottom of a long screen leaves the content flush against the container's
-edge while the gutter survives on the other three sides.
+Any box in between breaks one of them. A box with `height: 100%` pins itself to the parent, so
+a flowing screen overflows it and the scroll container's end padding — added after its in-flow
+children, not after what they overflow with — drops out: scrolled to the bottom, the content
+sits flush on the edge. A grid box with `min-height: 100%` grows with a flowing screen, but a
+grid track is sized from its item's content, and during that sizing the item's `height: 100%`
+counts as `auto` — so a filling screen with many rows grows the track to every row and the
+table never scrolls. A block or flex box with `min-height: 100%` leaves a descendant's
+`height: 100%` with nothing definite to resolve against.
 
-`min-height: 100%` alone breaks the first. A percentage height only resolves against a parent
-whose `height` is specified, and a minimum does not satisfy that — so on a block (or flex) box
-a descendant's `height: 100%` computes to `auto` and every fill-the-viewport layout collapses
-to its content height.
+Consequences of having no box:
 
-A grid container gives both. A grid item stretches to its area by default, which fills without
-resolving a percentage, so the chain survives while the container's own height is indefinite —
-and because that height is `auto`, the box grows past the minimum when content demands it.
-Multiple children are unaffected: a track stretches, but an item with a definite height does not.
-
-The rule deliberately omits `align-content`; it relies on the initial `normal`. Setting
-`align-content: start` stops the track from stretching and silently voids case 1.
-
-When the parent's own height is `auto`, `min-height: 100%` resolves to `auto` too, so ordinary
-document flow is unaffected.
-
-The column track is bound to the outlet's width with `minmax(0, 1fr)`. Without it the implicit
-column is `auto`, and a grid item's default `min-width: auto` passes its content's minimum width up
-to the track — so a wide table inside a screen widened the whole screen past the outlet, even when
-the table sat in an `overflow-x: auto` box, and anything aligned to the screen's right edge (a
-toolbar's last button) ended up off screen. With the track bound, the screen is exactly as wide as
-the outlet, a narrow screen still fills it, and wide content scrolls inside its own box.
-
-### Printing
-
-In print media the outlet is a plain block box instead of a grid container. A grid container is
-an independent formatting context, so the bottom margin of a screen's last block cannot collapse
-through it — the margin lands *inside* the outlet's box and adds to its height. On screen that is
-harmless. On paper it is not: when content ends within that margin of a page boundary, the box
-spills onto a new page that holds nothing but the margin. As a block box, the outlet lets the
-margin collapse past it to the end of the document, and a margin that meets a page break is
-truncated there, so no trailing blank page appears.
-
-Print loses nothing by this. The grid exists to pass a *sized* parent's height down, and an
-application shell normally sizes itself to the viewport only for screen media; in print the
-parent's height is `auto`, and `min-height: 100%` resolves to nothing.
+- CSS that needs a box — `padding`, `background`, `border` — does nothing on `u-outlet`, and
+  `getBoundingClientRect()` on it returns zeros. Style the element that contains the outlet,
+  or the screen itself.
+- In print media there is no box to trap the bottom margin of a screen's last block, so it
+  collapses to the end of the document and no trailing blank page appears.
 
 ### Overriding it
 
-The `:where()` wrapper makes both rules' specificity zero, so **any** `u-outlet { … }` rule your
+The `:where()` wrapper makes the rule's specificity zero, so **any** `u-outlet { … }` rule your
 application writes wins, regardless of sheet order and without `!important`:
 
 ```css
-u-outlet { display: flex; }                    /* wins */
-u-outlet { grid-template-columns: auto; }      /* restores the 0.15.1 column track */
-u-outlet { display: contents; }                /* remove the box entirely */
-u-outlet { display: block; height: 100%; }     /* restores the 0.14.0 behavior */
-u-outlet { display: inline; }                  /* restores the pre-0.14.0 behavior */
-@media print { u-outlet { display: grid; } }  /* restores the 0.15.0 print behavior */
+u-outlet { display: block; }                   /* give the outlet a box again */
+u-outlet { display: block; height: 100%; }     /* the 0.14.0 behavior */
+u-outlet { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100%; }  /* the 0.15.x behavior */
 ```
-
-> **Making the outlet *smaller* takes two declarations, not one.** `min-height` is a floor, so
-> `u-outlet { height: 200px }` on its own still measures the parent's height. Write
-> `u-outlet { min-height: 0; height: 200px }`. Making it *larger*, or replacing `display`, needs
-> nothing extra. This is the only contract addition in 0.15.0.
-
 
 
 ## Nested Outlet Rule

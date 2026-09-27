@@ -3,16 +3,18 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import '../src/components/UOutlet.js';
 
 /**
- * docket #302 — `<u-outlet>` 은 스타일 없는 `HTMLElement` 라 UA 기본 `display: inline` 을
- * 그대로 가졌고, 라우트 화면(블록 요소들)을 인라인 상자에 담아 block-in-inline 분할을
- * 만들었다(인쇄에서 짧은 문서에 빈 꼬리 쪽이 붙는 형태로 관측됐다).
+ * `<u-outlet>` 은 자기 표시 방식을 선언한다 — 스타일 없는 커스텀 엘리먼트의 UA 기본값 `inline` 은
+ * 라우트 화면(블록 요소들)을 인라인 상자에 담아 block-in-inline 분할을 만든다.
  *
  * 이 테스트가 고정하는 것은 셋이다:
- *   ⑴ 연결되면 자기가 속한 트리에 표시 규칙이 실린다
+ *   ⑴ 연결되면 자기가 속한 트리에 표시 규칙(`display: contents`)이 실린다
  *   ⑵ 그 규칙의 특이도가 0 이라 소비자 규칙이 `!important` 없이 이긴다
  *   ⑶ 섀도 루트 안의 아웃렛도 규칙을 받는다(문서 시트는 거기 닿지 않는다)
+ *
+ * ⚠happy-dom 은 레이아웃을 계산하지 않으므로 이 파일은 «규칙이 실렸는가» 까지만 말할 수 있다 —
+ *   «그래서 어떻게 배치되는가» 는 `tests/browser/outlet-box-model.browser.test.ts`.
  */
-describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
+describe('UOutlet — 자기 표시 방식 선언', () => {
   let hosts: HTMLElement[] = [];
 
   const track = <T extends HTMLElement>(el: T): T => {
@@ -40,22 +42,14 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
     document.head.querySelectorAll('style').forEach(el => el.remove());
   });
 
-  it('연결되면 문서 트리에 display 규칙이 실린다', () => {
+  it('연결되면 문서 트리에 display 규칙이 실린다 — 상자를 만들지 않는다', () => {
     const outlet = track(document.createElement('u-outlet'));
     document.body.appendChild(outlet);
 
     expect(rulesIn(document)).toMatch(/u-outlet/);
-    expect(rulesIn(document)).toMatch(/display:\s*grid/);
-    // `display` 만으로는 부족하다 — 백분율 높이의 기준 상자가 아웃렛 자신으로 바뀌므로,
-    // 채우기 선언이 없으면 «화면을 채우는» 레이아웃이 내용 높이로 무너진다(cycle-628 실측).
-    // 🔴그리고 그 선언은 `height` 가 아니라 `min-height` 여야 한다 — `height` 는 넘치는 화면에서
-    //   아웃렛을 못 박아 셸의 끝 거터를 먹는다(cycle-645 · docket #308 2차 실측).
-    //   ⚠happy-dom 은 레이아웃을 계산하지 않으므로 이 파일은 «규칙이 실렸는가» 까지만 말할 수
-    //   있다 — «그래서 어떻게 배치되는가» 는 `tests/browser/outlet-box-model.browser.test.ts`.
-    expect(rulesIn(document)).toMatch(/min-height:\s*100%/);
-    expect(rulesIn(document)).not.toMatch(/[^-]height:\s*100%/);
-    // 열 트랙을 아웃렛 폭에 묶는다 — 없으면 넓은 자손이 라우트 화면을 늘린다(docket #419).
-    expect(rulesIn(document)).toMatch(/grid-template-columns:\s*minmax\(0(px)?,\s*1fr\)/);
+    expect(rulesIn(document)).toMatch(/display:\s*contents/);
+    // 상자가 없으므로 높이·트랙 선언도 없어야 한다 — 있으면 무효이거나, 되살아난 상자의 흔적이다.
+    expect(rulesIn(document)).not.toMatch(/height|grid|@media print/);
   });
 
   it('규칙의 특이도가 0 이다 — 소비자의 `u-outlet {…}` 가 이긴다', () => {
@@ -74,7 +68,7 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
     shadow.appendChild(document.createElement('u-outlet'));
 
     // 문서 시트는 섀도 경계를 넘지 못하므로, 규칙은 섀도 루트 자신에 있어야 한다.
-    expect(rulesIn(shadow)).toMatch(/display:\s*grid/);
+    expect(rulesIn(shadow)).toMatch(/display:\s*contents/);
   });
 
   it('같은 트리에 아웃렛이 여럿이어도 규칙은 한 벌만 실린다', () => {
@@ -83,17 +77,8 @@ describe('UOutlet — 자기 표시 방식 선언 (docket #302)', () => {
       document.body.appendChild(outlet);
     }
 
-    // 한 벌 = 화면 규칙 하나 + 인쇄 규칙 하나(cycle-659). 아웃렛 수에 비례하면 안 된다.
+    // 한 벌 = 규칙 하나. 아웃렛 수에 비례하면 안 된다.
     const occurrences = rulesIn(document).match(/u-outlet/g) ?? [];
-    expect(occurrences).toHaveLength(2);
-  });
-
-  it('인쇄 매체 규칙이 함께 실린다 — 인쇄에서는 `block` 이다 (docket #302 3차)', () => {
-    const outlet = track(document.createElement('u-outlet'));
-    document.body.appendChild(outlet);
-
-    // grid 는 끝 블록의 아래 여백을 상자 안에 가둬 인쇄에서 빈 꼬리 쪽을 만든다.
-    // 배치 자체는 `tests/browser/outlet-box-model.browser.test.ts` 가 잰다.
-    expect(rulesIn(document)).toMatch(/@media print\s*\{\s*:where\(\s*u-outlet\s*\)\s*\{\s*display:\s*block/);
+    expect(occurrences).toHaveLength(1);
   });
 });
