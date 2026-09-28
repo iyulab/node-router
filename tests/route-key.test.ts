@@ -6,7 +6,7 @@ import { Router } from '../src/Router.js';
 import type { RouteConfig } from '../src/types/RouteConfig.js';
 
 /**
- * `RouteConfig.key` — «언제 새로 만드는가» 를 라우트가 소유한다 (docket #234).
+ * `RouteConfig.key` — «언제 새로 만드는가» 를 라우트가 소유한다.
  *
  * 종전에는 매 네비게이션마다 `u-outlet.reset()` 뒤 새로 마운트했고, 그래서 pathname 은 그대로고
  * 쿼리스트링만 바뀌어도(목록에서 상세 오버레이를 여는 형태) 페이지가 통째로 재마운트돼 목록

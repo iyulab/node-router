@@ -8,7 +8,7 @@ import { Router } from '../src/Router.js';
 import type { RouteErrorEvent } from '../src/types/RouteEvent.js';
 
 /**
- * `ISSUE-router-20260901-generic-error-messages.md` — 세 오류 메시지가 원인 값·기대
+ * 세 오류 메시지가 원인 값·기대
  * 형식을 알려주는지 고정한다. 로직 변경 없이 메시지 문자열만 바뀐 수정이라, 이 테스트는
  * "던지는지"가 아니라 "던지는 메시지가 유용한지"를 잰다.
  */

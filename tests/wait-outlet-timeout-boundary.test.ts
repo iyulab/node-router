@@ -3,8 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { waitOutlet } from '../src/internals/element-helpers.js';
 
 /**
- * §D-32 / ISSUE-router-20260811-waitoutlet-no-final-check-before-throw:
- *
  * `waitOutlet`의 while 루프는 `performance.now()` 재평가를 `requestAnimationFrame`
  * 콜백이 리졸브된 뒤에만 하므로, 완전히 suspend된(백그라운드) 탭에서는 rAF가 영원히
  * 발화하지 않아 루프 자체를 빠져나오지 못했다(아래 첫 테스트). 그리고 설령 (setTimeout

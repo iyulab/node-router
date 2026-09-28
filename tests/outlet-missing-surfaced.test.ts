@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**
- * ISSUE-20260722-router-react-consumption #1 (정정): root 안에 <u-outlet> 이 없을 때
+ * (정정) root 안에 <u-outlet> 이 없을 때
  * waitOutlet 은 (초안 작성 시점부터 이미) 서술적 Error 로 reject 한다. 그러나 Router 는
  * `void waitOutlet(...).then(...)` 로 거부를 삼켜, 폴링 타임아웃만큼 지연된 뒤 unhandled
  * rejection 으로만 새어 나갔다 — 소비자에겐 사실상 원인 없는 빈 화면이었다.
