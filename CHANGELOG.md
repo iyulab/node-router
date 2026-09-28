@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **`@lit/react` is now an optional peer dependency instead of a dependency.** Only the
+  `@iyulab/router/react` wrappers use it, yet every app installing the router installed it —
+  the same arrangement `@iyulab/components` and `@iyulab/modern-app` already use for their React
+  subpaths. **Migration:** if you import `@iyulab/router/react`, add `@lit/react` alongside
+  `react`.
+
 ## [0.16.1] - 2026-09-28
 
 ### Fixed

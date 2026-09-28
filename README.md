@@ -215,7 +215,7 @@ before. Note that `navigate` asks a different question than the automatic origin
 escapes were a different origin, `target="_blank"` (which forces a new tab), or a `#`
 fragment (which is not another document at all).
 
-React wrappers:
+React wrappers (they need `react` and `@lit/react`, both optional peers — `npm install react @lit/react`):
 
 ```tsx
 import { ULink, UOutlet } from '@iyulab/router/react';
