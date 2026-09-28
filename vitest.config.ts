@@ -11,7 +11,7 @@ import { playwright } from '@vitest/browser-playwright';
 //            계약 중 일부는 «상자 모델» 이고, happy-dom 은 레이아웃을 계산하지 않아
 //            원리적으로 답을 줄 수 없다 — 유닛 테스트는 «규칙이 시트에 실렸는가» 까지만
 //            말할 수 있고 «그래서 어떻게 배치되는가» 는 말하지 못한다. 그 간극에서 실제로
-//            회귀가 났다(cycle-628: `display:block` 단독이 자손의 백분율 높이를 무효화).
+//            회귀가 났다(`display:block` 단독이 자손의 백분율 높이를 무효화).
 export default defineConfig({
   test: {
     projects: [
