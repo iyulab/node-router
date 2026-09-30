@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Optional React peers promise only the tested majors: `@lit/react ^1.0.8`, `react` and
+  `react-dom` `^18.0.0 || ^19.0.0` (were `>=` ranges with no upper bound).
+
 ## [0.17.0] - 2026-09-28
 
 ### Changed
