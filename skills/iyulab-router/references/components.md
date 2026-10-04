@@ -97,6 +97,10 @@ A parent route must render `<u-outlet>` to host child route content.
 custom properties are available to lightly restyle it without replacing
 `fallback.render` entirely:
 
+It fills the outlet (`:host` is `height: 100%`) and centres its content in it — so the page is
+centred only when the outlet has a height (see «Outlet Layout» above). In an outlet without one it
+sits at the top at its content's height.
+
 | Custom Property | Description | Default (light) | Default (dark) |
 | --- | --- | --- | --- |
 | `--error-icon-color` | Icon color | `#4a5568` | `#a0aec0` |
