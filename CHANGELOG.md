@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0] - 2026-10-05
+
+### Changed
+
+- **`lit` is an optional peer dependency instead of a dependency.** `<u-link>` and the built-in error
+  page are now standard custom elements, and `<u-outlet>` loads Lit only when a route returns a Lit
+  template. An app whose routes return elements or React content no longer installs Lit.
+  **Migration:** an app whose routes return Lit templates already has `lit` — nothing to do; if it
+  came only through the router, add `lit` to your dependencies.
+- **`<u-link>` updates synchronously and no longer has `updateComplete`.** Setting `href`, `target`,
+  `rel`, `navigate` or the forwarded `aria-*` attributes rewrites the inner `<a>` at once. Code that
+  awaited `link.updateComplete` can drop the `await`.
+
 ## [0.18.0] - 2026-10-05
 
 ### Added

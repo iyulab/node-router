@@ -8,6 +8,9 @@ Client-side SPA router for Lit and React with URLPattern matching, nested routes
 npm install @iyulab/router
 ```
 
+`lit` is an optional peer: install it (`npm install lit`) when routes return Lit templates. Routes
+that return elements or React content need neither Lit nor anything else beyond the router.
+
 ## Quick Start
 
 ```typescript

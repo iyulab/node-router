@@ -1,4 +1,3 @@
-import { render } from 'lit';
 
 /**
  * `<u-outlet>` 의 기본 표시 방식 — **상자를 만들지 않는다**(`display: contents`, 0.16.0).
@@ -160,7 +159,7 @@ class UOutlet extends HTMLElement {
 
     if (inPlace) {
       if (kind === 'lit') {
-        this.root = render(value, this);
+        this.root = (await loadLit()).render(value, this);
         await this.childrenRendered();
       } else if (kind === 'react') {
         await commitReact(this.root, value);
@@ -177,7 +176,7 @@ class UOutlet extends HTMLElement {
       this.replaceChildren(value as HTMLElement);
       this.root = undefined;
     } else if (kind === 'lit') {
-      this.root = render(value, this);
+      this.root = (await loadLit()).render(value, this);
       await this.childrenRendered();
     } else {
       const { createRoot } = await import('react-dom/client');
@@ -221,6 +220,14 @@ class UOutlet extends HTMLElement {
  * React 트리를 커밋까지 렌더한다. `root.render()` 는 커밋을 «예약» 만 하므로, 그대로 두면 `route-done` 이
  * 빈 컨테이너를 보고 난다. `flushSync` 가 그 자리에서 커밋한다.
  */
+/**
+ * Lit 은 라우트가 Lit 템플릿을 돌려줄 때만 싣는다 — 템플릿을 만든 앱은 이미 Lit 을 갖고 있고(선택적 peer), React·요소만
+ * 쓰는 앱은 Lit 없이 라우터를 쓴다. `react-dom/client` 와 같은 지연 로드다.
+ */
+function loadLit(): Promise<typeof import('lit')> {
+  return import('lit');
+}
+
 async function commitReact(root: { render(value: unknown): void }, value: unknown): Promise<void> {
   const { flushSync } = await import('react-dom');
   flushSync(() => root.render(value));

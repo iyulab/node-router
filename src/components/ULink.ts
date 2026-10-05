@@ -1,19 +1,62 @@
-import { LitElement, PropertyValues, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
-
 import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
 import { currentRouteUrl, stateMode, toBrowserHref } from "../internals/location.js";
+
+const STYLES = `
+  :host {
+    cursor: pointer;
+  }
+
+  a {
+    text-decoration: none;
+
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+    color: inherit;
+    cursor: inherit;
+  }
+`;
+
+/** 속성 이름 ↔ 프로퍼티 — 속성을 바꾸면 프로퍼티가 따라온다(프로퍼티는 속성으로 반영하지 않는다). */
+const PROPS = ['href', 'target', 'rel', 'navigate'] as const;
 
 /**
  * - 클라이언트 라우팅을 지원하는 링크 엘리먼트입니다.
  * - 내부 링크는 클라이언트 라우팅을 수행하고, 외부 링크는 브라우저 기본 네비게이션을 사용합니다.
  * - Ctrl/Meta/Shift/Alt, 중클릭/우클릭 등은 브라우저 기본 동작(새 탭, 컨텍스트 메뉴 등)을 그대로 유지합니다.
+ *
+ * Lit 없이 쓰는 표준 커스텀 엘리먼트다 — 라우터가 Lit 을 필수 의존으로 끌고 오지 않도록(React·요소만 쓰는 앱).
+ * 값이 바뀌면 그 자리에서 내부 `<a>` 를 다시 맞춘다(비동기 갱신 주기가 없다).
  */
-@customElement("u-link")
-export class ULink extends LitElement {
+export class ULink extends HTMLElement {
+  static readonly observedAttributes = [...PROPS, 'aria-current', 'aria-label'];
+
   /** 외부 링크 여부 */
   private isExternal: boolean = false;
+  private _href?: string;
+  private _target?: string;
+  private _rel?: string;
+  private _navigate?: "router" | "document";
+  private readonly anchor: HTMLAnchorElement;
+
+  constructor() {
+    super();
+    const root = this.attachShadow({ mode: "open" });
+    const style = document.createElement("style");
+    style.textContent = STYLES;
+    this.anchor = document.createElement("a");
+    this.anchor.appendChild(document.createElement("slot"));
+    root.append(style, this.anchor);
+    // 정의되기 전에 세팅된 프로퍼티(업그레이드 전 인스턴스 값)는 접근자를 가린다 — 걷어 내고 접근자로 다시 넣는다.
+    for (const p of PROPS) {
+      if (Object.prototype.hasOwnProperty.call(this, p)) {
+        const value = (this as Record<string, unknown>)[p];
+        delete (this as Record<string, unknown>)[p];
+        (this as Record<string, unknown>)[p] = value;
+      }
+    }
+    this.sync();
+  }
 
   /**
    * 링크 대상 target 속성
@@ -23,7 +66,8 @@ export class ULink extends LitElement {
    * - `_parent`: 부모 프레임에서 링크 열기
    * - `_top`: 최상위 프레임에서 링크 열기
    */
-  @property({ type: String }) target?: string;
+  get target(): string | undefined { return this._target; }
+  set target(value: string | undefined) { this._target = value ?? undefined; this.sync(); }
 
   /** 
    * 링크 관계 rel 속성
@@ -34,7 +78,8 @@ export class ULink extends LitElement {
    * - `nofollow`: 검색 엔진이 링크를 따라가지 않도록 지시 (SEO에 영향)
    * - 그 외 rel 값도 그대로 전달됩니다. 
    */
-  @property({ type: String }) rel?: string;
+  get rel(): string | undefined { return this._rel; }
+  set rel(value: string | undefined) { this._rel = value ?? undefined; this.sync(); }
 
   /**
    * 링크 대상 URL, 다음 사항에 따라 SPA 라우팅 또는 브라우저 네비게이션이 결정됩니다.
@@ -46,7 +91,12 @@ export class ULink extends LitElement {
    * - ?로 시작하면 현재 경로에 쿼리스트링을 추가하여 SPA 라우팅합니다.
    * - #으로 시작하면 브라우저 기본 동작을 사용합니다.
    */
-  @property({ type: String }) href?: string;
+  get href(): string | undefined { return this._href; }
+  set href(value: string | undefined) {
+    this._href = value ?? undefined;
+    this.isExternal = isExternalUrl(this._href || "");
+    this.sync();
+  }
 
   /**
    * 이 링크를 라우터가 처리할지, 브라우저의 문서 이동에 맡길지.
@@ -68,63 +118,53 @@ export class ULink extends LitElement {
    * ⚠**자동 판정을 넓히지 않는다.** 「등록된 라우트와 대조해 미등록이면 문서 이동」도 가능하지만
    * 라우트가 늦게 등록되면 판정이 **시점에 의존**하게 된다. 명시 선언이 예측 가능하다.
    */
-  @property({ type: String }) navigate?: "router" | "document";
+  get navigate(): "router" | "document" | undefined { return this._navigate; }
+  set navigate(value: "router" | "document" | undefined) { this._navigate = value ?? undefined; this.sync(); }
 
   connectedCallback() {
-    super.connectedCallback();
     this.addEventListener("click", this.handleClick);
+    // basepath·모드는 히스토리 상태에서 읽는다 — 붙는 시점의 값으로 다시 맞춘다.
+    this.sync();
   }
 
   disconnectedCallback() {
     this.removeEventListener("click", this.handleClick);
-    super.disconnectedCallback();
   }
 
   /**
    * 호스트에 세팅된 `aria-current`/`aria-label`은 실제 접근 가능한(포커스 대상)
    * 엘리먼트가 아니라 — 그 안쪽 shadow DOM 의 네이티브 `<a>`다. 섀도우 경계를
    * 넘지 않으므로 접근성 트리에 자동 반영되지 않는다(실측 — 속성은
-   * 붙어 있는데 접근성 트리의 `aria-current`는 계속 비어 있음). `render()`가 이
-   * 값을 읽어 내부 `<a>`에 직접 옮긴다.
-   *
-   * 둘 다 Lit 리액티브 프로퍼티로 선언돼 있지 않아 `observedAttributes`에 없다 —
-   * 그 목록에 없는 속성은 `attributeChangedCallback` 자체가 호출되지 않는다
-   * (커스텀 엘리먼트 표준 동작). 초기 렌더는 되지만 연결 후 동적 변경은 반영되지
-   * 않았다 — 목록에 명시적으로 추가해야 한다.
+   * 붙어 있는데 접근성 트리의 `aria-current`는 계속 비어 있음). 그래서 `sync()`가 이
+   * 값을 읽어 내부 `<a>`에 직접 옮기고, 두 속성을 `observedAttributes`에 둬 연결 후의
+   * 변경도 반영한다(목록에 없는 속성은 `attributeChangedCallback` 자체가 호출되지 않는다).
    */
-  static get observedAttributes(): string[] {
-    return [...super.observedAttributes, 'aria-current', 'aria-label'];
-  }
-
-  attributeChangedCallback(name: string, old: string | null, value: string | null): void {
-    super.attributeChangedCallback(name, old, value);
-    if (name === 'aria-current' || name === 'aria-label') this.requestUpdate();
-  }
-
-  protected willUpdate(changedProperties: PropertyValues): void {
-    super.willUpdate(changedProperties);
-
-    if (changedProperties.has("href")) {
-      this.isExternal = isExternalUrl(this.href || "");
+  attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
+    if ((PROPS as readonly string[]).includes(name)) {
+      (this as Record<string, unknown>)[name] = value ?? undefined;
+    } else {
+      this.sync();
     }
   }
 
-  render() {
-    return html`
-      <a
-        href=${this.compute(this.href)}
-        target=${ifDefined(this.target)}
-        rel=${ifDefined(this.rel)}
-        data-navigate=${ifDefined(this.navigate)}
-        aria-current=${ifDefined(this.getAttribute('aria-current') ?? undefined)}
-        aria-label=${ifDefined(this.getAttribute('aria-label') ?? undefined)}
-      >
-        <slot></slot>
-      </a>
-    `;
+  /** 내부 `<a>` 를 지금 값으로 맞춘다. */
+  private sync() {
+    const a = this.anchor;
+    if (!a) return; // 생성자 안, 앵커를 만들기 전의 세터 호출
+    a.setAttribute("href", this.compute(this._href));
+    const attrs: Record<string, string | null | undefined> = {
+      target: this._target,
+      rel: this._rel,
+      "data-navigate": this._navigate,
+      "aria-current": this.getAttribute("aria-current"),
+      "aria-label": this.getAttribute("aria-label"),
+    };
+    for (const [name, value] of Object.entries(attrs)) {
+      if (value == null) a.removeAttribute(name);
+      else a.setAttribute(name, value);
+    }
   }
 
-  /** a 태그에 주입할 href 값을 계산합니다. */
   private compute(href?: string): string {
     const basepath = this.getBasepath();
     // hash 모드면 라우트 경로를 `#` 뒤에 싣는다 — 새 탭·주소 복사가 같은 화면으로 열린다.
@@ -218,20 +258,6 @@ export class ULink extends LitElement {
   private getBasepath(): string {
     return window.history.state?.basepath || "/";
   };
-
-  static styles = css`
-    :host {
-      cursor: pointer;
-    }
-
-    a {
-      text-decoration: none;
-
-      font-size: inherit;
-      font-weight: inherit;
-      font-family: inherit;
-      color: inherit;
-      cursor: inherit;
-    }
-  `;
 }
+
+customElements.define("u-link", ULink);

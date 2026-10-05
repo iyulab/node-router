@@ -130,7 +130,6 @@ describe('router — hash 모드', () => {
     link.href = '/orders/5';
     link.textContent = 'order';
     root.appendChild(link);
-    await link.updateComplete;
     const inner = link.shadowRoot!.querySelector('a')!;
     expect(inner.getAttribute('href')).toBe('#/orders/5');
 
