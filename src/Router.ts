@@ -4,6 +4,7 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
+import { currentRouteUrl, toBrowserHref, toRouteHref, type RouterMode } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
 import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
@@ -22,6 +23,7 @@ export class Router {
   private readonly _fallback?: FallbackRouteConfig;
   private readonly _enter?: RouterConfig['enter'];
   private readonly _tracker = new RouteTracker();
+  private readonly _mode: RouterMode;
 
   /** 현재 라우팅 요청 ID */
   private _requestID?: string;
@@ -36,6 +38,10 @@ export class Router {
     this._routes = setRoutes(config.routes || [], this._basepath);
     this._fallback = config.fallback;
     this._enter = config.enter;
+    this._mode = config.mode === 'hash' ? 'hash' : 'history';
+    // `u-link` 는 라우터 인스턴스 없이 히스토리 상태에서 basepath·모드를 읽는다 — 첫 라우팅 전에 그려지는 링크도
+    // 모드에 맞는 주소를 내도록 지금 적어 둔다.
+    window.history.replaceState({ ...(window.history.state ?? {}), basepath: this._basepath, mode: this._mode }, '');
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
@@ -47,7 +53,7 @@ export class Router {
       // 시간만큼 지연된 뒤) 소비자는 빈 화면의 원인을 진단하기 어렵다. 명시적으로 표면화한다.
       waitOutlet(this._rootElement)
         .then(() => {
-          this.go(window.location.href);
+          this.go(currentRouteUrl(this._mode).href);
         })
         .catch((error) => {
           console.error('Router initialization failed:', error instanceof Error ? error.message : error);
@@ -66,6 +72,10 @@ export class Router {
   /** 라우터의 기본 경로 반환 */
   public get basepath() {
     return this._basepath;
+  }
+  /** 라우트를 주소의 어디에서 읽는가(`RouterConfig.mode`). */
+  public get mode(): RouterMode {
+    return this._mode;
   }
   /** 등록된 라우트 정보 반환 */
   public get routes() {
@@ -89,18 +99,20 @@ export class Router {
 
     const requestID = getRandomID();
     this._requestID = requestID;
-    const context = parseUrl(href, this._basepath);
+    const current = currentRouteUrl(this._mode);
+    const context = parseUrl(toRouteHref(href, this._mode), this._basepath, current);
 
     // 리다이렉트 체인에서만 사이클 감지 (최초 진입은 항상 허용)
     if (options?.isRedirect && this._tracker.visit(context.href)) return;
 
     // 히스토리 업데이트: isRedirect/replace면 replaceState (뒤로가기에서 경유지 제거)
-    const useReplace = options?.isRedirect || options?.replace || context.href === window.location.href;
-    const historyState = { basepath: context.basepath, ...options?.state };
+    const useReplace = options?.isRedirect || options?.replace || context.href === current.href;
+    const historyState = { basepath: context.basepath, mode: this._mode, ...options?.state };
+    const browserHref = toBrowserHref(context.path, context.href, this._mode);
     if (useReplace) {
-      window.history.replaceState(historyState, '', context.href);
+      window.history.replaceState(historyState, '', browserHref);
     } else {
-      window.history.pushState(historyState, '', context.href);
+      window.history.pushState(historyState, '', browserHref);
     }
 
     let outlet: UOutlet | undefined = undefined;
@@ -213,7 +225,7 @@ export class Router {
 
   /** 브라우저 히스토리 이벤트가 발생시 라우팅 처리 */
   private handleWindowPopstate = async (_: PopStateEvent) => {
-    await this.go(window.location.href);
+    await this.go(currentRouteUrl(this._mode).href);
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */
@@ -237,7 +249,9 @@ export class Router {
       if (anchor.getAttribute('data-navigate') === 'document') return;
       if (anchor.target && anchor.target !== '') return;
 
-      const pathname = new URL(anchor.href).pathname;
+      // hash 모드: `#/x` 를 단 이 문서의 앵커는 `#` 뒤가 라우트다 — 그 밖의 앵커는 종전처럼 경로로 본다.
+      const routeHref = toRouteHref(anchor.href, this._mode);
+      const pathname = new URL(routeHref, window.location.origin).pathname;
       if (this._basepath !== '/' && !pathname.startsWith(this._basepath)) return;
       // 등록된 라우트에 매칭되지 않는 경로는 가로채지 않고 네이티브 내비게이션에 맡깁니다.
       // (특히 basepath '/'에서 다른 앱의 경로를 soft-404로 렌더하는 것을 방지)
@@ -246,7 +260,7 @@ export class Router {
 
       e.preventDefault();
       // 위에서 계산한 매칭 결과를 그대로 전달해 go() 내부의 getRoutes 재계산을 생략합니다.
-      await this.go(anchor.href, undefined, routes);
+      await this.go(routeHref, undefined, routes);
     } catch {
       // 예외는 무시하고 기본 동작 유지
     }

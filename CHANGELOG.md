@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.18.0] - 2026-10-05
+
+### Added
+
+- **Hash mode: `new Router({ mode: 'hash' })`.** The route lives after `#` (`/app/#/orders/7`), so a
+  refresh or a deep link works on a static host that serves one document, with no server-side
+  fallback. `basepath`, route paths, `go()`, `ctx.pathname` and `ctx.query` apply to the part after
+  `#`; `<u-link>` renders `#/…` hrefs; back/forward, `#/…` anchors and editing the address's `#` all
+  route. The default stays `'history'`. `router.mode` reports which one is in use.
 
 ### Changed
 

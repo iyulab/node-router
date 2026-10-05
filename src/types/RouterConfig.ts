@@ -17,7 +17,16 @@ export interface RouterConfig {
    * @default  '/'
    */
   basepath?: string;
-  
+
+  /**
+   * 라우트를 주소의 어디에서 읽는가.
+   * - `'history'`: 경로(`/app/orders/1`). 서버가 앱의 모든 경로에 같은 문서를 돌려줘야 새로고침·딥링크가 동작한다.
+   * - `'hash'`: `#` 뒤(`/app/#/orders/1`). 서버는 문서 하나만 서빙하면 된다 — 정적 호스팅에서 서버 설정 없이 딥링크가
+   *   동작한다. `basepath` 와 라우트 경로는 `#` 뒤에 적용된다. 라우트 안의 조각 식별자(`#section`)는 쓸 수 없다.
+   * @default 'history'
+   */
+  mode?: 'history' | 'hash';
+
   /**
    * 라우트 설정
    * - 라우트는 URLPattern을 사용하여 경로를 탐색합니다.

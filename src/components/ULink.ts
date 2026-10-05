@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
+import { currentRouteUrl, stateMode, toBrowserHref } from "../internals/location.js";
 
 /**
  * - 클라이언트 라우팅을 지원하는 링크 엘리먼트입니다.
@@ -126,6 +127,13 @@ export class ULink extends LitElement {
   /** a 태그에 주입할 href 값을 계산합니다. */
   private compute(href?: string): string {
     const basepath = this.getBasepath();
+    // hash 모드면 라우트 경로를 `#` 뒤에 싣는다 — 새 탭·주소 복사가 같은 화면으로 열린다.
+    if (stateMode() === "hash") {
+      if (!href) return "#" + basepath;
+      if (this.isExternal || href.startsWith("#")) return href;
+      if (href.startsWith("?")) return "#" + currentRouteUrl("hash").pathname + href;
+      return "#" + (href.startsWith("/") ? href : absolutePath(basepath, href));
+    }
 
     // href 속성이 없으면 basepath로 이동
     if (!href) return window.location.origin + basepath;
@@ -176,8 +184,8 @@ export class ULink extends LitElement {
     event.preventDefault();
 
     if (this.href.startsWith("?")) {
-      // 현재 pathname + ?query
-      const url = window.location.pathname + this.href;
+      // 현재 pathname + ?query (hash 모드면 `#` 뒤의 라우트 경로)
+      const url = currentRouteUrl(stateMode()).pathname + this.href;
       this.dispatchPopstate(basepath, url);
       return;
     }
@@ -201,7 +209,8 @@ export class ULink extends LitElement {
 
   /** 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다. */
   private dispatchPopstate(basepath: string, url: string) {
-    window.history.pushState({ basepath }, "", url);
+    const mode = stateMode();
+    window.history.pushState({ basepath, mode }, "", toBrowserHref(url, url, mode));
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 

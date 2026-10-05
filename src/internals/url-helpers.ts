@@ -43,21 +43,23 @@ export function isExternalUrl(url: string): boolean {
  * 
  * @param url 파싱할 URL 문자열
  * @param basepath 기준이 되는 basepath 문자열
+ * @param current 지금의 라우팅 URL — 쿼리·해시만 준 상대 입력과 동적 basepath 가 이것을 기준으로 풀린다.
+ *   hash 모드에서는 주소의 경로가 아니라 `#` 뒤가 라우팅 URL 이다(`internals/location.ts`).
  * @returns 파싱된 RouteContext 객체
  */
-export function parseUrl(url: string, basepath: string): RouteContext {
+export function parseUrl(url: string, basepath: string, current: URL = new URL(window.location.href)): RouteContext {
   let urlObj: URL;
-  basepath = catchBasepath(basepath);
+  basepath = catchBasepath(basepath, current.pathname);
   if (url.startsWith('http')) {
     urlObj = new URL(url);
   } else if (url.startsWith('/')) {
-    urlObj = new URL(url, window.location.origin);
+    urlObj = new URL(url, current.origin);
   } else if (url.startsWith('?')) {
-    urlObj = new URL(window.location.pathname + url, window.location.origin);
+    urlObj = new URL(current.pathname + url, current.origin);
   } else if (url.startsWith('#')) {
-    urlObj = new URL(window.location.pathname + window.location.search + url, window.location.origin);
+    urlObj = new URL(current.pathname + current.search + url, current.origin);
   } else {
-    urlObj = new URL(absolutePath(basepath, url), window.location.origin);
+    urlObj = new URL(absolutePath(basepath, url), current.origin);
   }
   
   return {
@@ -92,16 +94,17 @@ export function absolutePath(...paths: string[]): string {
  * 현재 경로에서 해당되는 패턴의 basepath를 추출하여 반환합니다.
  * 
  * @param basepath 동적 패턴이 포함된 basepath 문자열
+ * @param pathname 지금의 라우트 경로(기본: 주소의 경로)
  * @return 현재 경로에 매칭되는 basepath 문자열
  * @example
  * catchBasePath('/app/:id') => '/app/123'
  */
-export function catchBasepath(basepath: string): string {
+export function catchBasepath(basepath: string, pathname: string = window.location.pathname): string {
   if (basepath === '/') return basepath;
 
   // basepath가 경로의 중간에 올수도 있으므로 /* 패턴으로 먼저 검사
   let pattern = new URLPattern({ pathname: basepath + '/*' });
-  let match = pattern.exec({ pathname: window.location.pathname });
+  let match = pattern.exec({ pathname });
   if (match) {
     const rawPath = match.pathname.input;
     const restPath = match.pathname.groups?.["0"];
@@ -112,7 +115,7 @@ export function catchBasepath(basepath: string): string {
 
   // basepath가 경로의 끝에 올수도 있으므로 /? 패턴으로도 검사
   pattern = new URLPattern({ pathname: `${basepath}{/}?` });
-  match = pattern.exec({ pathname: window.location.pathname });
+  match = pattern.exec({ pathname });
   if (match) {
     return match.pathname.input;
   }

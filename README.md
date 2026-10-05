@@ -38,6 +38,19 @@ router.go('/users/1');
 > If `root` contains no `<u-outlet>`, the router logs
 > `Router initialization failed: Timed out waiting for <u-outlet>` and renders nothing.
 
+## Hash Mode
+
+On a static host that serves one document (no server-side fallback for every path), put the route
+after `#`:
+
+```typescript
+const router = new Router({ root: document.body, mode: 'hash', routes });
+// /app/#/users/1 — refreshes and deep links work without server configuration
+```
+
+Routes, `basepath` and `router.go()` apply to the part after `#`, and `<u-link>` renders `#/…`
+hrefs. A fragment inside a route (`#section`) is not available in this mode.
+
 ## React + Vite
 
 The outlet renders React content by dynamically importing `react-dom/client` when a route
