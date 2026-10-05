@@ -21,7 +21,6 @@ describe('u-link aria shadow forwarding', () => {
     const el = document.createElement('u-link');
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     document.body.appendChild(el);
-    await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
     return el;
   }
 
@@ -45,15 +44,14 @@ describe('u-link aria shadow forwarding', () => {
   });
 
   it('selected 토글처럼 연결 후 aria-current를 세팅/해제해도 반영된다', async () => {
-    const el = await mount({ href: '/home' }) as HTMLElement & { updateComplete: Promise<unknown> };
+    // 갱신은 동기다 — 속성을 바꾼 바로 다음 줄에서 안쪽 <a> 가 따라와 있어야 한다.
+    const el = await mount({ href: '/home' });
     const inner = () => el.shadowRoot!.querySelector('a')!;
 
     el.setAttribute('aria-current', 'page');
-    await el.updateComplete;
     expect(inner().getAttribute('aria-current')).toBe('page');
 
     el.removeAttribute('aria-current');
-    await el.updateComplete;
     expect(inner().hasAttribute('aria-current')).toBe(false);
   });
 });

@@ -46,10 +46,9 @@ function clickAnchor(root: HTMLElement, href: string, attrs: Record<string, stri
 }
 
 async function clickLink(props: Record<string, string>): Promise<MouseEvent> {
-  const link = document.createElement('u-link') as HTMLElement & { updateComplete: Promise<boolean> };
+  const link = document.createElement('u-link');
   for (const [k, v] of Object.entries(props)) link.setAttribute(k, v);
   document.body.appendChild(link);
-  await link.updateComplete;
   const event = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
   link.dispatchEvent(event);
   link.remove();
@@ -111,14 +110,10 @@ describe('같은 오리진의 비-SPA 경로', () => {
   });
 
   it('ULink 가 렌더한 앵커에 표시가 실린다 — 두 경로가 같은 신호를 본다', async () => {
-    const link = document.createElement('u-link') as HTMLElement & {
-      updateComplete: Promise<boolean>;
-      shadowRoot: ShadowRoot;
-    };
+    const link = document.createElement('u-link');
     link.setAttribute('href', '/help/');
     link.setAttribute('navigate', 'document');
     document.body.appendChild(link);
-    await link.updateComplete;
 
     const anchor = link.shadowRoot!.querySelector('a')!;
     expect(anchor.getAttribute('data-navigate')).toBe('document');
