@@ -30,7 +30,8 @@ export default defineConfig({
           browser: {
             enabled: true,
             provider: playwright(),
-            instances: [{ browser: 'chromium' }],
+            // headless 고정 — 헤드 있는 창은 OS 표시 배율에 물려 얇은 테두리가 장치 픽셀로 스냅된다(components 설정 주석 참조).
+            instances: [{ browser: 'chromium', headless: true }],
           },
           // 고정 포트 이유는 packages/components/vitest.config.ts 참조 —
           // 이 머신의 Windows 동적 포트 제외 범위와 vitest 기본 포트가
