@@ -20,6 +20,19 @@ window.addEventListener('route-error', (e) => {
 });
 ```
 
+## Current route without the router
+
+`currentRoutePath()` reads the current location as a route path (`RouteContext.path` form — path + query + hash),
+in the router's mode (`history` or `hash`), with no router instance. Use it to initialise a widget that follows
+`route-begin` but may connect after the first navigation (a shell rendered as a route's parent) — it has missed
+that event.
+
+```typescript
+import { currentRoutePath } from '@iyulab/router';
+let path = currentRoutePath();
+window.addEventListener('route-begin', (e) => { path = e.context.path; });
+```
+
 ## Fallback
 
 ```ts

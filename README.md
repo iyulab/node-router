@@ -251,6 +251,20 @@ window.addEventListener('route-progress', (e) => {
 });
 ```
 
+### Reading the current route without the router
+
+A widget that follows `route-begin` — a menu marking the current item — may be connected *after* the first
+navigation, when it is rendered by a route (a shell as a nested route's parent). It has missed that event.
+Start from `currentRoutePath()`, which reads the current location in the router's mode, in the same form as
+`RouteContext.path`:
+
+```typescript
+import { currentRoutePath } from '@iyulab/router';
+
+let path = currentRoutePath();                                  // e.g. '/orders/7?tab=log'
+window.addEventListener('route-begin', (e) => { path = e.context.path; });
+```
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).

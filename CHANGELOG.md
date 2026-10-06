@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0] - 2026-10-06
+
+### Added
+
+- **`currentRoutePath()`** — the current location as a route path (path + query + hash, the `RouteContext.path`
+  form), read in the router's mode with no router instance. A widget that follows `route-begin` and is connected
+  after the first navigation — a shell rendered as a nested route's parent — had missed that event and knew no
+  current route until the next navigation; it now starts from this.
+
 ## [0.19.2] - 2026-10-06
 
 ### Documentation

@@ -10,5 +10,8 @@ export * from './types/RouterConfig';
 export * from './components/UOutlet';
 export * from './components/ULink';
 
+// location exports
+export { currentRoutePath } from './internals/location';
+
 // main export
 export { Router } from './Router';

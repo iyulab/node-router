@@ -37,6 +37,17 @@ export function currentRouteUrl(mode: RouterMode): URL {
 }
 
 /**
+ * 지금 위치의 라우트 경로(경로 + 쿼리 + 해시) — `RouteContext.path` 와 같은 형식이다.
+ *
+ * 라우터 인스턴스 없이 읽는다(모드는 라우터가 적은 히스토리 상태에서). 라우터 이벤트(`route-begin`)를 듣는 위젯은
+ * 그 이벤트가 **자기가 붙기 전에** 지나갔을 수 있다 — 라우트 결과물로 그려지는 셸이 그렇다. 붙을 때 이것으로 시작한다.
+ */
+export function currentRoutePath(): string {
+  const url = currentRouteUrl(stateMode());
+  return url.pathname + url.search + url.hash;
+}
+
+/**
  * 라우터가 받는 href 를 «라우팅 URL 의 href» 로 정규화한다. history 모드는 그대로다.
  * hash 모드에서는 `#/x` 와, 이 문서를 가리키며 `#/x` 를 단 절대 URL 을 `/x` 로 푼다 — 그 밖(경로 · 상대 경로 ·
  * 쿼리)은 이미 라우트 공간의 값이라 그대로 둔다.
