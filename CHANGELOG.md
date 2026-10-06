@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.19.2] - 2026-10-06
+
+### Documentation
+
+- **The README's Quick Start runs as written.** It passed `document.body` as `root`, which has no
+  `<u-outlet>`, so copying it produced "Router outlet element not found" and an empty page — the
+  note about the outlet came after the code. The example is now one complete page: the outlet in
+  the markup and the router in a module script.
+
 ## [0.19.1] - 2026-10-06
 
 ### Fixed

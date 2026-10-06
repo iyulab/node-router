@@ -13,31 +13,30 @@ that return elements or React content need neither Lit nor anything else beyond 
 
 ## Quick Start
 
-```typescript
-import { Router } from '@iyulab/router';
-import { html } from 'lit';
+```html
+<!-- The router renders matched output into the <u-outlet> inside `root`. -->
+<div id="app"><u-outlet></u-outlet></div>
 
-const router = new Router({
-  root: document.body,
-  basepath: '/',
-  routes: [
-    { index: true, render: () => html`<home-page></home-page>` },
-    { path: '/users/:id', render: (ctx) => html`<user-page .id=${ctx.params.id}></user-page>` },
-  ],
-  fallback: {
-    render: (ctx) => html`<error-page .error=${ctx.error}></error-page>`,
-  },
-});
+<script type="module">
+  import { Router } from '@iyulab/router';
+  import { html } from 'lit';
 
-router.go('/users/1');
+  const router = new Router({
+    root: document.getElementById('app'),
+    basepath: '/',
+    routes: [
+      { index: true, render: () => html`<home-page></home-page>` },
+      { path: '/users/:id', render: (ctx) => html`<user-page .id=${ctx.params.id}></user-page>` },
+    ],
+    fallback: {
+      render: (ctx) => html`<error-page .error=${ctx.error}></error-page>`,
+    },
+  });
+
+  router.go('/users/1');
+</script>
 ```
 
-> The router renders matched output into a `<u-outlet>` inside `root`. Make sure one exists:
->
-> ```html
-> <div id="app"><u-outlet></u-outlet></div>
-> ```
->
 > If `root` contains no `<u-outlet>`, the router logs
 > `Router initialization failed: Timed out waiting for <u-outlet>` and renders nothing.
 
