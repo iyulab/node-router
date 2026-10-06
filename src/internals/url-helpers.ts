@@ -59,7 +59,8 @@ export function parseUrl(url: string, basepath: string, current: URL = new URL(w
   } else if (url.startsWith('#')) {
     urlObj = new URL(current.pathname + current.search + url, current.origin);
   } else {
-    urlObj = new URL(absolutePath(basepath, url), current.origin);
+    const joined = absolutePath(basepath, url);
+    urlObj = new URL(joined === absolutePath(basepath) ? basepathRoot(basepath) : joined, current.origin);
   }
   
   return {
@@ -74,6 +75,17 @@ export function parseUrl(url: string, basepath: string, current: URL = new URL(w
     progress: () => {},
     metadata: {}
   };
+}
+
+/**
+ * basepath 루트의 URL 경로 — 하위 경로에 배포된 앱의 루트는 디렉터리라 끝 `/` 를 붙인다(`/app` → `/app/`).
+ *
+ * 서버는 `/app/` 을 앱으로 내고 `/app` 은 404 로 내거나(Vite `base`) 리다이렉트한다(정적 호스팅). `absolutePath` 는 끝 `/` 를
+ * 지우므로, 루트로 가는 링크·주소창이 그대로 쓰면 새 탭·새로 고침·주소 복사가 깨진다. basepath 가 `/` 면 그대로다.
+ */
+export function basepathRoot(basepath: string): string {
+  const path = absolutePath(basepath);
+  return path === '/' ? path : path + '/';
 }
 
 /**

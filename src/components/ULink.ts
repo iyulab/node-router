@@ -1,4 +1,4 @@
-import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
+import { absolutePath, basepathRoot, isExternalUrl } from "../internals/url-helpers.js";
 import { currentRouteUrl, stateMode, toBrowserHref, ROUTER_STATE_EVENT } from "../internals/location.js";
 
 const STYLES = `
@@ -174,14 +174,14 @@ export class ULink extends HTMLElement {
     const basepath = this.getBasepath();
     // hash 모드면 라우트 경로를 `#` 뒤에 싣는다 — 새 탭·주소 복사가 같은 화면으로 열린다.
     if (stateMode() === "hash") {
-      if (!href) return "#" + basepath;
+      if (!href) return "#" + basepathRoot(basepath);
       if (this.isExternal || href.startsWith("#")) return href;
       if (href.startsWith("?")) return "#" + currentRouteUrl("hash").pathname + href;
       return "#" + (href.startsWith("/") ? href : absolutePath(basepath, href));
     }
 
-    // href 속성이 없으면 basepath로 이동
-    if (!href) return window.location.origin + basepath;
+    // href 속성이 없으면 basepath 루트로 이동 — 끝 `/` 를 붙인 디렉터리 URL(`basepathRoot`)
+    if (!href) return window.location.origin + basepathRoot(basepath);
     // 외부 링크는 그대로 (http/https 등)
     if (this.isExternal) return href;
     // 절대경로(/...)는 그대로 표시
@@ -217,7 +217,7 @@ export class ULink extends HTMLElement {
     // href 없으면 basepath로 SPA 라우팅
     if (!this.href) {
       event.preventDefault();
-      this.dispatchPopstate(basepath, basepath);
+      this.dispatchPopstate(basepath, basepathRoot(basepath));
       return;
     }
 

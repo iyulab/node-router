@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.1] - 2026-10-07
+
+### Fixed
+
+- **Links to the app root keep the trailing slash under a sub-path basepath.** With `basepath: '/app/'`, a `<u-link>`
+  without `href` (the usual logo link) rendered `/app`, clicking it put `/app` in the address bar, and `go('')`
+  did the same. Servers serve a sub-path app at `/app/` — Vite answers `/app` with 404 — so opening the logo in a
+  new tab, copying its address, or reloading after clicking it left the app. All three now use `/app/`; other
+  relative paths are joined as before.
+
 ## [0.20.0] - 2026-10-06
 
 ### Added
