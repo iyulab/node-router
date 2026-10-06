@@ -138,6 +138,31 @@ describe('router — hash 모드', () => {
     expect(window.location.hash).toBe('#/orders/5');
   });
 
+  it('🔴라우터보다 먼저 붙은 `u-link` 도 hash 주소로 다시 그려진다 — 셸을 먼저 그리는 앱의 첫 방문', async () => {
+    // 첫 방문: 히스토리 상태가 비어 있다(새로고침은 상태를 보존하므로 이 경로를 재현하지 못한다).
+    expect(history.state).toBeNull();
+    const users = document.createElement('u-link') as ULink;
+    users.href = '/orders/5';
+    const logo = document.createElement('u-link') as ULink; // href 없음 = basepath
+    root.append(users, logo);
+    const usersA = users.shadowRoot!.querySelector('a')!;
+    const logoA = logo.shadowRoot!.querySelector('a')!;
+    expect(usersA.getAttribute('href'), '라우터 전에는 아직 모드를 모른다').toBe('/orders/5');
+
+    mount(false);
+    expect(usersA.getAttribute('href')).toBe('#/orders/5');
+    expect(logoA.getAttribute('href')).toBe('#/');
+  });
+
+  it('NEGATIVE 떼어 낸 `u-link` 는 라우터 상태 알림을 받지 않는다', () => {
+    const link = document.createElement('u-link') as ULink;
+    link.href = '/orders/5';
+    root.appendChild(link);
+    link.remove();
+    mount(false);
+    expect(link.shadowRoot!.querySelector('a')!.getAttribute('href')).toBe('/orders/5');
+  });
+
   it('쿼리는 `#` 뒤 라우트의 쿼리다', async () => {
     const r = mount();
     await until(() => screenIn(root) === 'home', 'home');

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.19.1] - 2026-10-06
+
+### Fixed
+
+- **A `<u-link>` rendered before the router is created now follows the router's mode and basepath.**
+  A link reads them when it renders; an app that draws its shell (and the links in it) before
+  creating the router left those links in the history form on a first visit — in `hash` mode a link
+  to `/users` kept `href="/users"`, so opening it in a new tab or copying its address led to a
+  different screen. Clicks were unaffected. The router now announces its state when it is created,
+  and connected links redraw their address.
+
 ## [0.19.0] - 2026-10-05
 
 ### Changed

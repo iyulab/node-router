@@ -12,6 +12,15 @@ export interface RouterHistoryState {
   [key: string]: unknown;
 }
 
+/**
+ * 라우터가 히스토리 상태(basepath·모드)를 막 적었다는 알림 — `window` 에 쏜다.
+ *
+ * `u-link` 는 href 를 그릴 때 그 상태를 읽는데, 셸이 라우터보다 먼저 그려지면(링크가 든 레이아웃을 띄운 뒤
+ * 라우터를 만드는 앱) 상태가 아직 없어 history 형식으로 그려진 채 남는다. 클릭은 가로채지므로 옳게 가지만
+ * href 를 직접 쓰는 경로 — 새 탭 · 주소 복사 — 가 다른 화면을 연다. 이 알림을 받은 링크가 다시 맞춘다.
+ */
+export const ROUTER_STATE_EVENT = 'u-router-state';
+
 /** 현재 히스토리 상태가 선언한 모드(라우터가 아직 상태를 쓰지 않았으면 `history`). */
 export function stateMode(): RouterMode {
   return (window.history.state as RouterHistoryState | null)?.mode === 'hash' ? 'hash' : 'history';

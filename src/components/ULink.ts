@@ -1,5 +1,5 @@
 import { absolutePath, isExternalUrl } from "../internals/url-helpers.js";
-import { currentRouteUrl, stateMode, toBrowserHref } from "../internals/location.js";
+import { currentRouteUrl, stateMode, toBrowserHref, ROUTER_STATE_EVENT } from "../internals/location.js";
 
 const STYLES = `
   :host {
@@ -123,13 +123,18 @@ export class ULink extends HTMLElement {
 
   connectedCallback() {
     this.addEventListener("click", this.handleClick);
-    // basepath·모드는 히스토리 상태에서 읽는다 — 붙는 시점의 값으로 다시 맞춘다.
+    // basepath·모드는 히스토리 상태에서 읽는다 — 붙는 시점의 값으로 다시 맞추고, 라우터가 나중에 그 상태를
+    // 적으면(라우터보다 먼저 그려진 셸) 그때 다시 맞춘다.
+    window.addEventListener(ROUTER_STATE_EVENT, this.handleRouterState);
     this.sync();
   }
 
   disconnectedCallback() {
     this.removeEventListener("click", this.handleClick);
+    window.removeEventListener(ROUTER_STATE_EVENT, this.handleRouterState);
   }
+
+  private handleRouterState = () => this.sync();
 
   /**
    * 호스트에 세팅된 `aria-current`/`aria-label`은 실제 접근 가능한(포커스 대상)

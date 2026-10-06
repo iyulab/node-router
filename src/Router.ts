@@ -4,7 +4,7 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
-import { currentRouteUrl, toBrowserHref, toRouteHref, type RouterMode } from './internals/location.js';
+import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, type RouterMode } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
 import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
@@ -42,6 +42,8 @@ export class Router {
     // `u-link` 는 라우터 인스턴스 없이 히스토리 상태에서 basepath·모드를 읽는다 — 첫 라우팅 전에 그려지는 링크도
     // 모드에 맞는 주소를 내도록 지금 적어 둔다.
     window.history.replaceState({ ...(window.history.state ?? {}), basepath: this._basepath, mode: this._mode }, '');
+    // 라우터보다 먼저 붙은 링크(셸을 먼저 그리는 앱)도 이 상태를 따르게 한다.
+    window.dispatchEvent(new Event(ROUTER_STATE_EVENT));
     window.addEventListener('popstate', this.handleWindowPopstate);
 
     if (config.useIntercept !== false) {
