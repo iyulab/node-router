@@ -29,6 +29,11 @@ export class Router {
   private _requestID?: string;
   /** 현재 라우팅 정보 */
   private _context?: RouteContext;
+  /**
+   * fallback 이 제목을 바꾸기 직전의 문서 제목 — 다음 성공 라우트가 제목을 갖지 않으면 이것으로 돌아간다.
+   * 제목 없는 라우트는 문서 제목을 그대로 두므로, 없으면 실패 제목(«Page not found»)이 회복 뒤에도 남는다.
+   */
+  private _titleBeforeFallback?: string;
 
   constructor(config: RouterConfig) {
     this.destroy();
@@ -119,6 +124,7 @@ export class Router {
 
     let outlet: UOutlet | undefined = undefined;
     let title: string | undefined = undefined;
+    let completed = false;
     try {
       outlet = findOutletOrThrow(this._rootElement);
       
@@ -196,6 +202,7 @@ export class Router {
         }
         title = route.title || title;
       }
+      completed = true;
       // 라우트 완료 이벤트 발생
       window.dispatchEvent(new RouteDoneEvent(context));
     } catch (error: any) {
@@ -222,11 +229,17 @@ export class Router {
         const fallbackTitle = this._fallback?.title;
         title = (typeof fallbackTitle === 'function' ? fallbackTitle(fallbackContext) : fallbackTitle)
           || routeError.message || 'Error';
+        // 실패가 이어지면 첫 실패 직전의 제목을 지킨다.
+        this._titleBeforeFallback ??= document.title;
       } catch (pageError) {
         console.error('Failed to render error component:', pageError);
         console.error('Original error:', routeError.original || routeError);
       }
     } finally {
+      if (completed && this._titleBeforeFallback !== undefined) {
+        title ||= this._titleBeforeFallback;
+        this._titleBeforeFallback = undefined;
+      }
       document.title = title || document.title;
     }
   }

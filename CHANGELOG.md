@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.1] - 2026-10-08
+
+### Fixed
+
+- **The fallback's tab title no longer outlives the failure.** A route without a `title` leaves the document title
+  as it is, so after a failed navigation (404, a guard's refusal) the next successful route kept the failure's title
+  ("Page not found") instead of the app's own. The router now remembers the title from before the failure and
+  restores it when a route without a title completes. A route with a `title` sets it as before.
+
 ## [0.21.0] - 2026-10-08
 
 ### Added

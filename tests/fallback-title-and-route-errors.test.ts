@@ -83,6 +83,36 @@ describe('fallback title · route-chosen errors', () => {
     expect(document.title).toContain('Access denied');
   });
 
+  it('after a failure, a route without a title restores the title from before the failure', async () => {
+    // 제목 없는 라우트는 문서 제목을 그대로 둔다 — 그래서 실패 제목이 회복 뒤에도 남았다.
+    const r = new Router({
+      root, basepath: '/', initialLoad: false,
+      routes: [{ path: '/home', render: () => document.createElement('section') }],
+      fallback: { title: 'Not here', render: () => document.createElement('p') },
+    });
+    router = r;
+    document.title = 'My App';
+    await r.go('/home');
+    await r.go('/nowhere');
+    await r.go('/still-nowhere');
+    expect(document.title).toBe('Not here');
+    await r.go('/home');
+    expect(document.title).toBe('My App');
+  });
+
+  it('a route with its own title keeps it after a failure', async () => {
+    const r = new Router({
+      root, basepath: '/', initialLoad: false,
+      routes: [{ path: '/home', title: 'Home', render: () => document.createElement('section') }],
+      fallback: { title: 'Not here', render: () => document.createElement('p') },
+    });
+    router = r;
+    document.title = 'My App';
+    await r.go('/nowhere');
+    await r.go('/home');
+    expect(document.title).toBe('Home');
+  });
+
   it('a RouteError thrown from render() reaches the fallback unchanged', async () => {
     const r = make({});
     await r.go('/orders/7');
