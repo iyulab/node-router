@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.21.0] - 2026-10-08
+
+### Added
+
+- **`fallback.title` may be a function of the failure** — `(ctx) => string | undefined`, called with the same
+  context as `fallback.render`. A string gave every failure the same tab title, so a fallback that drew different
+  screens for 403 and 404 could not title them apart, and without a title the tab showed the diagnostic message
+  (`Page not found: http://…/x`). Returning nothing still falls back to the message.
+
+### Changed
+
+- **A `RouteError` thrown from a route's `render()` reaches the fallback unchanged.** It used to be wrapped in a
+  `ContentLoadError` (code `CONTENT_LOAD_FAILED`), so a screen could not say "this record does not exist" with
+  `throw new NotFoundError(ctx.pathname)` and get the 404 screen. Anything else thrown from `render()` is still a
+  `ContentLoadError` carrying the original.
+
+### Documentation
+
+- The skill reference listed error codes that do not exist (`NOT_FOUND`, `CONTENT_LOAD_ERROR`,
+  `CONTENT_RENDER_ERROR`). It now lists the real ones (`404`, `403`, `OUTLET_MISSING`, `CONTENT_LOAD_FAILED`,
+  `CONTENT_RENDER_FAILED`) with their classes, and its fallback example compares `code === 404`.
+
 ## [0.20.2] - 2026-10-08
 
 ### Fixed

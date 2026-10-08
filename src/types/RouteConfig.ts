@@ -140,8 +140,15 @@ export type RouteConfig = IndexRouteConfig | NonIndexRouteConfig;
 export interface FallbackRouteConfig {
   /**
    * 브라우저의 타이틀이 설정에 따라 변경됩니다.
+   * - 함수면 실패마다 그 컨텍스트로 부른다 — 오류에 따라 제목이 달라야 할 때(403 · 404 · 그 밖).
+   *   고정 문자열은 모든 실패에 같은 제목을 준다.
+   * - 비거나 빈 문자열을 돌려주면 오류 메시지가 제목이 된다(종전 동작).
+   * @example
+   * ```typescript
+   * title: (ctx) => ctx.error.code === 404 ? 'Page not found' : 'Something went wrong'
+   * ```
    */
-  title?: string;
+  title?: string | ((ctx: FallbackRouteContext) => string | undefined);
 
   /**
    * 라우팅 실패 시 표시할 렌더링 결과를 반환합니다.

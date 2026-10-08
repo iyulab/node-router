@@ -175,6 +175,9 @@ export class Router {
             );
           }
         } catch (e) {
+          // 라우트가 스스로 고른 실패(`throw new NotFoundError(path)` — 레코드가 없다)는 그대로 둔다.
+          // 감싸면 코드가 CONTENT_LOAD_FAILED 로 바뀌어 fallback 이 404 를 알 수 없다.
+          if (e instanceof RouteError) throw e;
           throw new ContentLoadError(e);
         }
 
@@ -206,8 +209,9 @@ export class Router {
       console.error('Routing error:', routeError.original || routeError);
 
       try {
-        const content = this._fallback?.render 
-          ? await this._fallback.render({ ...context, error: routeError }) 
+        const fallbackContext = { ...context, error: routeError };
+        const content = this._fallback?.render
+          ? await this._fallback.render(fallbackContext)
           : new UErrorPage(routeError);
         if (outlet) {
           outlet.render(content, { id: getRandomID() });
@@ -215,7 +219,9 @@ export class Router {
           document.body.innerHTML = '';
           document.body.appendChild(content instanceof Node ? content : new UErrorPage(routeError));
         }
-        title = this._fallback?.title || routeError.message || 'Error';
+        const fallbackTitle = this._fallback?.title;
+        title = (typeof fallbackTitle === 'function' ? fallbackTitle(fallbackContext) : fallbackTitle)
+          || routeError.message || 'Error';
       } catch (pageError) {
         console.error('Failed to render error component:', pageError);
         console.error('Original error:', routeError.original || routeError);

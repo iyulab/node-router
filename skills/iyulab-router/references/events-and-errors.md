@@ -35,11 +35,16 @@ window.addEventListener('route-begin', (e) => { path = e.context.path; });
 
 ## Fallback
 
+`ctx.error` is a `RouteError`. `title` may be a string or a function of the same context — use the
+function when the tab title should differ by failure; with a string (or no title) every failure gets the
+same one, and with none the error message becomes the title.
+
 ```ts
 fallback: {
+  title: (ctx) => (ctx.error.code === 404 ? 'Page not found' : 'Something went wrong'),
   render: (ctx) => {
     const { code, message } = ctx.error;
-    if (code === 'NOT_FOUND') return html`<not-found-page></not-found-page>`;
+    if (code === 404) return html`<not-found-page></not-found-page>`;
     return html`<error-page .message=${message}></error-page>`;
   }
 }
@@ -47,6 +52,30 @@ fallback: {
 
 ## Error Codes
 
-- `NOT_FOUND`
-- `CONTENT_LOAD_ERROR`
-- `CONTENT_RENDER_ERROR`
+`code` is the HTTP-like status for the two expected failures and a string for the others. Each has its
+own class, exported from the package, so `instanceof` works as well.
+
+| `code` | Class | When |
+|---|---|---|
+| `404` | `NotFoundError` | No route matches the address |
+| `403` | `AccessDeniedError` | An `enter` guard returned `false` |
+| `'OUTLET_MISSING'` | `OutletMissingError` | The matched route has no `<u-outlet>` to render into |
+| `'CONTENT_LOAD_FAILED'` | `ContentLoadError` | The route's `render()` threw, or returned nothing |
+| `'CONTENT_RENDER_FAILED'` | `ContentRenderError` | The outlet could not render what `render()` returned |
+
+A route can choose its own failure: a `RouteError` thrown from `render()` reaches the fallback unchanged,
+so a screen whose record does not exist shows the 404 screen:
+
+```ts
+import { NotFoundError } from '@iyulab/router';
+
+{ path: '/orders/:id', render: async (ctx) => {
+  const order = await fetchOrder(ctx.params.id);
+  if (!order) throw new NotFoundError(ctx.pathname);
+  return html`<order-page .order=${order}></order-page>`;
+} }
+```
+
+Anything else thrown from `render()` becomes a `ContentLoadError` (its `original` is what was thrown). An
+error thrown from an `enter` guard keeps its own `status` or `code` when it has one, otherwise the code is
+`'UNKNOWN_ERROR'`.
