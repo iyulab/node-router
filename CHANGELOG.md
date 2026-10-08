@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **`hidden` hides `u-error-page`.** Its host's `display: flex` outranked the browser's `[hidden]` rule, so a hidden
+  error page kept drawing.
+
 ## [0.20.1] - 2026-10-07
 
 ### Fixed

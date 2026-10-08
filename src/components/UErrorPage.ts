@@ -20,6 +20,11 @@ const STYLES = `
       }
     }
 
+    /* The host display below outranks the browser's [hidden] rule. */
+    :host([hidden]) {
+      display: none !important;
+    }
+
     :host {
       display: flex;
       flex-direction: column;
