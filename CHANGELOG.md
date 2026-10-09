@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.2] - 2026-10-09
+
+### Fixed
+
+- **Expected routing outcomes are no longer logged as errors.** Every failed navigation went to `console.error` as
+  `Routing error: …`, including the ones the fallback draws as normal screens — no route matched (404), a guard's
+  refusal (403), a route's own `NotFoundError`. An app whose monitoring collects console errors received one for
+  every navigation a user was not allowed to make. Failures with a 4xx code are now left to the fallback and the
+  `route-error` event; a failed load or render is still logged with its cause.
+
 ## [0.21.1] - 2026-10-08
 
 ### Fixed
