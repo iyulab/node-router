@@ -14,6 +14,15 @@ import type { FallbackRouteConfig, RouteConfig } from './types/RouteConfig.js';
 import type { NavigateOptions } from './types/NavigateOptions.js';
 
 /**
+ * 실패가 «예상된 결과» 인가 — 상태 코드가 4xx 인 것(없는 경로 404 · 가드 거부 403 · 가드가 던진 `{ status: 401 }` 류).
+ * 판정은 클래스가 아니라 코드로 한다: 가드가 던진 상태도 router 가 같은 코드의 `RouteError` 로 감싼다.
+ */
+function isExpectedOutcome(error: RouteError): boolean {
+  const code = Number(error.code);
+  return Number.isInteger(code) && code >= 400 && code < 500;
+}
+
+/**
  * `lit-element`, `react`를 지원하는 SPA 클라이언트 라우터 객체입니다.
  */
 export class Router {
@@ -213,7 +222,13 @@ export class Router {
           error);
 
       window.dispatchEvent(new RouteErrorEvent(context, routeError));
-      console.error('Routing error:', routeError.original || routeError);
+      // 예상된 결과(4xx — 없는 경로 · 가드 거부 · 라우트가 고른 «레코드 없음»)는 fallback 이 정상 화면으로 그린다.
+      // 오류로 로깅하면 콘솔 오류를 수집하는 모니터링이 권한 없는 이동마다 «장애» 를 받는다. 전부를 보려면
+      // `route-error` 를 듣는다 — 그 이벤트는 모든 실패에 난다. 예상 밖 실패(로드 · 렌더 · outlet)는 메시지가
+      // «콘솔을 보라» 고 말하므로 원인을 계속 남긴다.
+      if (!isExpectedOutcome(routeError)) {
+        console.error('Routing error:', routeError.original || routeError);
+      }
 
       try {
         const fallbackContext = { ...context, error: routeError };

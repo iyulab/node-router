@@ -20,6 +20,10 @@ window.addEventListener('route-error', (e) => {
 });
 ```
 
+`route-error` fires for every failure. The console gets only the unexpected ones — a failed load or render,
+logged as `Routing error:` with the cause. A failure with a 4xx code (no route matched, a guard's refusal, a
+route's own `NotFoundError`) is an outcome the fallback draws, so it is not logged as an error.
+
 ## Current route without the router
 
 `currentRoutePath()` reads the current location as a route path (`RouteContext.path` form — path + query + hash),

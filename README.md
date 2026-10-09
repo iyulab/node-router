@@ -245,6 +245,9 @@ The router dispatches events on `window`:
 - `route-done`
 - `route-error`
 
+`route-error` fires for every failure; the console logs only the unexpected ones (a failed load or render).
+A 4xx failure — no route matched, a guard's refusal — is an outcome the fallback draws, not an error.
+
 ```typescript
 window.addEventListener('route-progress', (e) => {
   console.log(e.progress);
