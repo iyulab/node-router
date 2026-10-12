@@ -72,6 +72,7 @@ const router = new Router({
 | `index` | `true` | Marks route as index of its parent path |
 | `render` | `(ctx) => unknown` | Returns Lit `TemplateResult`, React element, or `HTMLElement` |
 | `enter` | `(ctx) => string \| boolean \| Promise<string \| boolean>` | Guard before route render (`false` cancel, `string` redirect) |
+| `leave` | `({ from, to }) => boolean \| Promise<boolean>` | Guard before the current screen is replaced (`false` stays — also for Back/Forward). See `references/guards-and-metadata.md` |
 | `children` | `RouteConfig[]` | Nested routes; parent must render `<u-outlet>` |
 | `title` | `string` | Sets `document.title` on match |
 | `metadata` | `Record<string, unknown>` | Arbitrary metadata (auth, layout, analytics) |

@@ -117,3 +117,16 @@ export interface FallbackRouteContext extends RouteContext {
    */
   error: RouteError;
 }
+
+/**
+ * `leave` 가드가 받는 것 — 지금 화면(`from`)과 가려는 곳(`to`).
+ *
+ * `to` 는 주소만 푼 문맥이다 — 아직 라우트를 맞추지 않았으므로 `params`·`metadata` 는 비어 있고 `navigation.type` 은
+ * 그 이동의 종류다(`push` · `replace` · `traverse`).
+ */
+export interface RouteLeaveContext {
+  /** 지금 그려진 화면의 문맥 */
+  from: RouteContext;
+  /** 가려는 곳 — 주소만 푼 문맥 */
+  to: RouteContext;
+}

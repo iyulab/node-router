@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import { currentRouteUrl, requestNavigation, stateMode, toBrowserHref, ROUTER_STATE_EVENT } from './internals/location.js';
+import { currentRouteUrl, requestRoutedNavigation, stateMode, toBrowserHref, ROUTER_STATE_EVENT, type NavigationRequestOutcome } from './internals/location.js';
 
 /**
  * 선택 채널의 선택 사항.
@@ -82,7 +82,9 @@ class Channel<T> implements SelectionChannel<T> {
       this._value = this.fromAddress();
       // 주소가 원천 — 뒤로·앞으로 가기, 딥링크, 다른 코드의 이동으로 쿼리가 바뀌면 채널이 따라간다.
       // 라우터보다 먼저 만든 채널은 모드(hash 면 `#` 뒤가 주소)를 모른 채 읽었다 — 라우터가 상태를 적으면 다시 읽는다.
-      window.addEventListener('popstate', this.syncFromAddress);
+      // 라우터가 쓴 항목으로의 뒤로·앞으로 가기는 라우터가 `leave` 에 묻고 나서 `route-begin` 을 낸다 — 거기서 따라간다
+      // (막힌 이동에 채널이 먼저 움직이면 따라가는 뷰가 버려질 선택을 불러온다).
+      window.addEventListener('popstate', this.syncFromUnroutedEntry);
       window.addEventListener('route-begin', this.syncFromAddress);
       window.addEventListener(ROUTER_STATE_EVENT, this.syncFromAddress);
     }
@@ -97,8 +99,17 @@ class Channel<T> implements SelectionChannel<T> {
   }
 
   set(value: T | undefined): void {
-    if (!this.change(value)) return;
-    if (this.options.query) this.toAddress(value);
+    if (this.same(this._value, value)) return;
+    if (!this.options.query) {
+      this.change(value);
+      return;
+    }
+    // 떠 있는 라우터가 받은 이동이 화면의 `leave` 에 묻는다면 값은 그 이동이 시작될 때(`route-begin`) 바뀐다 — 막히면
+    // 채널도 그대로다. 묻지 않으면(종전처럼) 지금 바꾼다. 라우터가 없으면 지금 바꾸고 기록만 고친다.
+    const outcome = this.toAddress(value);
+    if (outcome.guarded) return;
+    this.change(value);
+    if (!outcome.handled) this.writeHistory(value);
   }
 
   subscribe(listener: SelectionListener<T>, options?: { immediate?: boolean }): () => void {
@@ -156,17 +167,32 @@ class Channel<T> implements SelectionChannel<T> {
     this.change(this.fromAddress());
   };
 
-  /** 지금 주소의 쿼리만 바꿔 남긴다 — 떠 있는 라우터가 받고(같은 화면이면 `RouteConfig.key` 로 재마운트를 피한다), 없으면 기록만. */
-  private toAddress(value: T | undefined): void {
+  /** 라우터가 쓰지 않은 항목으로의 뒤로·앞으로 가기만 바로 따라간다(라우터 항목은 `route-begin` 이 맡는다). */
+  private syncFromUnroutedEntry = () => {
+    const state = window.history.state as { entryKey?: unknown } | null;
+    if (typeof state?.entryKey === 'string') return;
+    this.syncFromAddress();
+  };
+
+  /** 이 값을 담은 주소 — 지금 주소의 쿼리만 바꾼다. */
+  private addressOf(value: T | undefined): { routePath: string; href: string } {
     const mode = stateMode();
     const url = currentRouteUrl(mode);
     if (value === undefined) url.searchParams.delete(this.options.query!);
     else url.searchParams.set(this.options.query!, this.format(value));
     const routePath = url.pathname + url.search + url.hash;
-    const replace = this.options.history !== 'push';
-    if (requestNavigation(routePath, { replace })) return;
-    const href = toBrowserHref(routePath, url.href, mode);
-    if (replace) window.history.replaceState(window.history.state, '', href);
+    return { routePath, href: toBrowserHref(routePath, url.href, mode) };
+  }
+
+  /** 떠 있는 라우터에 주소 변경을 맡긴다(같은 화면이면 `RouteConfig.key` 로 재마운트를 피한다). */
+  private toAddress(value: T | undefined): NavigationRequestOutcome {
+    return requestRoutedNavigation(this.addressOf(value).routePath, { replace: this.options.history !== 'push' });
+  }
+
+  /** 라우터가 없을 때 — 문서를 떠나지 않고 기록만 고친다. */
+  private writeHistory(value: T | undefined): void {
+    const { href } = this.addressOf(value);
+    if (this.options.history !== 'push') window.history.replaceState(window.history.state, '', href);
     else window.history.pushState(window.history.state, '', href);
   }
 }

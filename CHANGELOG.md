@@ -1,9 +1,26 @@
 # Changelog
 
-## [0.23.1] - 2026-10-13
+## [0.24.0] - 2026-10-13
+
+### Added
+
+- **`leave` guards** — `RouteConfig.leave` and `RouterConfig.leave`, the other side of `enter`. A guard runs before
+  the current screen is replaced and returns `false` (or a promise of it) to stay: the screen and the address do not
+  change. It receives `{ from, to }` (`RouteLeaveContext` — `to` is the destination's address; its `params` and
+  `metadata` are empty). It runs for every navigation that changes the path or query: links, `go()`, `navigate()`,
+  a selection channel that goes through the router, Back and Forward. A hash-only change, redirect hops and the
+  first route do not ask. Route guards of the current screen run child first, then the global one; a guard that
+  throws counts as `false`. Leaving the document (reload, another site, closing the tab) is `beforeunload`'s job.
+- **Back and Forward can be held.** The History API cannot cancel a traversal, so when a guard has to be asked the
+  router first returns to the entry you were on, asks, and goes the same number of entries again if the guard
+  allows it. To count entries, history state now carries `entryIndex` next to `entryKey`.
 
 ### Changed
 
+- **A selection channel waits for the router when the screen guards leaving.** With `query` and a running router,
+  `set()` changes the value when the navigation starts (`route-begin`), so a blocked navigation leaves the channel
+  as it was. Where no `leave` guard would be asked, the value changes in `set()` as before. Back and Forward to an
+  entry the router wrote are followed through the router too.
 - **A second copy of the router says so.** When `<u-link>`, `<u-outlet>` or `<u-error-page>` is already defined by
   a different class, loading the router throws an error that names the likely cause — two copies of
   `@iyulab/router` in one app — and how to check it (`npm ls @iyulab/router`), instead of the browser's

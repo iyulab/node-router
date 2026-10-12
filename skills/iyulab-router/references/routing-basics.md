@@ -28,6 +28,7 @@ const router = new Router({
 | `mode` | `'history'` | Where the route lives in the address: `'history'` = the path, `'hash'` = after `#` (see below) |
 | `routes` | `[]` | Route definitions |
 | `enter` | - | Global guard before navigation |
+| `leave` | - | Global guard before the current screen is replaced — after the route `leave` guards |
 | `fallback` | built-in error page | Error/404 handler |
 | `useIntercept` | `true` | Intercept `<a>` clicks for client routing |
 | `initialLoad` | `true` | Auto-navigate on initialization |

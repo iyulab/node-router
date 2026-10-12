@@ -1,4 +1,4 @@
-import type { RouteContext, FallbackRouteContext } from "./RouteContext";
+import type { RouteContext, FallbackRouteContext, RouteLeaveContext } from "./RouteContext";
 
 /**
  * 공통 라우트 속성
@@ -71,6 +71,23 @@ interface BaseRouteConfig {
    * ```
    */
   enter?: (ctx: RouteContext) => Promise<string | boolean> | string | boolean;
+
+  /**
+   * 이 라우트의 화면을 떠나기 전에 호출되는 leave 함수입니다 — `enter` 의 대칭입니다.
+   * - `false` 반환: 이동 취소(화면과 주소가 그대로 남습니다)
+   * - `true` 반환: 통과
+   *
+   * 화면을 바꾸는 이동(경로나 쿼리가 다른 곳)마다 부릅니다 — 링크 · `go()` · `navigate()` · 라우터를 거치는 선택 채널 ·
+   * 뒤로·앞으로 가기. 같은 주소와 해시만 다른 이동, 리다이렉트 경유지, 문서를 떠나는 이동(새로 고침 · 다른 사이트 ·
+   * 탭 닫기 — 그것은 `beforeunload` 의 자리)에는 부르지 않습니다. 뒤로·앞으로 가기는 묻기 전에 원래 항목으로 되돌리고,
+   * 통과하면 다시 그 항목으로 갑니다(History API 에는 «취소» 가 없습니다).
+   * 지금 화면의 라우트 사슬에서 자식부터 부모 순으로 부르고, 하나라도 `false` 면 멈춥니다. 던지면 취소로 봅니다.
+   * @example
+   * ```typescript
+   * { path: '/orders/:id', leave: () => !form.dirty || confirm('Discard your changes?') }
+   * ```
+   */
+  leave?: (ctx: RouteLeaveContext) => Promise<boolean> | boolean;
 
   /**
    * 이 라우트의 콘텐츠를 **언제 새로 만들 것인가**를 정하는 식별 키입니다.

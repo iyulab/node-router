@@ -79,15 +79,30 @@ export const ROUTER_NAVIGATE_EVENT = 'u-router-navigate';
 export interface RouterNavigateRequest {
   href: string;
   options?: NavigateOptions;
+  /**
+   * 받은 라우터가 채운다 — 이 이동이 `leave` 가드에 물을 것이면 `true`(이동이 일어날지 아직 모른다).
+   * @internal
+   */
+  guarded?: boolean;
+}
+
+/** 이동 요청의 결과 — 받은 라우터가 있는가, 그 이동이 `leave` 에 묻는가. */
+export interface NavigationRequestOutcome {
+  handled: boolean;
+  guarded: boolean;
+}
+
+/** 떠 있는 라우터에 이동을 요청하고, 받았는지 · 가드에 묻는지를 돌려준다. */
+export function requestRoutedNavigation(href: string, options?: NavigateOptions): NavigationRequestOutcome {
+  const detail: RouterNavigateRequest = { href, options };
+  const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, { detail, cancelable: true });
+  const handled = !window.dispatchEvent(request);
+  return { handled, guarded: handled && detail.guarded === true };
 }
 
 /** 떠 있는 라우터에 이동을 요청한다 — 받은 라우터가 있으면 `true`. */
 export function requestNavigation(href: string, options?: NavigateOptions): boolean {
-  const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, {
-    detail: { href, options },
-    cancelable: true,
-  });
-  return !window.dispatchEvent(request);
+  return requestRoutedNavigation(href, options).handled;
 }
 
 /**

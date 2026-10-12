@@ -1,5 +1,5 @@
 import type { FallbackRouteConfig, RouteConfig } from "./RouteConfig";
-import type { RouteContext } from "./RouteContext";
+import type { RouteContext, RouteLeaveContext } from "./RouteContext";
 
 /**
  * 라우터 설정
@@ -47,6 +47,12 @@ export interface RouterConfig {
    * ```
    */
   enter?: (ctx: RouteContext) => Promise<string | boolean> | string | boolean;
+
+  /**
+   * 모든 라우트 전환 전에 호출되는 글로벌 leave 함수입니다 — 라우트별 `leave` 뒤에 부릅니다.
+   * `false` 면 이동을 취소합니다. 언제 부르는가는 `RouteConfig.leave` 와 같습니다.
+   */
+  leave?: (ctx: RouteLeaveContext) => Promise<boolean> | boolean;
 
   /**
    * 라우트 매칭 실패 또는 오류 발생 시 대체 라우트 설정
