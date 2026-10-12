@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Selection channels** — `selection<T>(name, options)` gives several views one «current pick» to follow: a list,
+  a side panel and an open tab share it by name. Each value comes with an `AbortSignal` that the next pick aborts, so
+  a late answer for an earlier pick is dropped. With `query` the address is the source — deep links, reloads and Back
+  carry the pick (`history: 'replace'` by default, `'push'` for an entry per pick); with a router the change goes
+  through it, without one only the history entry is rewritten. `follow()` lets a view pin itself. Lit
+  `SelectionController` and React `useSelection` (`@iyulab/router/react`) bind it to a view.
+
 ## [0.22.0] - 2026-10-12
 
 ### Added

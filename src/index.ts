@@ -13,5 +13,9 @@ export * from './components/ULink';
 // location exports
 export { currentRoutePath, navigate, type RouterNavigateRequest } from './internals/location';
 
+// selection exports
+export { selection, SelectionController } from './selection';
+export type { SelectionChannel, SelectionOptions, SelectionListener, SelectionFollower } from './selection';
+
 // main export
 export { Router } from './Router';

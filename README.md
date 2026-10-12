@@ -297,6 +297,28 @@ inner box scrolls rather than the document, name it:
 new Router({ root, routes, scrollRestoration: { container: () => shell.querySelector('main') } });
 ```
 
+### Selection channels — several views following one selection
+
+A route says *which screen*; a selection says *what you are looking at inside it*. A named channel holds one current
+value that a list, a side panel and an open tab all follow — same name, same channel, across modules that do not
+know each other. With `query`, the address is the source: the value survives a reload, a shared link and Back.
+
+```typescript
+import { selection } from '@iyulab/router';
+
+const order = selection<string>('order', { query: 'order' });            // ?order=G-7
+order.subscribe((id, signal) => { if (id) load(id, { signal }); });      // a later pick aborts this one
+order.set('G-7');
+```
+
+- **Latest wins** — each value comes with an `AbortSignal` aborted by the next pick; pass it to the fetch so a slow
+  answer for an earlier pick never overwrites a later one.
+- **History** — `history: 'replace'` (default) keeps picks out of the history; `'push'` makes each pick an entry, so
+  Back returns to the previous pick. Give the route a `key` so a query-only change does not remount the screen.
+- **Pin a view** — `channel.follow(fn)` returns `{ pin, unpin }`: a pinned view stays where it is; unpinning catches up.
+- **Adapters** — Lit: `new SelectionController(this, channel)` (`value`, `signal`, `pin()`); React:
+  `const [value, set] = useSelection(channel)` from `@iyulab/router/react`.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).

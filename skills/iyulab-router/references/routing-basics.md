@@ -87,3 +87,18 @@ window.addEventListener('route-done', (e) => {
 ```
 
 For the scroll position itself, turn on `scrollRestoration` — it waits for a late-growing screen (data arriving after render) to reach the saved position, and stops if the person scrolls first.
+
+## Selection channels
+
+Several views that follow one «current pick» (list · side panel · open tab) share a named channel:
+`selection<T>(name, { query?, parse?, format?, history? })` → `{ value, signal, set(v), subscribe(fn(value, signal)), follow(fn) }`.
+Same name, same channel. `query` makes the address the source (deep link · Back); `history: 'push'` makes each pick an
+entry (default `'replace'`). The `signal` passed with each value aborts on the next pick — hand it to the fetch.
+`follow()` gives a view `pin()`/`unpin()`. Adapters: Lit `SelectionController(host, channel)` · React `useSelection(channel)`
+(`@iyulab/router/react`). Give the route a `key` so a query-only change does not remount the screen.
+
+```ts
+const order = selection<string>('order', { query: 'order' });
+order.subscribe((id, signal) => { if (id) load(id, { signal }); });
+order.set('G-7');
+```

@@ -81,6 +81,15 @@ export interface RouterNavigateRequest {
   options?: NavigateOptions;
 }
 
+/** 떠 있는 라우터에 이동을 요청한다 — 받은 라우터가 있으면 `true`. */
+export function requestNavigation(href: string, options?: NavigateOptions): boolean {
+  const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, {
+    detail: { href, options },
+    cancelable: true,
+  });
+  return !window.dispatchEvent(request);
+}
+
 /**
  * 라우터 인스턴스 없이 클라이언트 이동을 요청한다 — 셸 · 링크 · 인증 만료 처리처럼 라우터를 쥐지 않은 코드의 자리다.
  *
@@ -89,11 +98,7 @@ export interface RouterNavigateRequest {
  * «뒤로 가기» 와 구별되지 않고, 상태 없이 쓴 항목은 라우터의 기록 상태(모드 · 항목 키)를 지운다.
  */
 export function navigate(href: string, options?: NavigateOptions): void {
-  const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, {
-    detail: { href, options },
-    cancelable: true,
-  });
-  if (!window.dispatchEvent(request)) return;
+  if (requestNavigation(href, options)) return;
   const mode = stateMode();
   const target = toBrowserHref(href, href, mode);
   if (options?.replace) window.location.replace(target);

@@ -1,5 +1,5 @@
 import { absolutePath, basepathRoot, isExternalUrl } from "../internals/url-helpers.js";
-import { currentRouteUrl, navigate as requestNavigation, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
+import { currentRouteUrl, navigate as navigateTo, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
 
 const STYLES = `
   :host {
@@ -217,7 +217,7 @@ export class ULink extends HTMLElement {
     // href 없으면 basepath로 SPA 라우팅
     if (!this.href) {
       event.preventDefault();
-      requestNavigation(basepathRoot(basepath));
+      navigateTo(basepathRoot(basepath));
       return;
     }
 
@@ -231,7 +231,7 @@ export class ULink extends HTMLElement {
     if (this.href.startsWith("?")) {
       // 현재 pathname + ?query (hash 모드면 `#` 뒤의 라우트 경로)
       const url = currentRouteUrl(stateMode()).pathname + this.href;
-      requestNavigation(url);
+      navigateTo(url);
       return;
     }
 
@@ -243,13 +243,13 @@ export class ULink extends HTMLElement {
         return;
       }
       // basepath 내부면 SPA 라우팅
-      requestNavigation(this.href);
+      navigateTo(this.href);
       return;
     }
 
     // 상대경로 → basepath와 결합 후 SPA 라우팅
     const url = absolutePath(basepath, this.href);
-    requestNavigation(url);
+    navigateTo(url);
   };
 
 
