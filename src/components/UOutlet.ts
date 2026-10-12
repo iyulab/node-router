@@ -1,4 +1,4 @@
-import { defineElement } from '../internals/define-element.js';
+import { assertNotDefined } from '../internals/single-copy.js';
 
 /**
  * `<u-outlet>` 의 기본 표시 방식 — **상자를 만들지 않는다**(`display: contents`, 0.16.0).
@@ -246,7 +246,8 @@ function contentKind(value: object): ContentKind {
   );
 }
 
-defineElement('u-outlet', UOutlet);
+assertNotDefined('u-outlet');
+customElements.define('u-outlet', UOutlet);
 
 declare global {
   interface HTMLElementTagNameMap {

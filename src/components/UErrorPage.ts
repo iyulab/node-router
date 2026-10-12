@@ -1,5 +1,5 @@
 import { RouteError } from '../types/RouteError.js';
-import { defineElement } from '../internals/define-element.js';
+import { assertNotDefined } from '../internals/single-copy.js';
 
 const STYLES = `
     :host {
@@ -146,4 +146,5 @@ export class UErrorPage extends HTMLElement {
   }
 }
 
-defineElement('u-error-page', UErrorPage);
+assertNotDefined('u-error-page');
+customElements.define('u-error-page', UErrorPage);

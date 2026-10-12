@@ -1,6 +1,6 @@
 import { absolutePath, basepathRoot, isExternalUrl } from "../internals/url-helpers.js";
 import { currentRouteUrl, navigate as navigateTo, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
-import { defineElement } from "../internals/define-element.js";
+import { assertNotDefined } from "../internals/single-copy.js";
 
 const STYLES = `
   :host {
@@ -260,4 +260,5 @@ export class ULink extends HTMLElement {
   };
 }
 
-defineElement("u-link", ULink);
+assertNotDefined("u-link");
+customElements.define("u-link", ULink);
