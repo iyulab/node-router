@@ -1,4 +1,5 @@
 import { RouteError } from '../types/RouteError.js';
+import { defineElement } from '../internals/define-element.js';
 
 const STYLES = `
     :host {
@@ -145,4 +146,4 @@ export class UErrorPage extends HTMLElement {
   }
 }
 
-customElements.define('u-error-page', UErrorPage);
+defineElement('u-error-page', UErrorPage);

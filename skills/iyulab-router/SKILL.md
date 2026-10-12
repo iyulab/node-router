@@ -17,6 +17,11 @@ Client-side router supporting Lit and React renders, nested routes, route guards
 npm install @iyulab/router
 ```
 
+One copy per app: `npm ls @iyulab/router` must list a single version. Packages that take the router as a peer
+(`@iyulab/modern-app`) share the app's copy. A broad peer range (`"*"`) in a workspace package can keep an older
+copy installed with no install error — delete the older lockfile and `node_modules` entries and reinstall. A second
+copy that loads throws «`<u-link>` is already defined by a different class … another copy of @iyulab/router».
+
 ## Core API
 
 | Export | Purpose |

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.23.1] - 2026-10-13
+
+### Changed
+
+- **A second copy of the router says so.** When `<u-link>`, `<u-outlet>` or `<u-error-page>` is already defined by
+  a different class, loading the router throws an error that names the likely cause — two copies of
+  `@iyulab/router` in one app — and how to check it (`npm ls @iyulab/router`), instead of the browser's
+  «name has already been used». Two copies do not share the running router or selection channels.
+- The installation section says to keep one copy, and that a package declaring the router as a broad peer (`"*"`)
+  can keep an older copy installed after an upgrade without any install error.
+
 ## [0.23.0] - 2026-10-12
 
 ### Added

@@ -11,6 +11,13 @@ npm install @iyulab/router
 `lit` is an optional peer: install it (`npm install lit`) when routes return Lit templates. Routes
 that return elements or React content need neither Lit nor anything else beyond the router.
 
+**Load one copy.** The router keeps module state — the running router, selection channels, the `<u-link>` and
+`<u-outlet>` definitions — so an app and the packages it builds on (such as `@iyulab/modern-app`, which takes the
+router as a peer) must share one copy. After installing or upgrading, `npm ls @iyulab/router` should list a single
+version. A second copy that loads stops with an error saying `<u-link>` is already defined by another copy. A
+package that declares the router as a broad peer (`"*"`) can keep an older copy satisfied after an upgrade without
+any install error; remove the older entries from the lockfile and `node_modules`, then install again.
+
 ## Quick Start
 
 ```html
