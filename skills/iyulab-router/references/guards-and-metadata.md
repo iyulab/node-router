@@ -34,11 +34,20 @@ Guard return values:
 input can ask first. Return `false` to stay — the screen and the address do not change.
 
 ```typescript
-{
-  path: '/orders/:id',
-  leave: () => !form.dirty || confirm('Discard your changes?'),
-  render: (ctx) => html`<order-page .id=${ctx.params.id}></order-page>`,
-}
+import { Router } from '@iyulab/router';
+
+let dirty = false; // the screen's own state — true while an edit is unsaved
+
+new Router({
+  root: document.body,
+  routes: [
+    {
+      path: '/orders/:id',
+      leave: () => !dirty || confirm('Discard your changes?'),
+      render: (ctx) => Object.assign(document.createElement('p'), { textContent: `Order ${ctx.params.id}` }),
+    },
+  ],
+});
 ```
 
 - It receives `{ from, to }`: the current screen's context and the destination (address only — `to.params` and
