@@ -73,7 +73,9 @@ export function parseUrl(url: string, basepath: string, current: URL = new URL(w
     hash: urlObj.hash,
     params: {},
     progress: () => {},
-    metadata: {}
+    metadata: {},
+    // 라우터가 이동을 시작할 때 채운다(`Router.go`).
+    navigation: { type: 'push', entryKey: '' },
   };
 }
 

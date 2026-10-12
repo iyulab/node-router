@@ -268,6 +268,24 @@ let path = currentRoutePath();                                  // e.g. '/orders
 window.addEventListener('route-begin', (e) => { path = e.context.path; });
 ```
 
+### Navigating without the router
+
+Code that does not hold the router asks for a navigation with `navigate(href, options)`. The running router
+performs it; with no router it becomes a document navigation. `<u-link>` uses the same request — it no longer
+pushes an entry and dispatches a synthetic `popstate`, so a `popstate` your app hears is a real Back or Forward.
+
+```typescript
+import { navigate } from '@iyulab/router';
+
+navigate('/login', { replace: true });
+```
+
+### How a screen was reached
+
+`context.navigation` is `{ type, entryKey }`: `type` is `push`, `replace`, `reload`, or `traverse` (Back/Forward
+returned to an existing entry — the platform Navigation API's vocabulary), and `entryKey` names the history entry,
+the same when you return to it. State given to `go(href, { state })` survives Back, Forward and a reload.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).

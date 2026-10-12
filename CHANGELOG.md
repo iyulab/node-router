@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`RouteContext.navigation`** — `{ type, entryKey }`. `type` is how the route was entered: `push`, `replace`,
+  `reload` or `traverse` (Back/Forward returned to an existing entry) — the platform Navigation API's vocabulary.
+  `entryKey` names the history entry: a new entry gets a new key, `replace` keeps the slot's key, and coming back
+  to an entry gives its key again, so per-entry memory (scroll, selection) can be restored on `traverse`. The key is
+  kept in `history.state` with the router's other fields, which now win over same-named fields in `state`.
+- **`navigate(href, options)`** — asks the running router for a navigation without holding it (a shell, an
+  auth-expiry handler). With no router listening it becomes a document navigation.
+
+### Changed
+
+- **`<u-link>` no longer pushes a history entry and dispatches a synthetic `popstate`.** It asks the router to
+  navigate (`navigate()`), so a `popstate` your app hears is a real Back or Forward, and the new entry carries the
+  router's state. Code that imitated the old idiom (`history.pushState(…)` + `dispatchEvent(new PopStateEvent(…))`)
+  still routes, as a `traverse`; move it to `navigate()`.
+- `RouteContext` has a required `navigation` field — a hand-built context needs one.
+
 ### Fixed
 
 - **A history entry keeps its state when you come back to it.** `go(href, { state })` promised the state could be

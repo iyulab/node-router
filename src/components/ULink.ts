@@ -1,5 +1,5 @@
 import { absolutePath, basepathRoot, isExternalUrl } from "../internals/url-helpers.js";
-import { currentRouteUrl, stateMode, toBrowserHref, ROUTER_STATE_EVENT } from "../internals/location.js";
+import { currentRouteUrl, navigate as requestNavigation, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
 
 const STYLES = `
   :host {
@@ -217,7 +217,7 @@ export class ULink extends HTMLElement {
     // href 없으면 basepath로 SPA 라우팅
     if (!this.href) {
       event.preventDefault();
-      this.dispatchPopstate(basepath, basepathRoot(basepath));
+      requestNavigation(basepathRoot(basepath));
       return;
     }
 
@@ -231,7 +231,7 @@ export class ULink extends HTMLElement {
     if (this.href.startsWith("?")) {
       // 현재 pathname + ?query (hash 모드면 `#` 뒤의 라우트 경로)
       const url = currentRouteUrl(stateMode()).pathname + this.href;
-      this.dispatchPopstate(basepath, url);
+      requestNavigation(url);
       return;
     }
 
@@ -243,21 +243,15 @@ export class ULink extends HTMLElement {
         return;
       }
       // basepath 내부면 SPA 라우팅
-      this.dispatchPopstate(basepath, this.href);
+      requestNavigation(this.href);
       return;
     }
 
     // 상대경로 → basepath와 결합 후 SPA 라우팅
     const url = absolutePath(basepath, this.href);
-    this.dispatchPopstate(basepath, url);
+    requestNavigation(url);
   };
 
-  /** 클라이언트 라우팅을 위해 popstate 이벤트를 발생시킵니다. */
-  private dispatchPopstate(basepath: string, url: string) {
-    const mode = stateMode();
-    window.history.pushState({ basepath, mode }, "", toBrowserHref(url, url, mode));
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
 
   /** basepath를 state에서 꺼내는 헬퍼 */
   private getBasepath(): string {

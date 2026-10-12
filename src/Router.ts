@@ -4,11 +4,11 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
-import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, type RouterMode } from './internals/location.js';
+import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
 import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
-import type { RouteContext } from './types/RouteContext.js';
+import type { RouteContext, RouteNavigationType } from './types/RouteContext.js';
 import type { RouterConfig } from './types/RouterConfig.js';
 import type { FallbackRouteConfig, RouteConfig } from './types/RouteConfig.js';
 import type { NavigateOptions } from './types/NavigateOptions.js';
@@ -20,6 +20,17 @@ import type { NavigateOptions } from './types/NavigateOptions.js';
 function isExpectedOutcome(error: RouteError): boolean {
   const code = Number(error.code);
   return Number.isInteger(code) && code >= 400 && code < 500;
+}
+
+/**
+ * 첫 라우팅의 이동 종류 — 문서가 어떻게 열렸는가(Navigation Timing). 새로 고침이면 `reload`, 뒤로·앞으로 가기로 문서가
+ * 다시 열렸으면 `traverse`, 그 밖은 새 방문(`push`).
+ */
+function initialNavigationType(): RouteNavigationType {
+  const entry = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (entry?.type === 'reload') return 'reload';
+  if (entry?.type === 'back_forward') return 'traverse';
+  return 'push';
 }
 
 /** `history.state` 가 펼칠 수 있는 평범한 객체인가 — 다른 코드가 원시값·배열을 넣었으면 잇지 않는다. */
@@ -64,6 +75,7 @@ export class Router {
     // 라우터보다 먼저 붙은 링크(셸을 먼저 그리는 앱)도 이 상태를 따르게 한다.
     window.dispatchEvent(new Event(ROUTER_STATE_EVENT));
     window.addEventListener('popstate', this.handleWindowPopstate);
+    window.addEventListener(ROUTER_NAVIGATE_EVENT, this.handleNavigateRequest);
 
     if (config.useIntercept !== false) {
       this._rootElement.addEventListener('click', this.handleRootElementClick);
@@ -74,7 +86,7 @@ export class Router {
       // 시간만큼 지연된 뒤) 소비자는 빈 화면의 원인을 진단하기 어렵다. 명시적으로 표면화한다.
       waitOutlet(this._rootElement)
         .then(() => {
-          this.go(currentRouteUrl(this._mode).href);
+          this.run(currentRouteUrl(this._mode).href, undefined, undefined, initialNavigationType());
         })
         .catch((error) => {
           console.error('Router initialization failed:', error instanceof Error ? error.message : error);
@@ -85,6 +97,7 @@ export class Router {
   /** 객체를 정리하고 이벤트 리스너를 제거합니다. */
   public destroy() {
     window.removeEventListener('popstate', this.handleWindowPopstate);
+    window.removeEventListener(ROUTER_NAVIGATE_EVENT, this.handleNavigateRequest);
     this._rootElement?.removeEventListener('click', this.handleRootElementClick);
     this._requestID = undefined;
     this._context = undefined;
@@ -116,6 +129,14 @@ export class Router {
    *   동일 pathname에 대한 getRoutes 중복 호출을 피하는 용도입니다. 외부에서 사용하지 마세요.
    */
   public async go(href: string, options?: NavigateOptions, routes?: RouteConfig[]) {
+    return this.run(href, options, routes);
+  }
+
+  /**
+   * 이동 본체. `type` 은 브라우저가 이미 옮긴 항목에 들어갈 때(뒤로·앞으로 가기 · 첫 로드) 호출자가 준다 — 없으면
+   * 히스토리를 어떻게 쓰는가로 정한다(`replace` 면 교체, 아니면 새 항목).
+   */
+  private async run(href: string, options?: NavigateOptions, routes?: RouteConfig[], type?: RouteNavigationType) {
     if (!options?.isRedirect) this._tracker.reset();
 
     const requestID = getRandomID();
@@ -133,10 +154,16 @@ export class Router {
     // 상태가 Back 으로 돌아오는 순간 지워졌다(`NavigateOptions.state` 의 «다시 읽을 수 있다» 가 첫 방문에만 참이었다).
     // 다른 주소로의 교체(리다이렉트 · `replace`)는 새 위치라 옛 상태를 잇지 않는다.
     const sameEntry = !options?.isRedirect && context.href === current.href;
-    const entryState = sameEntry && isRecord(window.history.state) ? window.history.state : {};
-    const historyState = { ...entryState, basepath: context.basepath, mode: this._mode, ...options?.state };
+    const previous = isRecord(window.history.state) ? window.history.state : {};
+    const entryState = sameEntry ? previous : {};
+    // 이동 종류와 항목 키. 키는 기록 «칸» 의 정체다 — 새 항목이면 새 키, 교체·돌아옴이면 그 칸의 키(없던 칸이면 새로).
+    const navigationType: RouteNavigationType = type ?? (useReplace ? 'replace' : 'push');
+    const entryKey = navigationType !== 'push' && typeof previous.entryKey === 'string' ? previous.entryKey : getRandomID();
+    context.navigation = { type: navigationType, entryKey };
+    // 라우터 필드가 마지막 — 앱 상태가 같은 이름을 써도 모드·항목 키를 덮지 못한다.
+    const historyState = { ...entryState, ...options?.state, basepath: context.basepath, mode: this._mode, entryKey };
     const browserHref = toBrowserHref(context.path, context.href, this._mode);
-    if (useReplace) {
+    if (useReplace || navigationType === 'traverse' || navigationType === 'reload') {
       window.history.replaceState(historyState, '', browserHref);
     } else {
       window.history.pushState(historyState, '', browserHref);
@@ -272,7 +299,14 @@ export class Router {
 
   /** 브라우저 히스토리 이벤트가 발생시 라우팅 처리 */
   private handleWindowPopstate = async (_: PopStateEvent) => {
-    await this.go(currentRouteUrl(this._mode).href);
+    await this.run(currentRouteUrl(this._mode).href, undefined, undefined, 'traverse');
+  };
+
+  /** 라우터 인스턴스 없이 낸 이동 요청(`navigate()` · `u-link`)을 받는다 — 먼저 받은 라우터 하나가 처리한다. */
+  private handleNavigateRequest = (e: CustomEvent<{ href: string; options?: NavigateOptions }>) => {
+    if (e.defaultPrevented) return;
+    e.preventDefault();
+    void this.go(e.detail.href, e.detail.options);
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */

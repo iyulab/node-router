@@ -56,5 +56,31 @@ router.go('/orders/7');   // address becomes …/#/orders/7 — the path is unto
 ```ts
 router.go('/dashboard');
 router.go('settings');
+router.go('/orders/7', { state: { tab: 'log' } });   // read back from history.state — also after Back/Forward or a reload
 router.destroy();
+```
+
+Code that does not hold the router — a shell, an auth-expiry handler — asks for a navigation with `navigate()`.
+The running router performs it (a new entry; `{ replace: true }` replaces); with no router it is a document
+navigation. Do not imitate it with `history.pushState` plus a dispatched `popstate`: that event reads as Back to
+everything listening, and an entry written without the router's state loses its mode and entry key.
+
+```ts
+import { navigate } from '@iyulab/router';
+navigate('/login', { replace: true });
+```
+
+`<u-link>` uses the same request.
+
+### How a screen was reached
+
+`context.navigation` says how the route was entered: `type` is `push` (a new entry), `replace`, `reload`, or
+`traverse` (Back/Forward returned to an existing entry), and `entryKey` names the history entry — the same value
+when you come back to it. Restore per-entry memory (scroll, selection) on `traverse`, keyed by `entryKey`:
+
+```ts
+window.addEventListener('route-done', (e) => {
+  const { type, entryKey } = e.context.navigation;
+  if (type === 'traverse') restore(entryKey);
+});
 ```

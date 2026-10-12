@@ -83,6 +83,31 @@ export interface RouteContext {
    * - 부모 라우트에서 자식 라우트 순서로 병합됩니다.
    */
   metadata: Record<string, unknown>;
+
+  /**
+   * 이 화면에 어떻게 왔는가 — 이동 종류와 그 기록 항목.
+   * - 화면이 «돌아왔는가»(`traverse`)와 «새로 왔는가»(`push`)를 가르는 자리다 — 스크롤·선택을 되돌릴지 정하는 쪽이 읽는다.
+   */
+  navigation: RouteNavigation;
+}
+
+/**
+ * 이동 종류 — 플랫폼 Navigation API 의 `NavigationType` 과 같은 어휘다.
+ * - `push`: 새 기록 항목(링크 · `go()` · 첫 방문)
+ * - `replace`: 지금 항목을 바꿈(`replace` · 리다이렉트 · 같은 주소로의 이동)
+ * - `reload`: 새로 고침으로 들어온 첫 라우팅
+ * - `traverse`: 뒤로·앞으로 가기로 이미 있던 항목에 돌아옴
+ */
+export type RouteNavigationType = 'push' | 'replace' | 'reload' | 'traverse';
+
+export interface RouteNavigation {
+  /** 이동 종류 */
+  type: RouteNavigationType;
+  /**
+   * 기록 항목의 키 — 그 항목에 돌아오면(`traverse` · `reload`) 같은 값이다. `replace` 는 같은 칸이라 키를 잇는다
+   * (Navigation API 의 `key` 와 같은 뜻). 항목별로 무언가(스크롤 · 선택)를 기억할 때 이것으로 묶는다.
+   */
+  entryKey: string;
 }
 
 export interface FallbackRouteContext extends RouteContext {

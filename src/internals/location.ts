@@ -1,3 +1,5 @@
+import type { NavigateOptions } from '../types/NavigateOptions.js';
+
 /**
  * 라우팅 위치의 원천.
  * - `history`: 주소의 경로(`/app/orders/1`)가 곧 라우트다. 서버가 모든 경로에 앱을 돌려줘야 새로고침·딥링크가 동작한다.
@@ -9,6 +11,8 @@ export type RouterMode = 'history' | 'hash';
 export interface RouterHistoryState {
   basepath?: string;
   mode?: RouterMode;
+  /** 기록 항목의 키(`RouteNavigation.entryKey`) — 라우터가 심는다. */
+  entryKey?: string;
   [key: string]: unknown;
 }
 
@@ -67,4 +71,37 @@ export function toRouteHref(href: string, mode: RouterMode): string {
 /** 라우트 경로(경로 + 쿼리 + 해시)를 주소창에 쓸 값으로. */
 export function toBrowserHref(routePath: string, routeHref: string, mode: RouterMode): string {
   return mode === 'hash' ? window.location.pathname + window.location.search + '#' + routePath : routeHref;
+}
+
+/** 라우터 인스턴스 없이 낸 이동 요청 — `window` 에 쏜다. 라우터가 받아 `go()` 한다(`navigate`). */
+export const ROUTER_NAVIGATE_EVENT = 'u-router-navigate';
+
+export interface RouterNavigateRequest {
+  href: string;
+  options?: NavigateOptions;
+}
+
+/**
+ * 라우터 인스턴스 없이 클라이언트 이동을 요청한다 — 셸 · 링크 · 인증 만료 처리처럼 라우터를 쥐지 않은 코드의 자리다.
+ *
+ * 떠 있는 라우터가 요청을 받아 `go(href, options)` 한다(새 기록 항목 — `options.replace` 면 교체). 받을 라우터가 없으면
+ * 문서 이동으로 간다. ⚠`history.pushState` + 합성 `popstate` 로 흉내 내지 말 것 — 그 `popstate` 는 앱이 듣는
+ * «뒤로 가기» 와 구별되지 않고, 상태 없이 쓴 항목은 라우터의 기록 상태(모드 · 항목 키)를 지운다.
+ */
+export function navigate(href: string, options?: NavigateOptions): void {
+  const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, {
+    detail: { href, options },
+    cancelable: true,
+  });
+  if (!window.dispatchEvent(request)) return;
+  const mode = stateMode();
+  const target = toBrowserHref(href, href, mode);
+  if (options?.replace) window.location.replace(target);
+  else window.location.assign(target);
+}
+
+declare global {
+  interface WindowEventMap {
+    'u-router-navigate': CustomEvent<RouterNavigateRequest>;
+  }
 }

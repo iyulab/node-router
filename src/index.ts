@@ -11,7 +11,7 @@ export * from './components/UOutlet';
 export * from './components/ULink';
 
 // location exports
-export { currentRoutePath } from './internals/location';
+export { currentRoutePath, navigate, type RouterNavigateRequest } from './internals/location';
 
 // main export
 export { Router } from './Router';
