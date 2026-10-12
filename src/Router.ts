@@ -22,6 +22,11 @@ function isExpectedOutcome(error: RouteError): boolean {
   return Number.isInteger(code) && code >= 400 && code < 500;
 }
 
+/** `history.state` 가 펼칠 수 있는 평범한 객체인가 — 다른 코드가 원시값·배열을 넣었으면 잇지 않는다. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * `lit-element`, `react`를 지원하는 SPA 클라이언트 라우터 객체입니다.
  */
@@ -123,7 +128,13 @@ export class Router {
 
     // 히스토리 업데이트: isRedirect/replace면 replaceState (뒤로가기에서 경유지 제거)
     const useReplace = options?.isRedirect || options?.replace || context.href === current.href;
-    const historyState = { basepath: context.basepath, mode: this._mode, ...options?.state };
+    // 같은 기록 항목에 들어가는 이동(뒤로·앞으로 가기 · 첫 로드와 새로 고침 · 같은 주소로의 이동)은 그 항목이 이미
+    // 가진 상태 위에 라우터 필드만 갱신한다 — 종전에는 `{ basepath, mode }` 로 덮어써, `go(href, { state })` 로 실은
+    // 상태가 Back 으로 돌아오는 순간 지워졌다(`NavigateOptions.state` 의 «다시 읽을 수 있다» 가 첫 방문에만 참이었다).
+    // 다른 주소로의 교체(리다이렉트 · `replace`)는 새 위치라 옛 상태를 잇지 않는다.
+    const sameEntry = !options?.isRedirect && context.href === current.href;
+    const entryState = sameEntry && isRecord(window.history.state) ? window.history.state : {};
+    const historyState = { ...entryState, basepath: context.basepath, mode: this._mode, ...options?.state };
     const browserHref = toBrowserHref(context.path, context.href, this._mode);
     if (useReplace) {
       window.history.replaceState(historyState, '', browserHref);

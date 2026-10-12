@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **A history entry keeps its state when you come back to it.** `go(href, { state })` promised the state could be
+  read again from `history.state`, but Back and Forward routed through the same `go()` that overwrote the entry with
+  `{ basepath, mode }`, so the state was gone the moment the entry returned — the browser had handed it back in the
+  `popstate` event. A reload did the same. Entering the same entry (Back, Forward, reload, navigating to the current
+  address) now updates the router's fields on top of the entry's state; navigating to the current address with a new
+  `state` adds to it. Replacing the entry with another address (`replace`, redirects) still starts fresh.
+
 ## [0.21.2] - 2026-10-09
 
 ### Fixed

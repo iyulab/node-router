@@ -20,7 +20,8 @@ export interface NavigateOptions {
 
   /**
    * pushState / replaceState 호출 시 함께 저장할 커스텀 상태 객체.
-   * - `history.state`로 다시 읽을 수 있습니다.
+   * - `history.state`로 다시 읽을 수 있습니다 — 뒤로·앞으로 가기나 새로 고침으로 그 기록 항목에 돌아와도 남습니다.
+   * - 같은 주소로 다시 이동하면 기존 상태 위에 얹힙니다. 다른 주소로의 교체(`replace` · 리다이렉트)는 잇지 않습니다.
    * @example { from: '/login', referrer: 'email-link' }
    */
   state?: Record<string, unknown>;
