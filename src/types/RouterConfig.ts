@@ -65,4 +65,19 @@ export interface RouterConfig {
    * @default true
    */
   initialLoad?: boolean;
+
+  /**
+   * 기록 항목마다 스크롤 위치를 기억하고 되돌린다.
+   * - 뒤로·앞으로 가기와 새로 고침으로 항목에 돌아오면, 화면이 선 뒤 그 항목에서 보던 자리로 — 데이터를 받은 뒤 높이가
+   *   생기는 화면은 내용이 그 위치까지 자랄 때까지 잠시 기다린다(사람이 먼저 굴리면 멈춘다).
+   * - 새 이동은 맨 위로(주소에 해시가 있으면 그 요소로) · 교체(`replace`)는 그대로.
+   * - `container` 는 스크롤하는 상자 — 셸이 문서가 아니라 안쪽 상자를 굴리면 그것을 준다(기본 문서). 켜면
+   *   `history.scrollRestoration` 을 `'manual'` 로 둔다(브라우저의 문서 복원과 겹치지 않게).
+   * @default false
+   * @example
+   * ```typescript
+   * scrollRestoration: { container: () => document.querySelector('main') }
+   * ```
+   */
+  scrollRestoration?: boolean | { container?: () => Element | null | undefined };
 }

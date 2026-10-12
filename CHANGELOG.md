@@ -9,6 +9,12 @@
   `entryKey` names the history entry: a new entry gets a new key, `replace` keeps the slot's key, and coming back
   to an entry gives its key again, so per-entry memory (scroll, selection) can be restored on `traverse`. The key is
   kept in `history.state` with the router's other fields, which now win over same-named fields in `state`.
+- **`RouterConfig.scrollRestoration`** (off by default) — per-entry scroll memory. Back, Forward and a reload return
+  to where you were reading; a new navigation starts at the top (or the `#hash` element); `replace` leaves the
+  position alone. A screen that grows after rendering is waited for (up to 1.5 s) until it reaches the saved
+  position, and scrolling first cancels the restore. `{ container: () => el }` names an inner scrolling box — a shell
+  whose main area scrolls instead of the document, which the browser's own restoration does not reach. While on,
+  `history.scrollRestoration` is `'manual'`.
 - **`navigate(href, options)`** — asks the running router for a navigation without holding it (a shell, an
   auth-expiry handler). With no router listening it becomes a document navigation.
 

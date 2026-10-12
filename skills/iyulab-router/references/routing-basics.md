@@ -31,6 +31,7 @@ const router = new Router({
 | `fallback` | built-in error page | Error/404 handler |
 | `useIntercept` | `true` | Intercept `<a>` clicks for client routing |
 | `initialLoad` | `true` | Auto-navigate on initialization |
+| `scrollRestoration` | `false` | Per-entry scroll memory: Back/Forward/reload return to where you were, a new navigation starts at the top (`#hash` → that element). `{ container: () => el }` when an inner box scrolls, not the document |
 
 ## Hash mode — static hosting without a server fallback
 
@@ -84,3 +85,5 @@ window.addEventListener('route-done', (e) => {
   if (type === 'traverse') restore(entryKey);
 });
 ```
+
+For the scroll position itself, turn on `scrollRestoration` — it waits for a late-growing screen (data arriving after render) to reach the saved position, and stops if the person scrolls first.

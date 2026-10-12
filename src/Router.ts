@@ -6,6 +6,7 @@ import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
 import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
+import { ScrollMemory } from './internals/ScrollMemory.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
 import { RouteBeginEvent, RouteDoneEvent, RouteErrorEvent, RouteProgressEvent } from './types/RouteEvent.js';
 import type { RouteContext, RouteNavigationType } from './types/RouteContext.js';
@@ -59,6 +60,8 @@ export class Router {
    * 제목 없는 라우트는 문서 제목을 그대로 두므로, 없으면 실패 제목(«Page not found»)이 회복 뒤에도 남는다.
    */
   private _titleBeforeFallback?: string;
+  /** `RouterConfig.scrollRestoration` 을 켰을 때 — 기록 항목별 스크롤 기억. */
+  private _scroll?: ScrollMemory;
 
   constructor(config: RouterConfig) {
     this.destroy();
@@ -76,6 +79,10 @@ export class Router {
     window.dispatchEvent(new Event(ROUTER_STATE_EVENT));
     window.addEventListener('popstate', this.handleWindowPopstate);
     window.addEventListener(ROUTER_NAVIGATE_EVENT, this.handleNavigateRequest);
+    if (config.scrollRestoration) {
+      const container = typeof config.scrollRestoration === 'object' ? config.scrollRestoration.container : undefined;
+      this._scroll = new ScrollMemory(() => container?.(), () => this._context?.navigation.entryKey);
+    }
 
     if (config.useIntercept !== false) {
       this._rootElement.addEventListener('click', this.handleRootElementClick);
@@ -98,6 +105,8 @@ export class Router {
   public destroy() {
     window.removeEventListener('popstate', this.handleWindowPopstate);
     window.removeEventListener(ROUTER_NAVIGATE_EVENT, this.handleNavigateRequest);
+    this._scroll?.destroy();
+    this._scroll = undefined;
     this._rootElement?.removeEventListener('click', this.handleRootElementClick);
     this._requestID = undefined;
     this._context = undefined;
@@ -160,6 +169,11 @@ export class Router {
     const navigationType: RouteNavigationType = type ?? (useReplace ? 'replace' : 'push');
     const entryKey = navigationType !== 'push' && typeof previous.entryKey === 'string' ? previous.entryKey : getRandomID();
     context.navigation = { type: navigationType, entryKey };
+    // 떠나는 화면(지금 그려진 항목)의 스크롤을 기억한다 — 새 항목을 쌓기 직전이면 그 항목 상태에도(새로 고침 뒤 복원).
+    // 교체는 같은 칸이라 기억하지 않는다(그 칸을 떠날 때 기억된다).
+    if (navigationType === 'push' || navigationType === 'traverse') {
+      this._scroll?.remember(this._context?.navigation.entryKey, navigationType === 'push');
+    }
     // 라우터 필드가 마지막 — 앱 상태가 같은 이름을 써도 모드·항목 키를 덮지 못한다.
     const historyState = { ...entryState, ...options?.state, basepath: context.basepath, mode: this._mode, entryKey };
     const browserHref = toBrowserHref(context.path, context.href, this._mode);
@@ -289,6 +303,8 @@ export class Router {
         console.error('Original error:', routeError.original || routeError);
       }
     } finally {
+      // 화면(또는 대체 화면)이 선 뒤 — 이 이동이 아직 최신일 때만 위치를 정한다(리다이렉트·더 새 이동이 넘겨받았으면 그쪽이).
+      if (this._requestID === requestID) this._scroll?.arrive(context.navigation, context.hash);
       if (completed && this._titleBeforeFallback !== undefined) {
         title ||= this._titleBeforeFallback;
         this._titleBeforeFallback = undefined;

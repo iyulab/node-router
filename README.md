@@ -286,6 +286,17 @@ navigate('/login', { replace: true });
 returned to an existing entry — the platform Navigation API's vocabulary), and `entryKey` names the history entry,
 the same when you return to it. State given to `go(href, { state })` survives Back, Forward and a reload.
 
+### Scroll restoration
+
+With `scrollRestoration`, Back, Forward and a reload return to where you were reading; a new navigation starts at
+the top (or the `#hash` element), and `replace` leaves the position alone. A screen that grows after rendering — data
+arriving later — is waited for until it reaches the saved position; scrolling first cancels the restore. When an
+inner box scrolls rather than the document, name it:
+
+```typescript
+new Router({ root, routes, scrollRestoration: { container: () => shell.querySelector('main') } });
+```
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).
