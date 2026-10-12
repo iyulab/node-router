@@ -11,16 +11,19 @@
   a selection channel that goes through the router, Back and Forward. A hash-only change, redirect hops and the
   first route do not ask. Route guards of the current screen run child first, then the global one; a guard that
   throws counts as `false`. Leaving the document (reload, another site, closing the tab) is `beforeunload`'s job.
-- **Back and Forward can be held.** The History API cannot cancel a traversal, so when a guard has to be asked the
-  router first returns to the entry you were on, asks, and goes the same number of entries again if the guard
-  allows it. To count entries, history state now carries `entryIndex` next to `entryKey`.
+- **Guards that answer right away cost nothing.** Guards are asked in order without waiting while they return
+  booleans, so a navigation whose guards say `true` at once goes on in the same tick, as before. Only a guard that
+  returns a promise (an in-app dialog) is waited for.
+- **Back and Forward can be held.** The History API cannot cancel a traversal, so when a guard does not let one
+  through right away the router returns to the entry you were on, waits for the answer, and goes the same number of
+  entries again if the guard allows it. To count entries, history state now carries `entryIndex` next to `entryKey`.
 
 ### Changed
 
-- **A selection channel waits for the router when the screen guards leaving.** With `query` and a running router,
-  `set()` changes the value when the navigation starts (`route-begin`), so a blocked navigation leaves the channel
-  as it was. Where no `leave` guard would be asked, the value changes in `set()` as before. Back and Forward to an
-  entry the router wrote are followed through the router too.
+- **A selection channel follows the router's `leave` answer.** With `query` and a running router, a pick that a
+  guard blocks leaves the channel as it was; while a guard is still answering (a dialog), the value changes when the
+  navigation starts (`route-begin`). A pick the guards let through at once changes the value in `set()`, as before.
+  Back and Forward to an entry the router wrote are followed through the router too.
 - **A second copy of the router says so.** When `<u-link>`, `<u-outlet>` or `<u-error-page>` is already defined by
   a different class, loading the router throws an error that names the likely cause — two copies of
   `@iyulab/router` in one app — and how to check it (`npm ls @iyulab/router`), instead of the browser's

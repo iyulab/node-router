@@ -138,8 +138,11 @@ input can ask first. Return `false` to stay — the screen and the address do no
   that goes through the router, Back and Forward. A hash-only change, redirect hops and the first route do not ask.
 - Route guards of the current screen run child first, then the global `RouterConfig.leave`. The first `false` stops;
   a guard that throws counts as `false`. A guard may return a promise (an in-app dialog).
-- Back and Forward have no «cancel» in the History API. The router returns to the entry you were on before it asks,
-  and goes the same number of entries again when the guard allows it.
+- A guard that answers right away (a boolean) does not delay anything — the navigation goes on in the same tick, as
+  without guards. Only a guard that returns a promise is waited for.
+- Back and Forward have no «cancel» in the History API. When a guard does not let a Back or Forward through right
+  away, the router returns to the entry you were on, waits for the answer, and goes the same number of entries again
+  if the guard allows it.
 - Leaving the document (reload, another site, closing the tab) is not a navigation the router sees — use the
   browser's `beforeunload` for that.
 

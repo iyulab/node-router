@@ -4,7 +4,7 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
-import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest } from './internals/location.js';
+import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest, type LeaveOutcome } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { ScrollMemory } from './internals/ScrollMemory.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
@@ -83,6 +83,8 @@ export class Router {
   private _reverted?: () => void;
   /** 가드를 통과해 다시 건너는 이동 — 그 `popstate` 는 묻지 않고 라우팅한다. */
   private _approvedTraverse = false;
+  /** 마지막 이동의 `leave` 판정 — 이동 요청(`navigate()` · 선택 채널)에 동기로 돌려준다. */
+  private _leaveOutcome: LeaveOutcome = 'allowed';
 
   constructor(config: RouterConfig) {
     this.destroy();
@@ -170,19 +172,27 @@ export class Router {
    * 히스토리를 어떻게 쓰는가로 정한다(`replace` 면 교체, 아니면 새 항목).
    */
   private async run(href: string, options?: NavigateOptions, routes?: RouteConfig[], type?: RouteNavigationType) {
-    const requestID = getRandomID();
-    this._requestID = requestID;
     const current = currentRouteUrl(this._mode);
     const context = parseUrl(toRouteHref(href, this._mode), this._basepath, current);
 
     // 화면을 떠나는 이동이면 기록을 쓰기 전에 묻는다 — 취소면 화면도 주소도 그대로다. 뒤로·앞으로 가기(`type`)는
     // 브라우저가 이미 항목을 옮겼으므로 `popstate` 처리기가 따로 묻는다.
-    // 물을 가드가 없으면 기다리지 않는다 — 기록은 종전처럼 호출한 그 틱에 쓰인다(클릭 직후 주소를 읽는 코드).
-    if (type === undefined && !options?.isRedirect && this.leaveGuardsFor(context).length > 0) {
+    // 가드가 바로 답하면 기다리지 않는다 — 기록은 종전처럼 호출한 그 틱에 쓰인다(클릭 직후 주소를 읽는 코드).
+    // 이 이동의 요청 ID 는 판정 뒤에 잡는다 — 막힌 이동이 진행 중인 앞 이동을 «더 새 이동» 으로 끊지 않게.
+    if (type === undefined && !options?.isRedirect) {
       const leaveType = options?.replace || context.href === current.href ? 'replace' : 'push';
-      const allowed = await this.confirmLeave(context, leaveType);
-      if (!allowed || this._requestID !== requestID) return;
+      const decision = this.leaveDecision(context, leaveType);
+      this._leaveOutcome = decision === true ? 'allowed' : decision === false ? 'blocked' : 'pending';
+      if (decision === false) return;
+      if (decision !== true) {
+        const before = this._requestID;
+        // 가드가 답하는 동안 다른 이동이 시작했으면 그쪽이 이긴다.
+        if (!(await decision) || this._requestID !== before) return;
+      }
     }
+
+    const requestID = getRandomID();
+    this._requestID = requestID;
 
     if (!options?.isRedirect) this._tracker.reset();
 
@@ -356,21 +366,35 @@ export class Router {
   /**
    * 화면을 떠나도 되는가 — 지금 화면의 라우트 `leave`(자식 → 부모) 다음 글로벌 `leave`. 하나라도 `false` 거나 던지면
    * 떠나지 않는다. 화면을 바꾸지 않는 이동(해시만 다름)과 첫 라우팅에는 묻지 않는다.
+   * 모든 가드가 바로 답하면 `boolean`, 하나라도 Promise 를 돌려주면 `Promise<boolean>`.
    */
-  private async confirmLeave(to: RouteContext, type: RouteNavigationType): Promise<boolean> {
+  private leaveDecision(to: RouteContext, type: RouteNavigationType): boolean | Promise<boolean> {
     const from = this._context;
     const guards = this.leaveGuardsFor(to);
     if (!from || guards.length === 0) return true;
     to.navigation = { type, entryKey: '' };
-    try {
-      for (const guard of guards) {
-        if ((await guard({ from, to })) === false) return false;
-      }
-      return true;
-    } catch (error) {
+    const fail = (error: unknown) => {
       console.error('Route leave guard failed — staying on the current screen:', error);
       return false;
-    }
+    };
+    // 동기 우선 — 가드가 바로 답하는 동안은 바로 답한다(이동이 호출한 그 틱에 진행한다). Promise 를 돌려준 가드부터는
+    // 나머지를 이어 묻는 Promise 가 된다.
+    const ask = (start: number): boolean | Promise<boolean> => {
+      for (let i = start; i < guards.length; i++) {
+        let answer: boolean | Promise<boolean>;
+        try {
+          answer = guards[i]({ from, to });
+        } catch (error) {
+          return fail(error);
+        }
+        if (answer === false) return false;
+        if (typeof (answer as Promise<boolean> | undefined)?.then === 'function') {
+          return Promise.resolve(answer).then((value) => (value === false ? false : ask(i + 1)), fail);
+        }
+      }
+      return true;
+    };
+    return ask(0);
   }
 
   /** 이 이동이 물어야 할 가드 — 지금 화면의 라우트(자식 → 부모) 다음 글로벌. 화면을 떠나지 않거나 첫 라우팅이면 없다. */
@@ -408,7 +432,9 @@ export class Router {
     const from = this._context;
     if (!from) return true;
     const to = parseUrl(toRouteHref(href, this._mode), this._basepath, currentRouteUrl(this._mode));
-    if (this.leaveGuardsFor(to).length === 0) return true;
+    // 가드가 바로 통과시키면 되돌리지 않는다 — 대부분의 뒤로 가기(저장 안 한 변경이 없는 화면)는 종전 그대로다.
+    const decision = this.leaveDecision(to, 'traverse');
+    if (decision === true) return true;
     const state = isRecord(window.history.state) ? window.history.state : {};
     const delta = typeof state.entryIndex === 'number' ? state.entryIndex - this._entryIndex : 0;
     if (delta !== 0) {
@@ -418,7 +444,7 @@ export class Router {
         window.history.go(-delta);
       });
     }
-    const allowed = await this.confirmLeave(to, 'traverse');
+    const allowed = typeof decision === 'boolean' ? decision : await decision;
     if (allowed) {
       if (delta === 0) return true;
       this._approvedTraverse = true;
@@ -436,9 +462,10 @@ export class Router {
   private handleNavigateRequest = (e: CustomEvent<RouterNavigateRequest>) => {
     if (e.defaultPrevented) return;
     e.preventDefault();
-    const to = parseUrl(toRouteHref(e.detail.href, this._mode), this._basepath, currentRouteUrl(this._mode));
-    e.detail.guarded = this.leaveGuardsFor(to).length > 0;
+    // `go()` 의 동기 구간이 `leave` 판정까지 간다 — 그 결과를 요청자(선택 채널)에게 돌려준다.
+    this._leaveOutcome = 'allowed';
     void this.go(e.detail.href, e.detail.options);
+    e.detail.leave = this._leaveOutcome;
   };
 
   /** 클릭 이벤트에서 라우터로 처리할 앵커를 찾아 클라이언트 라우팅 수행 */

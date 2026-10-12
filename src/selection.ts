@@ -104,10 +104,10 @@ class Channel<T> implements SelectionChannel<T> {
       this.change(value);
       return;
     }
-    // 떠 있는 라우터가 받은 이동이 화면의 `leave` 에 묻는다면 값은 그 이동이 시작될 때(`route-begin`) 바뀐다 — 막히면
-    // 채널도 그대로다. 묻지 않으면(종전처럼) 지금 바꾼다. 라우터가 없으면 지금 바꾸고 기록만 고친다.
+    // 떠 있는 라우터가 받은 이동이 화면의 `leave` 에 막히면 채널도 그대로다. 가드가 아직 답하는 중이면(대화상자) 값은 그
+    // 이동이 시작될 때(`route-begin`) 바뀐다. 바로 통과면(종전처럼) 지금 바꾼다. 라우터가 없으면 지금 바꾸고 기록만 고친다.
     const outcome = this.toAddress(value);
-    if (outcome.guarded) return;
+    if (outcome.leave !== 'allowed') return;
     this.change(value);
     if (!outcome.handled) this.writeHistory(value);
   }

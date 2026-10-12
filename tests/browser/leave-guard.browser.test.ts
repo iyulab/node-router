@@ -65,6 +65,7 @@ const mount = (extra?: { leave?: (ctx: RouteLeaveContext) => boolean | Promise<b
       { path: '/list', render: page('list') },
       { path: '/other', render: page('other') },
       { path: '/old', render: () => '/other' as unknown as HTMLElement, enter: () => '/other' },
+      { path: '/slow', enter: async () => { await new Promise((r) => setTimeout(r, 300)); return true; }, render: page('slow') },
       {
         path: '/edit',
         key: () => 'edit',
@@ -253,5 +254,54 @@ describe('leave — 선택 채널', () => {
     c.set('x');
     expect(c.value).toBe('x');
     await until(() => location.hash === '#/list?pick=x', '주소');
+  });
+});
+
+describe('leave — 바로 답하는 가드는 기다리지 않는다', () => {
+  it('바로 통과하는 가드면 기록은 go() 를 부른 그 틱에 쓰인다', () => {
+    const r = mount({ leave: () => true });
+    void r.go('/list');
+    return (async () => {
+      await until(() => screen() === 'list', '목록');
+      void r.go('/other');
+      expect(location.hash).toBe('#/other');
+    })();
+  });
+
+  it('바로 통과하는 가드면 Back 을 되돌리지 않는다 — popstate 한 번', async () => {
+    const r = mount({ leave: () => true });
+    await r.go('/list');
+    await r.go('/other');
+    let pops = 0;
+    const count = () => { pops++; };
+    window.addEventListener('popstate', count);
+    history.back();
+    await until(() => screen() === 'list', 'Back');
+    await quiet();
+    window.removeEventListener('popstate', count);
+    expect(pops).toBe(1);
+  });
+
+  it('바로 막힌 이동은 진행 중인 앞 이동을 끊지 않는다', async () => {
+    const r = mount({ leave: (ctx) => ctx.to.pathname !== '/other' });
+    await r.go('/list');
+    const slow = r.go('/slow');
+    await settle();
+    await r.go('/other');
+    await slow;
+    expect(screen()).toBe('slow');
+  });
+
+  it('가드가 답하는 중인 선택은 답이 나온 뒤 바뀐다 — 통과면 값이 따라간다', async () => {
+    let answer!: (v: boolean) => void;
+    const r = mount({ leave: () => new Promise<boolean>((resolve) => { answer = resolve; }) });
+    await r.go('/edit');
+    const c = selection<string>('t-leave-pending', { query: 'pick' });
+    c.set('p');
+    await settle();
+    expect(c.value).toBeUndefined();
+    answer(true);
+    await until(() => c.value === 'p', '통과 뒤 값');
+    expect(location.hash).toBe('#/edit?pick=p');
   });
 });

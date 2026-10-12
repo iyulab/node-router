@@ -80,24 +80,27 @@ export interface RouterNavigateRequest {
   href: string;
   options?: NavigateOptions;
   /**
-   * 받은 라우터가 채운다 — 이 이동이 `leave` 가드에 물을 것이면 `true`(이동이 일어날지 아직 모른다).
+   * 받은 라우터가 채운다 — 이 이동의 `leave` 판정: 통과(`allowed`) · 막힘(`blocked`) · 가드가 아직 답하는 중(`pending`).
    * @internal
    */
-  guarded?: boolean;
+  leave?: LeaveOutcome;
 }
 
-/** 이동 요청의 결과 — 받은 라우터가 있는가, 그 이동이 `leave` 에 묻는가. */
+/** 이동 하나의 `leave` 판정 — 가드가 Promise 를 돌려주면 `pending`. */
+export type LeaveOutcome = 'allowed' | 'blocked' | 'pending';
+
+/** 이동 요청의 결과 — 받은 라우터가 있는가, 그 이동의 `leave` 판정. */
 export interface NavigationRequestOutcome {
   handled: boolean;
-  guarded: boolean;
+  leave: LeaveOutcome;
 }
 
-/** 떠 있는 라우터에 이동을 요청하고, 받았는지 · 가드에 묻는지를 돌려준다. */
+/** 떠 있는 라우터에 이동을 요청하고, 받았는지 · `leave` 판정을 돌려준다. */
 export function requestRoutedNavigation(href: string, options?: NavigateOptions): NavigationRequestOutcome {
   const detail: RouterNavigateRequest = { href, options };
   const request = new CustomEvent<RouterNavigateRequest>(ROUTER_NAVIGATE_EVENT, { detail, cancelable: true });
   const handled = !window.dispatchEvent(request);
-  return { handled, guarded: handled && detail.guarded === true };
+  return { handled, leave: handled ? detail.leave ?? 'allowed' : 'allowed' };
 }
 
 /** 떠 있는 라우터에 이동을 요청한다 — 받은 라우터가 있으면 `true`. */
