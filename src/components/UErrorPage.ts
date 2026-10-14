@@ -34,7 +34,7 @@ const STYLES = `
       width: 100%;
       height: 100%;
       text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--u-font-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       overflow: auto;
       user-select: none;
     }
