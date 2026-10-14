@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.24.2] - 2026-10-15
+
+### Fixed
+
+- **The `@iyulab/router/react` type declarations compile on their own.** They carried the global tag and event map
+  merges (`u-outlet`, `route-begin` … `route-error`, `u-router-navigate`) without the types they name, so a project
+  checking library types (`skipLibCheck: false`) failed with six errors when it imported the React entry. Those names
+  now refer to the main entry's exports. Types only — runtime unchanged.
 
 ### Added
 
