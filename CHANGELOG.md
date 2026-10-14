@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.1] - 2026-10-14
+
+### Fixed
+
+- `u-error-page` takes its font from `--u-font-base` when the page defines it (falling back to the previous stack),
+  so the error screen matches a themed app.
+
 ## [0.24.0] - 2026-10-13
 
 ### Added
