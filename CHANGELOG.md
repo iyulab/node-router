@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `@iyulab/components` (>=1.41.0) as an optional peer dependency. `u-error-page` reads its font from
+  `--u-font-base` when that sheet is loaded and falls back to its own stack otherwise; nothing else changes.
+
 ## [0.24.1] - 2026-10-14
 
 ### Fixed
