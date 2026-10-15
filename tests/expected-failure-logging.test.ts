@@ -11,7 +11,7 @@ import type { RouteConfig } from '../src/types/RouteConfig.js';
  * | 실패 | `console.error` | `route-error` |
  * |---|---|---|
  * | 없는 경로(404) · 가드 거부(403) · 라우트가 고른 «레코드 없음»(404) · 가드가 던진 `{ status: 401 }` | 없음 | 난다 |
- * | 로드 · 렌더 실패(`render()` 가 던진 `Error`) | `Routing error:` + 원인 | 난다 |
+ * | 로드 · 렌더 실패(`render()` 가 던진 `Error`) | `[@iyulab/router] routing error` + 원인 | 난다 |
  *
  * 종전에는 모든 실패가 `console.error` 였다 — fallback 이 정상 화면(«권한 없음» · «없는 페이지»)을 그린 뒤에도. 콘솔 오류를
  * 수집하는 모니터링이 권한 없는 이동마다 «장애» 를 받았다(참조 앱 실측).
@@ -52,7 +52,7 @@ describe('Router — 예상된 실패의 로깅', () => {
     return router;
   }
 
-  const routingErrors = () => errorSpy.mock.calls.filter((c: unknown[]) => String(c[0]).startsWith('Routing error'));
+  const routingErrors = () => errorSpy.mock.calls.filter((c: unknown[]) => String(c[0]).startsWith('[@iyulab/router] routing error'));
 
   it.each(['/nowhere', '/admin', '/orders/7', '/session'])('%s — fallback 이 그리고, 콘솔 오류는 없다', async (path) => {
     await make().go(path);

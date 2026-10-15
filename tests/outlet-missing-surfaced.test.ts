@@ -47,6 +47,6 @@ describe('Router — <u-outlet> 부재 시 오류 표면화', () => {
 
     expect(errorSpy).toHaveBeenCalled();
     const firstArg = errorSpy.mock.calls[0]?.[0];
-    expect(String(firstArg)).toContain('Router initialization failed');
+    expect(String(firstArg)).toContain('[@iyulab/router] initialization failed');
   });
 });

@@ -21,7 +21,7 @@ export class RouteTracker {
    */
   visit(href: string): boolean {
     if (this._history.has(href)) {
-      console.error('Router: Redirect cycle detected:', [...this._history, href].join(' → '));
+      console.error('[@iyulab/router] redirect cycle detected — check the redirects of these routes:', [...this._history, href].join(' → '));
       return true;
     }
     this._history.add(href);

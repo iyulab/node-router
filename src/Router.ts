@@ -122,7 +122,7 @@ export class Router {
           this.run(currentRouteUrl(this._mode).href, undefined, undefined, initialNavigationType());
         })
         .catch((error) => {
-          console.error('Router initialization failed:', error instanceof Error ? error.message : error);
+          console.error('[@iyulab/router] initialization failed:', error instanceof Error ? error.message : error);
         });
     }
   }
@@ -329,7 +329,7 @@ export class Router {
       // `route-error` 를 듣는다 — 그 이벤트는 모든 실패에 난다. 예상 밖 실패(로드 · 렌더 · outlet)는 메시지가
       // «콘솔을 보라» 고 말하므로 원인을 계속 남긴다.
       if (!isExpectedOutcome(routeError)) {
-        console.error('Routing error:', routeError.original || routeError);
+        console.error('[@iyulab/router] routing error — the fallback renders it:', routeError.original || routeError);
       }
 
       try {
@@ -349,8 +349,8 @@ export class Router {
         // 실패가 이어지면 첫 실패 직전의 제목을 지킨다.
         this._titleBeforeFallback ??= document.title;
       } catch (pageError) {
-        console.error('Failed to render error component:', pageError);
-        console.error('Original error:', routeError.original || routeError);
+        console.error('[@iyulab/router] the fallback threw while rendering an error:', pageError);
+        console.error('[@iyulab/router] the original error:', routeError.original || routeError);
       }
     } finally {
       // 화면(또는 대체 화면)이 선 뒤 — 이 이동이 아직 최신일 때만 위치를 정한다(리다이렉트·더 새 이동이 넘겨받았으면 그쪽이).
@@ -374,7 +374,7 @@ export class Router {
     if (!from || guards.length === 0) return true;
     to.navigation = { type, entryKey: '' };
     const fail = (error: unknown) => {
-      console.error('Route leave guard failed — staying on the current screen:', error);
+      console.error('[@iyulab/router] a leave guard threw — staying on the current screen:', error);
       return false;
     };
     // 동기 우선 — 가드가 바로 답하는 동안은 바로 답한다(이동이 호출한 그 틱에 진행한다). Promise 를 돌려준 가드부터는
