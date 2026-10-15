@@ -142,10 +142,10 @@ class UOutlet extends HTMLElement {
 
   private async mount(value: unknown, options?: RenderOption) {
     if (value === null) {
-      throw new Error('Content is null and cannot be rendered.');
+      throw new Error('[@iyulab/router] the route rendered null — return a Lit template, an element or a React element from render() (an empty html`` template draws an empty screen).');
     }
     if (typeof value !== 'object') {
-      throw new Error('Content is not a valid renderable object.');
+      throw new Error(`[@iyulab/router] the route rendered a ${typeof value}, which is not renderable — return a Lit template, an element or a React element from render().`);
     }
 
     const kind = contentKind(value);
