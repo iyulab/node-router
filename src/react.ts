@@ -19,7 +19,7 @@ export const ULink = createComponent({
  * `u-outlet` 웹 컴포넌트를 React에서 사용할 수 있도록 래핑한 컴포넌트입니다.
  */
 export const UOutlet = createComponent({
-  react: React as any,
+  react: React,
   tagName: 'u-outlet',
   elementClass: UOutletElement,
   events: {}
