@@ -127,7 +127,8 @@ describe('router — 이동 종류와 기록 항목 키', () => {
     stage.remove();
     expect(popstates).toBe(0);
     expect(last().type).toBe('push');
-    expect(history.length).toBe(before + 1);
+    // 기록 항목 수는 브라우저가 50 에서 자른다 — 앞 시험 파일들이 쌓은 만큼 이미 가득일 수 있다(그때는 +1 이 보이지 않는다)
+    expect(history.length).toBe(Math.min(before + 1, 50));
     expect((history.state as Record<string, unknown>).mode).toBe('hash');
   });
 
