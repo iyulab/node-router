@@ -48,6 +48,9 @@ export class ULink extends HTMLElement {
     this.anchor = document.createElement("a");
     this.anchor.appendChild(document.createElement("slot"));
     root.append(style, this.anchor);
+    // 클릭은 섀도 루트에서 듣는다 — 호스트(요소)의 click 리스너는 스크린리더가 안쪽 링크를 «클릭 가능, 링크» 로
+    // 읽게 한다. 안쪽 링크 · 슬롯 내용에서 시작한 클릭은 모두 이 루트를 지난다.
+    root.addEventListener("click", this.handleClick as EventListener);
     // 정의되기 전에 세팅된 프로퍼티(업그레이드 전 인스턴스 값)는 접근자를 가린다 — 걷어 내고 접근자로 다시 넣는다.
     for (const p of PROPS) {
       if (Object.prototype.hasOwnProperty.call(this, p)) {
@@ -123,7 +126,9 @@ export class ULink extends HTMLElement {
   set navigate(value: "router" | "document" | undefined) { this._navigate = value ?? undefined; this.sync(); }
 
   connectedCallback() {
-    this.addEventListener("click", this.handleClick);
+    // 감싸기만 하는 호스트 — 소비자가 호스트에 건 click 리스너도 «클릭 가능» 을 낳으므로 표시용으로 둔다.
+    // 작성자의 role 은 그대로 둔다. ⚠호스트에 aria-label 이 있으면 브라우저가 none 을 무시한다.
+    if (!this.hasAttribute("role")) this.setAttribute("role", "none");
     // basepath·모드는 히스토리 상태에서 읽는다 — 붙는 시점의 값으로 다시 맞추고, 라우터가 나중에 그 상태를
     // 적으면(라우터보다 먼저 그려진 셸) 그때 다시 맞춘다.
     window.addEventListener(ROUTER_STATE_EVENT, this.handleRouterState);
@@ -131,11 +136,15 @@ export class ULink extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.removeEventListener("click", this.handleClick);
     window.removeEventListener(ROUTER_STATE_EVENT, this.handleRouterState);
   }
 
   private handleRouterState = () => this.sync();
+
+  /** 호스트의 `click()` 은 안쪽 링크를 누른다 — 네이티브 `<a>.click()` 처럼 이동하고, 같은 가로채기 규칙을 탄다. */
+  override click(): void {
+    this.anchor.click();
+  }
 
   /**
    * 호스트에 세팅된 `aria-current`/`aria-label`은 실제 접근 가능한(포커스 대상)

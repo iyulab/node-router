@@ -53,7 +53,7 @@ describe('basepath 루트 URL', () => {
   it('🔴href 없는 `u-link` 를 누르면 주소창이 `/app/` 이 된다 — 새로 고쳐도 앱이다', () => {
     const logo = document.createElement('u-link');
     document.body.appendChild(logo);
-    logo.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    logo.shadowRoot!.querySelector('a')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, button: 0 }));
     expect(window.location.pathname).toBe('/app/');
     logo.remove();
   });

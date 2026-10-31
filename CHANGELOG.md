@@ -2,8 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Screen readers no longer announce «clickable» on a `u-link`.** Measured with NVDA in browse mode, every `u-link`
+  read as «clickable, link»: its click listener sat on the host, around the inner link. The listener is on the shadow
+  root now, and the host carries `role="none"` (unless you give it a role) so your own click listener on a `u-link`
+  is not announced either — except on a host with `aria-label`, where browsers ignore `role="none"`.
+
 ### Changed
 
+- `click()` on a `u-link` presses the inner link, as `<a>.click()` does — it routes or navigates by the same rules as
+  a real press. A click event you dispatch on the host yourself is no longer intercepted; dispatch it on the inner link
+  (`composed: true`) or call `click()`.
 - Console diagnostics begin with `[@iyulab/router]`, so a message in a console shared by several packages says which one wrote it (several also say what to do next).
 
 ## [0.24.2] - 2026-10-15

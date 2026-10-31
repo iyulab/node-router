@@ -49,8 +49,9 @@ async function clickLink(props: Record<string, string>): Promise<MouseEvent> {
   const link = document.createElement('u-link');
   for (const [k, v] of Object.entries(props)) link.setAttribute(k, v);
   document.body.appendChild(link);
-  const event = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-  link.dispatchEvent(event);
+  // 실제 누름은 안쪽 링크에서 시작한다 — 호스트는 섀도 루트에서 듣는다(호스트에 쏜 합성 click 은 그 루트를 지나지 않는다).
+  const event = new MouseEvent('click', { bubbles: true, cancelable: true, composed: true, button: 0 });
+  link.shadowRoot!.querySelector('a')!.dispatchEvent(event);
   link.remove();
   return event;
 }
