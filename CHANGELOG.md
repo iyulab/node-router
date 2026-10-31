@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **A `u-link` whose host has an `aria-*` attribute no longer gets `role="none"`.** The presentational role added in 0.25.0 is ignored by browsers on a host with a global attribute such as `aria-label`, and states such as `aria-pressed` are not allowed on it. The host now keeps no role in that case (an author's own role still wins). The attributes are read when the link is attached.
+
 ## [0.25.0] - 2026-10-31
 
 ### Fixed

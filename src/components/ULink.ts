@@ -127,8 +127,12 @@ export class ULink extends HTMLElement {
 
   connectedCallback() {
     // 감싸기만 하는 호스트 — 소비자가 호스트에 건 click 리스너도 «클릭 가능» 을 낳으므로 표시용으로 둔다.
-    // 작성자의 role 은 그대로 둔다. ⚠호스트에 aria-label 이 있으면 브라우저가 none 을 무시한다.
-    if (!this.hasAttribute("role")) this.setAttribute("role", "none");
+    // 작성자의 role 은 그대로 둔다. 호스트에 `aria-*` 가 하나라도 있으면 두지 않는다 — `aria-label` 같은 전역 속성이면
+    // 브라우저가 none 을 어차피 무시하고, `aria-pressed` 같은 상태는 none 에 허용되지 않아 검사기가 치명 위반으로 본다
+    // (components `u-button` 과 같은 규칙). 붙는 시점에 판정한다 — 나중에 더해진 속성은 다시 보지 않는다.
+    if (!this.hasAttribute("role") && !this.getAttributeNames().some((n) => n.startsWith("aria-"))) {
+      this.setAttribute("role", "none");
+    }
     // basepath·모드는 히스토리 상태에서 읽는다 — 붙는 시점의 값으로 다시 맞추고, 라우터가 나중에 그 상태를
     // 적으면(라우터보다 먼저 그려진 셸) 그때 다시 맞춘다.
     window.addEventListener(ROUTER_STATE_EVENT, this.handleRouterState);

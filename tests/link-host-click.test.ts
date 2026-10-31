@@ -16,6 +16,12 @@ describe('u-link — clicks heard off the host', () => {
     expect(document.getElementById('b')!.getAttribute('role')).toBe('menuitem');
   });
 
+  it('a host with an aria attribute is left without a role — none would be ignored or illegal there', () => {
+    document.body.innerHTML = '<u-link id="a" href="/x" aria-current="page">A</u-link><u-link id="b" href="/y" aria-label="B link">B</u-link>';
+    expect(document.getElementById('a')!.hasAttribute('role')).toBe(false);
+    expect(document.getElementById('b')!.hasAttribute('role')).toBe(false);
+  });
+
   it('click() on the host presses the inner link', () => {
     document.body.innerHTML = '<u-link href="#here">A</u-link>';
     const link = document.querySelector('u-link')!;
