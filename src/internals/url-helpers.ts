@@ -1,6 +1,7 @@
 import "urlpattern-polyfill";
 
 import type { RouteContext } from "../types/RouteContext";
+import { locationHref } from "./location.js";
 
 /**
  * 주어진 URL이 외부 링크인지 확인합니다.
@@ -47,7 +48,7 @@ export function isExternalUrl(url: string): boolean {
  *   hash 모드에서는 주소의 경로가 아니라 `#` 뒤가 라우팅 URL 이다(`internals/location.ts`).
  * @returns 파싱된 RouteContext 객체
  */
-export function parseUrl(url: string, basepath: string, current: URL = new URL(window.location.href)): RouteContext {
+export function parseUrl(url: string, basepath: string, current: URL = new URL(locationHref())): RouteContext {
   let urlObj: URL;
   basepath = catchBasepath(basepath, current.pathname);
   if (url.startsWith('http')) {
@@ -113,7 +114,7 @@ export function absolutePath(...paths: string[]): string {
  * @example
  * catchBasePath('/app/:id') => '/app/123'
  */
-export function catchBasepath(basepath: string, pathname: string = window.location.pathname): string {
+export function catchBasepath(basepath: string, pathname: string = new URL(locationHref()).pathname): string {
   if (basepath === '/') return basepath;
 
   // basepath가 경로의 중간에 올수도 있으므로 /* 패턴으로 먼저 검사

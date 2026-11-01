@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import { currentRouteUrl, requestRoutedNavigation, stateMode, toBrowserHref, writeHistoryEntry, ROUTER_STATE_EVENT, type NavigationRequestOutcome } from './internals/location.js';
+import { currentRouteUrl, historyState, requestRoutedNavigation, stateMode, toBrowserHref, writeHistoryEntry, ROUTER_STATE_EVENT, type NavigationRequestOutcome } from './internals/location.js';
 
 /**
  * 선택 채널의 선택 사항.
@@ -169,7 +169,7 @@ class Channel<T> implements SelectionChannel<T> {
 
   /** 라우터가 쓰지 않은 항목으로의 뒤로·앞으로 가기만 바로 따라간다(라우터 항목은 `route-begin` 이 맡는다). */
   private syncFromUnroutedEntry = () => {
-    const state = window.history.state as { entryKey?: unknown } | null;
+    const state = historyState() as { entryKey?: unknown } | null;
     if (typeof state?.entryKey === 'string') return;
     this.syncFromAddress();
   };
@@ -192,7 +192,7 @@ class Channel<T> implements SelectionChannel<T> {
   /** 라우터가 없을 때 — 문서를 떠나지 않고 기록만 고친다. */
   private writeHistory(value: T | undefined): void {
     const { href } = this.addressOf(value);
-    writeHistoryEntry(this.options.history !== 'push' ? 'replace' : 'push', window.history.state, href);
+    writeHistoryEntry(this.options.history !== 'push' ? 'replace' : 'push', historyState(), href);
   }
 }
 

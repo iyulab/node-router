@@ -1,6 +1,6 @@
 /// <reference types="@vitest/browser-playwright" />
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Router, navigate, selection, type RouteLeaveContext } from '../../src/index.js';
+import { Router, currentRoutePath, navigate, selection, type RouteLeaveContext } from '../../src/index.js';
 import '../../src/components/UOutlet.js';
 
 /**
@@ -302,6 +302,8 @@ describe('leave — 바로 답하는 가드는 기다리지 않는다', () => {
     expect(c.value).toBeUndefined();
     answer(true);
     await until(() => c.value === 'p', '통과 뒤 값');
-    expect(location.hash).toBe('#/edit?pick=p');
+    expect(currentRoutePath()).toBe('/edit?pick=p');
+    // 주소창은 기록 쓰기 예산 안에서 곧바로, 바닥났으면 잠시 뒤 따라온다(이 파일의 앞 시험들이 예산을 쓴다).
+    await until(() => location.hash === '#/edit?pick=p', '주소');
   });
 });

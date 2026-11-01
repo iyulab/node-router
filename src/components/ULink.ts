@@ -1,5 +1,5 @@
 import { absolutePath, basepathRoot, isExternalUrl } from "../internals/url-helpers.js";
-import { currentRouteUrl, navigate as navigateTo, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
+import { currentRouteUrl, historyState, navigate as navigateTo, stateMode, ROUTER_STATE_EVENT } from "../internals/location.js";
 import { assertNotDefined } from "../internals/single-copy.js";
 
 const STYLES = `
@@ -269,7 +269,7 @@ export class ULink extends HTMLElement {
 
   /** basepath를 state에서 꺼내는 헬퍼 */
   private getBasepath(): string {
-    return window.history.state?.basepath || "/";
+    return (historyState() as { basepath?: string } | null)?.basepath || "/";
   };
 }
 

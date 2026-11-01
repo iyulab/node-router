@@ -4,7 +4,7 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
-import { currentRouteUrl, toBrowserHref, toRouteHref, writeHistoryEntry, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest, type LeaveOutcome } from './internals/location.js';
+import { currentRouteUrl, historyState, toBrowserHref, toRouteHref, writeHistoryEntry, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest, type LeaveOutcome } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { ScrollMemory } from './internals/ScrollMemory.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
@@ -35,6 +35,12 @@ function initialNavigationType(): RouteNavigationType {
 }
 
 /** `history.state` 가 펼칠 수 있는 평범한 객체인가 — 다른 코드가 원시값·배열을 넣었으면 잇지 않는다. */
+/** 지금 항목의 기록 상태를 펼칠 수 있으면 그것, 아니면 빈 객체. */
+function recordState(): Record<string, unknown> {
+  const state = historyState();
+  return isRecord(state) ? state : {};
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -98,7 +104,7 @@ export class Router {
     this._mode = config.mode === 'hash' ? 'hash' : 'history';
     // `u-link` 는 라우터 인스턴스 없이 히스토리 상태에서 basepath·모드를 읽는다 — 첫 라우팅 전에 그려지는 링크도
     // 모드에 맞는 주소를 내도록 지금 적어 둔다. 항목 순번은 이미 있으면 잇는다(새로 고침 · 다른 문서에서 돌아옴).
-    const initial = isRecord(window.history.state) ? window.history.state : {};
+    const initial = recordState();
     this._entryIndex = typeof initial.entryIndex === 'number' ? initial.entryIndex : 0;
     writeHistoryEntry('replace', { ...initial, basepath: this._basepath, mode: this._mode, entryIndex: this._entryIndex });
     // 라우터보다 먼저 붙은 링크(셸을 먼저 그리는 앱)도 이 상태를 따르게 한다.
@@ -206,7 +212,7 @@ export class Router {
     // 상태가 Back 으로 돌아오는 순간 지워졌다(`NavigateOptions.state` 의 «다시 읽을 수 있다» 가 첫 방문에만 참이었다).
     // 다른 주소로의 교체(리다이렉트 · `replace`)는 새 위치라 옛 상태를 잇지 않는다.
     const sameEntry = !options?.isRedirect && context.href === current.href;
-    const previous = isRecord(window.history.state) ? window.history.state : {};
+    const previous = recordState();
     const entryState = sameEntry ? previous : {};
     // 이동 종류와 항목 키. 키는 기록 «칸» 의 정체다 — 새 항목이면 새 키, 교체·돌아옴이면 그 칸의 키(없던 칸이면 새로).
     const navigationType: RouteNavigationType = type ?? (useReplace ? 'replace' : 'push');
@@ -435,7 +441,7 @@ export class Router {
     // 가드가 바로 통과시키면 되돌리지 않는다 — 대부분의 뒤로 가기(저장 안 한 변경이 없는 화면)는 종전 그대로다.
     const decision = this.leaveDecision(to, 'traverse');
     if (decision === true) return true;
-    const state = isRecord(window.history.state) ? window.history.state : {};
+    const state = recordState();
     const delta = typeof state.entryIndex === 'number' ? state.entryIndex - this._entryIndex : 0;
     if (delta !== 0) {
       await new Promise<void>((resolve) => {

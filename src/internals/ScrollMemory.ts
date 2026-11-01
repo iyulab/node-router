@@ -1,5 +1,5 @@
 import type { RouteNavigation } from '../types/RouteContext.js';
-import { writeHistoryEntry } from './location.js';
+import { historyState, writeHistoryEntry } from './location.js';
 
 /** 기록 항목의 스크롤 위치 — `history.state.scroll` 에도 같은 모양으로 남는다(새로 고침 뒤 복원). */
 export interface ScrollPosition {
@@ -97,7 +97,7 @@ export class ScrollMemory {
   }
 
   private writeToCurrentEntry(position: ScrollPosition): void {
-    const state = window.history.state;
+    const state = historyState();
     const base = typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
     writeHistoryEntry('replace', { ...base, scroll: position });
   }
@@ -112,6 +112,6 @@ export class ScrollMemory {
 
 /** 지금 항목 상태에 남은 위치(새로 고침 · 다른 문서에서 돌아옴). */
 function stateScroll(): ScrollPosition | undefined {
-  const scroll = (window.history.state as { scroll?: unknown } | null)?.scroll as Partial<ScrollPosition> | undefined;
+  const scroll = (historyState() as { scroll?: unknown } | null)?.scroll as Partial<ScrollPosition> | undefined;
   return typeof scroll?.x === 'number' && typeof scroll.y === 'number' ? { x: scroll.x, y: scroll.y } : undefined;
 }

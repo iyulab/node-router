@@ -97,6 +97,8 @@ Same name, same channel. `query` makes the address the source (deep link · Back
 entry (default `'replace'`). The `signal` passed with each value aborts on the next pick — hand it to the fetch.
 `follow()` gives a view `pin()`/`unpin()`. Adapters: Lit `SelectionController(host, channel)` · React `useSelection(channel)`
 (`@iyulab/router/react`). Give the route a `key` so a query-only change does not remount the screen.
+Address writes come from a budget (40, refilled 4/s — under Safari's 100 per 10 s): past it only the newest replace is
+written as it refills, so read the address through `currentRoutePath()` / the channel, not `window.location`, during a burst.
 
 ```ts
 const order = selection<string>('order', { query: 'order' });

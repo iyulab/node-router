@@ -358,6 +358,10 @@ order.set('G-7');
   answer for an earlier pick never overwrites a later one.
 - **History** — `history: 'replace'` (default) keeps picks out of the history; `'push'` makes each pick an entry, so
   Back returns to the previous pick. Give the route a `key` so a query-only change does not remount the screen.
+- **Fast changes** — browsers limit address updates (Safari: 100 in 10 seconds). The router spends them from a budget
+  of 40, refilled 4 a second: within it every update is written at once; past it (an arrow key held on a bound list)
+  only the newest replace is written as the budget refills. Read the address through the router (`currentRoutePath()`,
+  `RouteContext`, the channel value) rather than `window.location` while that happens. `'push'` updates are never deferred.
 - **Pin a view** — `channel.follow(fn)` returns `{ pin, unpin }`: a pinned view stays where it is; unpinning catches up.
 - **Adapters** — Lit: `new SelectionController(this, channel)` (`value`, `signal`, `pin()`); React:
   `const [value, set] = useSelection(channel)` from `@iyulab/router/react`.
