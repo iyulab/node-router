@@ -2,6 +2,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { Router, selection, currentRoutePath } from '../../src/index.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **Address writes are coalesced under the browsers' rate limit.**
@@ -15,6 +16,9 @@ import '../../src/components/UOutlet.js';
  * that was left. A new entry (`push`) is never deferred.
  */
 const startPath = window.location.pathname + window.location.search;
+// The newest pending write lands within a quarter second; where the browser refuses it (WebKit, after the earlier
+// files' writes), it is retried as the browser's 10-second window frees.
+const settled = { timeout: 12000, interval: 100 };
 const budgetWindow = () => new Promise((resolve) => setTimeout(resolve, 1100));
 let router: Router | undefined;
 
@@ -23,12 +27,12 @@ beforeEach(async () => {
   await budgetWindow();
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
   router?.destroy();
   router = undefined;
   document.body.replaceChildren();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const query = (name: string) => new URL(window.location.href).searchParams.get(name);
@@ -42,8 +46,7 @@ describe('history write coalescing', () => {
     expect(replace.mock.calls.length).toBeLessThanOrEqual(41);
     // The pending address is what readers see right away.
     expect(new URL(currentRoutePath(), location.origin).searchParams.get('cb')).toBe('G-100');
-    await budgetWindow();
-    expect(query('cb')).toBe('G-100');
+    await vi.waitFor(() => expect(query('cb')).toBe('G-100'), settled);
     expect(replace.mock.calls.length).toBeLessThanOrEqual(42);
   });
 
@@ -52,8 +55,7 @@ describe('history write coalescing', () => {
     const b = selection<string>('coalesce-b', { query: 'cbb' });
     for (let i = 1; i <= 100; i++) a.set(`A-${i}`);
     b.set('B-1');
-    await budgetWindow();
-    expect(query('ca')).toBe('A-100');
+    await vi.waitFor(() => expect(query('ca')).toBe('A-100'), settled);
     expect(query('cbb')).toBe('B-1');
   });
 
@@ -72,8 +74,7 @@ describe('history write coalescing', () => {
     for (let i = 1; i <= 100; i++) channel.set(`R-${i}`);
     await vi.waitFor(() => expect(router!.context?.path).toBe('/orders?cr=R-100'));
     expect(replace.mock.calls.length).toBeLessThanOrEqual(41);
-    await budgetWindow();
-    expect(location.hash).toBe('#/orders?cr=R-100');
+    await vi.waitFor(() => expect(location.hash).toBe('#/orders?cr=R-100'), settled);
   });
 
   it('going back drops the pending write — it belonged to the entry that was left', async () => {

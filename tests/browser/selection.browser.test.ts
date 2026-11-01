@@ -7,6 +7,7 @@ import React from 'react';
 import { Router, selection, SelectionController } from '../../src/index.js';
 import { useSelection } from '../../src/react.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **여러 뷰가 «지금 고른 것» 하나를 따라간다.** 이동이 «어느 화면인가» 라면 선택은 «그 화면 안에서 무엇을 보는가» 다 —
@@ -31,17 +32,17 @@ const startPath = window.location.pathname + window.location.search;
 let root: HTMLElement;
 let router: Router | undefined;
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   root = document.createElement('div');
   root.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(root);
 });
-afterEach(() => {
+afterEach(async () => {
   router?.destroy();
   router = undefined;
   root.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const mount = () => {

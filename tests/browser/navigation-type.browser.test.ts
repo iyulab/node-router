@@ -1,11 +1,12 @@
 /// <reference types="@vitest/browser-playwright" />
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { Router, navigate } from '../../src/index.js';
 import '../../src/components/UOutlet.js';
 import '../../src/components/ULink.js';
 import type { RouteNavigation } from '../../src/types/RouteContext.js';
 import type { RouteDoneEvent } from '../../src/types/RouteEvent.js';
+import { setAddress } from './address.js';
 
 /**
  * **라우터는 «어떻게 왔는가» 를 안다** — 이동 종류(`push` · `replace` · `traverse` · `reload`)와 기록 항목 키.
@@ -43,8 +44,8 @@ let popstates = 0;
 const onDone = (e: Event) => done.push({ ...(e as RouteDoneEvent).context.navigation });
 const onPop = () => { popstates++; };
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   root = document.createElement('div');
   root.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(root);
@@ -53,13 +54,13 @@ beforeEach(() => {
   window.addEventListener('route-done', onDone);
   window.addEventListener('popstate', onPop);
 });
-afterEach(() => {
+afterEach(async () => {
   window.removeEventListener('route-done', onDone);
   window.removeEventListener('popstate', onPop);
   router?.destroy();
   router = undefined;
   root.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const mount = (initialLoad = false) => {
@@ -127,8 +128,9 @@ describe('router — 이동 종류와 기록 항목 키', () => {
     stage.remove();
     expect(popstates).toBe(0);
     expect(last().type).toBe('push');
-    // 기록 항목 수는 브라우저가 50 에서 자른다 — 앞 시험 파일들이 쌓은 만큼 이미 가득일 수 있다(그때는 +1 이 보이지 않는다)
-    expect(history.length).toBe(Math.min(before + 1, 50));
+    // 기록 항목 수는 Chromium 이 50 에서 자른다(WebKit 은 더 둔다) — 앞 시험 파일들이 쌓은 만큼 이미 가득일 수 있다.
+    // WebKit 은 프레임의 기록 길이를 늦게 고친다 — 기다려서 읽는다.
+    await vi.waitFor(() => expect(history.length).toBeGreaterThanOrEqual(Math.min(before + 1, 50)));
     expect((history.state as Record<string, unknown>).mode).toBe('hash');
   });
 

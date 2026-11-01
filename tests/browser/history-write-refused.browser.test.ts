@@ -1,7 +1,9 @@
 /// <reference types="@vitest/browser-playwright" />
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import { html } from 'lit';
 import { Router, selection } from '../../src/index.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **A history update the browser refuses does not throw into the app.**
@@ -18,12 +20,12 @@ const startPath = window.location.pathname + window.location.search;
 const refusal = () => new DOMException('Attempt to use history.replaceState() more than 100 times per 10 seconds', 'SecurityError');
 let router: Router | undefined;
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
   router?.destroy();
   router = undefined;
   document.body.replaceChildren();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 describe('history writes the browser refuses', () => {
@@ -60,7 +62,34 @@ describe('history writes the browser refuses', () => {
     expect(router.context?.path).toBe('/orders');
   });
 
-  it('⚪NEGATIVE — any other error still throws', () => {
+  it('a refused new entry is written once the browser takes writes again — Back still goes one step', async () => {
+    const root = document.createElement('div');
+    root.appendChild(document.createElement('u-outlet'));
+    document.body.appendChild(root);
+    router = new Router({
+      root,
+      mode: 'hash',
+      routes: [
+        { path: '/', render: () => html`home` },
+        { path: '/orders', render: () => html`orders` },
+      ],
+    });
+    await router.go('/');
+    const before = history.length;
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const push = vi.spyOn(history, 'pushState').mockImplementationOnce(() => { throw refusal(); });
+    await router.go('/orders');
+    expect(router.context?.path).toBe('/orders');
+    // Refused once — retried as the browser's window frees, as a new entry.
+    await vi.waitFor(() => expect(location.hash).toBe('#/orders'), { timeout: 5000, interval: 100 });
+    expect(push.mock.calls.length).toBe(2);
+    // Chromium caps the session history at 50 entries; WebKit updates a frame's history length late — wait for it.
+    await vi.waitFor(() => expect(history.length).toBeGreaterThanOrEqual(Math.min(before + 1, 50)));
+  });
+
+  it('⚪NEGATIVE — any other error still throws', async () => {
+    // A refusal above spends the write budget; wait until a write goes through at once again.
+    await new Promise((resolve) => setTimeout(resolve, 600));
     const channel = selection<string>('refused-other', { query: 'refused-b' });
     vi.spyOn(history, 'replaceState').mockImplementation(() => { throw new TypeError('boom'); });
     expect(() => channel.set('x')).toThrow('boom');

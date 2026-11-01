@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Router } from '../../src/Router.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **기록 항목의 상태는 그 항목에 돌아와도 남는다.**
@@ -37,17 +38,17 @@ const startPath = window.location.pathname + window.location.search;
 let root: HTMLElement;
 let router: Router | undefined;
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   root = document.createElement('div');
   root.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(root);
 });
-afterEach(() => {
+afterEach(async () => {
   router?.destroy();
   router = undefined;
   root.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const mount = (initialLoad = true) => {

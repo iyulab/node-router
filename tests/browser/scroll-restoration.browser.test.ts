@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Router } from '../../src/Router.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **뒤로 가기로 돌아오면 보던 자리.** 셸이 문서가 아니라 안쪽 상자를 굴리면 브라우저의 기본 복원(문서 스크롤만)이 닿지 않고,
@@ -39,18 +40,18 @@ const startPath = window.location.pathname + window.location.search;
 let box: HTMLElement;
 let router: Router | undefined;
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   box = document.createElement('div');
   box.style.cssText = 'height: 300px; overflow: auto;';
   box.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(box);
 });
-afterEach(() => {
+afterEach(async () => {
   router?.destroy();
   router = undefined;
   box.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const mount = (scrollRestoration: boolean = true) => {

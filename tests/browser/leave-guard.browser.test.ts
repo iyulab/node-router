@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Router, currentRoutePath, navigate, selection, type RouteLeaveContext } from '../../src/index.js';
 import '../../src/components/UOutlet.js';
+import { setAddress } from './address.js';
 
 /**
  * **`leave` — 화면을 떠나기 전에 묻는다**(`enter` 의 대칭). 저장 안 한 입력을 가진 화면이 링크 · `go()` · `navigate()` ·
@@ -12,8 +13,8 @@ const settle = async () => {
   await new Promise((r) => requestAnimationFrame(() => r(null)));
   await new Promise((r) => setTimeout(r, 40));
 };
-const until = async (fn: () => boolean, what: string) => {
-  for (let i = 0; i < 60; i++) {
+const until = async (fn: () => boolean, what: string, tries = 60) => {
+  for (let i = 0; i < tries; i++) {
     if (fn()) return;
     await settle();
   }
@@ -33,8 +34,8 @@ let order: string[] = [];
 
 const screen = () => root.querySelector('[data-screen]')?.getAttribute('data-screen');
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   dirty = false;
   asked = [];
   order = [];
@@ -42,11 +43,11 @@ beforeEach(() => {
   root.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(root);
 });
-afterEach(() => {
+afterEach(async () => {
   router?.destroy();
   router = undefined;
   root.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const page = (name: string) => () => {
@@ -177,6 +178,8 @@ describe('leave — 뒤로 · 앞으로 가기', () => {
     const r = mount();
     await r.go('/list');
     await r.go('/edit');
+    // 기록이 실제로 쌓인 뒤에 Back — 브라우저가 쓰기를 거부했으면(WebKit 한도) 라우터가 잠시 뒤 다시 쓴다.
+    await until(() => location.hash === '#/edit', '기록 항목', 250);
     dirty = true;
     history.back();
     await until(() => asked.length === 1, '가드가 물음');
@@ -243,7 +246,8 @@ describe('leave — 선택 채널', () => {
     c.set('b');
     await quiet();
     expect(c.value).toBe('a');
-    expect(location.hash).toBe('#/edit?pick=a');
+    expect(currentRoutePath()).toBe('/edit?pick=a');
+    await until(() => location.hash === '#/edit?pick=a', '주소', 250);
     expect(seen).toEqual(['a']);
   });
 
@@ -304,6 +308,6 @@ describe('leave — 바로 답하는 가드는 기다리지 않는다', () => {
     await until(() => c.value === 'p', '통과 뒤 값');
     expect(currentRoutePath()).toBe('/edit?pick=p');
     // 주소창은 기록 쓰기 예산 안에서 곧바로, 바닥났으면 잠시 뒤 따라온다(이 파일의 앞 시험들이 예산을 쓴다).
-    await until(() => location.hash === '#/edit?pick=p', '주소');
+    await until(() => location.hash === '#/edit?pick=p', '주소', 250);
   });
 });

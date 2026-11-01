@@ -42,12 +42,21 @@ let writeTokens = WRITE_CAPACITY;
 let refilledAt = -Infinity;
 let leaving = false;
 
-/** 미룬 교체 — 지금 항목에 쓸 상태와 주소(절대). `base` 는 미룰 때의 `history.state` — 항목이 바뀌었는지 알아본다. */
+/**
+ * 미룬 기록 — 예산이 바닥나 미룬 교체, 또는 브라우저가 거부해 다시 쓸 교체 · 새 항목. 상태와 주소(절대)는 지금 항목의 것이다
+ * (미룬 새 항목 위의 교체는 그 새 항목에 합친다). `base` · `baseHref` 는 미룰 때의 `history.state` · 주소 — 그 뒤 항목이
+ * 바뀌었거나(뒤로·앞으로 가기) 남이 기록을 썼으면 이 기록은 낡았다.
+ */
 interface PendingEntry {
+  kind: 'replace' | 'push';
   state: unknown;
   url: string;
   base: unknown;
+  baseHref: string;
 }
+
+/** 브라우저가 기록 쓰기를 거부했을 때 다시 해 보기까지 — 한도 창(Safari 10초)이 비는 대로 따라가게. */
+const REFUSED_RETRY_MS = 1000;
 let pending: PendingEntry | undefined;
 let pendingTimer: ReturnType<typeof setTimeout> | undefined;
 let listening = false;
@@ -68,7 +77,7 @@ export function locationHref(): string {
 
 /** 미룬 교체가 아직 지금 항목의 것인가 — 뒤로·앞으로 가기 · 남의 기록 쓰기로 항목 상태가 바뀌었으면 버린다. */
 function livePending(): PendingEntry | undefined {
-  if (pending && window.history.state !== pending.base) dropPending();
+  if (pending && (window.history.state !== pending.base || window.location.href !== pending.baseHref)) dropPending();
   return pending;
 }
 
@@ -78,12 +87,24 @@ function dropPending(): void {
   pendingTimer = undefined;
 }
 
-/** 미룬 교체를 지금 쓴다 — 새 항목을 쌓기 직전 · 문서를 떠날 때 · 토큰이 찼을 때. */
+/** 미룬 기록을 지금 쓴다 — 새 항목을 쌓기 직전 · 문서를 떠날 때 · 토큰이 찼을 때. */
 function flushPending(): void {
   const entry = livePending();
   if (!entry) return;
   dropPending();
-  write('replace', entry.state, entry.url);
+  writeNow(entry.kind, entry.state, entry.url);
+}
+
+/**
+ * 기록을 지금 쓴다 — 브라우저가 한도로 거부하면 버리지 않고 대기 기록으로 남겨 잠시 뒤 다시 쓴다. 이 라우터가 모르는 쓰기(앱 코드 ·
+ * 다른 라이브러리 · 같은 페이지의 다른 문서)도 브라우저 한도를 쓰므로 예산만으로는 거부를 다 막지 못한다. 거부된 새 항목도 다시
+ * 쓴다 — 버리면 라우터는 항목이 하나 늘었다고 아는데 기록에는 없어, 뒤로 가기가 한 칸 더 간다.
+ */
+function writeNow(kind: 'replace' | 'push', state: unknown, url?: string): void {
+  if (write(kind, state, url)) return;
+  pending = { kind, state, url: new URL(url ?? locationHref(), locationHref()).href, base: window.history.state, baseHref: window.location.href };
+  writeTokens = Math.min(writeTokens, 0);
+  schedulePending(REFUSED_RETRY_MS);
 }
 
 function refill(): void {
@@ -92,9 +113,9 @@ function refill(): void {
   refilledAt = now;
 }
 
-function schedulePending(): void {
+function schedulePending(atLeast = 0): void {
   if (pendingTimer !== undefined) return;
-  const wait = Math.max(0, (1 - writeTokens) / WRITE_REFILL_PER_MS);
+  const wait = Math.max(atLeast, (1 - writeTokens) / WRITE_REFILL_PER_MS);
   pendingTimer = setTimeout(() => {
     pendingTimer = undefined;
     refill();
@@ -114,26 +135,27 @@ function listen(): void {
 
 /**
  * 기록 항목을 쓴다(`replaceState` / `pushState`) — 위 예산 안이면 곧바로, 바닥난 뒤의 교체는 합쳐서 나중에. 그래도 브라우저가
- * 거부하면 예외를 앱에 올리지 않고 그 한 번의 쓰기만 건너뛴다(화면 · 채널 값은 그대로, 주소는 다음 쓰기에서 따라온다). 다른 오류는
- * 그대로 던진다. 거부되면 `false`(미룬 교체는 `true`).
+ * 거부하면 예외를 앱에 올리지 않고 대기 기록으로 남겨 잠시 뒤 다시 쓴다(화면 · 채널 값은 그대로 진행). 다른 오류는 그대로 던진다.
  */
-export function writeHistoryEntry(kind: 'replace' | 'push', state: unknown, url?: string): boolean {
+export function writeHistoryEntry(kind: 'replace' | 'push', state: unknown, url?: string): void {
   listen();
   refill();
   if (kind === 'push') {
     flushPending();
-    return write('push', state, url);
+    writeNow('push', state, url);
+    return;
   }
+  // 미룬 새 항목이 있으면 이 교체는 그 새 항목의 것이다 — 새 항목으로 쓴다.
+  const live = livePending();
+  const pendingKind = live ? live.kind : 'replace';
   if (writeTokens >= 1 || leaving) {
-    // 이 교체가 미룬 것을 대신한다(같은 항목의 더 새로운 상태).
     dropPending();
-    return write('replace', state, url);
+    writeNow(pendingKind, state, url);
+    return;
   }
-  const base = livePending()?.base ?? window.history.state;
   const target = new URL(url ?? locationHref(), locationHref()).href;
-  pending = { state, url: target, base };
+  pending = { kind: pendingKind, state, url: target, base: live ? live.base : window.history.state, baseHref: live ? live.baseHref : window.location.href };
   schedulePending();
-  return true;
 }
 
 function write(kind: 'replace' | 'push', state: unknown, url?: string): boolean {
@@ -147,7 +169,7 @@ function write(kind: 'replace' | 'push', state: unknown, url?: string): boolean 
     if (!throttleWarned) {
       throttleWarned = true;
       // diagnostic: 한 번만 — 넘친 호출마다 쓰면 콘솔이 같은 줄로 덮인다.
-      console.warn('[@iyulab/router] the browser refused a history update (too many in a short time); the address catches up on the next one:', error.message);
+      console.warn('[@iyulab/router] the browser refused a history update (too many in a short time); the address catches up shortly:', error.message);
     }
     return false;
   }

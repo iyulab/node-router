@@ -12,6 +12,16 @@ import { playwright } from '@vitest/browser-playwright';
 //            원리적으로 답을 줄 수 없다 — 유닛 테스트는 «규칙이 시트에 실렸는가» 까지만
 //            말할 수 있고 «그래서 어떻게 배치되는가» 는 말하지 못한다. 그 간극에서 실제로
 //            회귀가 났다(`display:block` 단독이 자손의 백분율 높이를 무효화).
+/** WebKit 표본의 대상 — 주소 · 기록 · 선택 축(Safari 의 기록 쓰기 한도가 걸리는 자리). */
+const WEBKIT_AXIS = [
+  'tests/browser/selection.browser.test.ts',
+  'tests/browser/hash-mode.browser.test.ts',
+  'tests/browser/navigation-type.browser.test.ts',
+  'tests/browser/history-*.browser.test.ts',
+  'tests/browser/leave-guard.browser.test.ts',
+  'tests/browser/scroll-restoration.browser.test.ts',
+];
+
 export default defineConfig({
   test: {
     projects: [
@@ -41,6 +51,24 @@ export default defineConfig({
           // 이 머신의 Windows 동적 포트 제외 범위와 vitest 기본 포트가
           // 충돌해 EACCES 로 실패하던 것을 실측으로 확인했다. 41501~41506 사용 중.
           api: { host: '127.0.0.1', port: 41507 },
+          isolate: true,
+        },
+      },
+      {
+        // WebKit 표본 — 엔진 차이가 알려진 축(주소 · 기록 · 선택)만. 편집 루프(`npm test`)가 아니라 게시 전 전체 검증에서
+        // `npm run test:webkit` 으로 돈다. Safari 는 기록 쓰기에 호출 한도가 있고(10초 100회) Chromium 은 넘친 호출을 조용히
+        // 버린다 — 이 축의 결함은 Chromium 시험에서 원리적으로 안 보인다. 한도 아래로 시험 사이 간격을 둔다(`webkit-pace.ts`).
+        test: {
+          name: 'webkit',
+          fileParallelism: false,
+          include: WEBKIT_AXIS,
+          setupFiles: ['tests/browser/webkit-pace.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } }),
+            instances: [{ browser: 'webkit', headless: true }],
+          },
+          api: { host: '127.0.0.1', port: 41511 },
           isolate: true,
         },
       },

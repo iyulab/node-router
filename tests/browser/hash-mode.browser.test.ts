@@ -4,6 +4,7 @@ import { Router } from '../../src/Router.js';
 import '../../src/components/UOutlet.js';
 import '../../src/components/ULink.js';
 import type { ULink } from '../../src/components/ULink.js';
+import { setAddress } from './address.js';
 
 /**
  * **hash 모드 — 라우트는 `#` 뒤에 산다.**
@@ -45,17 +46,17 @@ const startPath = window.location.pathname + window.location.search;
 let root: HTMLElement;
 let router: Router | undefined;
 
-beforeEach(() => {
-  history.replaceState(null, '', startPath);
+beforeEach(async () => {
+  await setAddress(null, startPath);
   root = document.createElement('div');
   root.appendChild(document.createElement('u-outlet'));
   document.body.appendChild(root);
 });
-afterEach(() => {
+afterEach(async () => {
   router?.destroy();
   router = undefined;
   root.remove();
-  history.replaceState(null, '', startPath);
+  await setAddress(null, startPath);
 });
 
 const mount = (initialLoad = true) => {
