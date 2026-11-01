@@ -4,7 +4,7 @@ import { getRandomID } from './internals/crypto-helpers.js';
 import { findOutlet, findOutletOrThrow, findAnchorFrom, waitOutlet } from './internals/element-helpers.js';
 import { getRoutes, setRoutes  } from './internals/route-helpers.js';
 import { absolutePath, isExternalUrl, parseUrl } from './internals/url-helpers.js';
-import { currentRouteUrl, toBrowserHref, toRouteHref, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest, type LeaveOutcome } from './internals/location.js';
+import { currentRouteUrl, toBrowserHref, toRouteHref, writeHistoryEntry, ROUTER_STATE_EVENT, ROUTER_NAVIGATE_EVENT, type RouterMode, type RouterNavigateRequest, type LeaveOutcome } from './internals/location.js';
 import { RouteTracker } from './internals/RouteTracker.js';
 import { ScrollMemory } from './internals/ScrollMemory.js';
 import { AccessDeniedError, ContentLoadError, ContentRenderError, NotFoundError, RouteError } from './types/RouteError.js';
@@ -100,7 +100,7 @@ export class Router {
     // 모드에 맞는 주소를 내도록 지금 적어 둔다. 항목 순번은 이미 있으면 잇는다(새로 고침 · 다른 문서에서 돌아옴).
     const initial = isRecord(window.history.state) ? window.history.state : {};
     this._entryIndex = typeof initial.entryIndex === 'number' ? initial.entryIndex : 0;
-    window.history.replaceState({ ...initial, basepath: this._basepath, mode: this._mode, entryIndex: this._entryIndex }, '');
+    writeHistoryEntry('replace', { ...initial, basepath: this._basepath, mode: this._mode, entryIndex: this._entryIndex });
     // 라우터보다 먼저 붙은 링크(셸을 먼저 그리는 앱)도 이 상태를 따르게 한다.
     window.dispatchEvent(new Event(ROUTER_STATE_EVENT));
     window.addEventListener('popstate', this.handleWindowPopstate);
@@ -225,9 +225,9 @@ export class Router {
     const historyState = { ...entryState, ...options?.state, basepath: context.basepath, mode: this._mode, entryKey, entryIndex };
     const browserHref = toBrowserHref(context.path, context.href, this._mode);
     if (useReplace || navigationType === 'traverse' || navigationType === 'reload') {
-      window.history.replaceState(historyState, '', browserHref);
+      writeHistoryEntry('replace', historyState, browserHref);
     } else {
-      window.history.pushState(historyState, '', browserHref);
+      writeHistoryEntry('push', historyState, browserHref);
     }
 
     let outlet: UOutlet | undefined = undefined;
@@ -453,7 +453,7 @@ export class Router {
     }
     if (delta === 0) {
       const back = { basepath: from.basepath, mode: this._mode, entryKey: from.navigation.entryKey, entryIndex: this._entryIndex };
-      window.history.pushState(back, '', toBrowserHref(from.path, from.href, this._mode));
+      writeHistoryEntry('push', back, toBrowserHref(from.path, from.href, this._mode));
     }
     return false;
   }

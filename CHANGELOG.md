@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **A history update the browser refuses no longer throws into the app.** Safari throws `SecurityError` on more than 100 `replaceState` / `pushState` calls in 10 seconds — a `selection()` bound to the address reaches that when an arrow key is held on a list, and the exception broke the selection change or the navigation mid-way. The refused write is now skipped (the value and the screen move on; the address catches up on the next write) and the console says so once. Other errors still throw.
 - **A `u-link` whose host has an `aria-*` attribute no longer gets `role="none"`.** The presentational role added in 0.25.0 is ignored by browsers on a host with a global attribute such as `aria-label`, and states such as `aria-pressed` are not allowed on it. The host now keeps no role in that case (an author's own role still wins). The attributes are read when the link is attached.
 
 ## [0.25.0] - 2026-10-31

@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import { currentRouteUrl, requestRoutedNavigation, stateMode, toBrowserHref, ROUTER_STATE_EVENT, type NavigationRequestOutcome } from './internals/location.js';
+import { currentRouteUrl, requestRoutedNavigation, stateMode, toBrowserHref, writeHistoryEntry, ROUTER_STATE_EVENT, type NavigationRequestOutcome } from './internals/location.js';
 
 /**
  * 선택 채널의 선택 사항.
@@ -192,8 +192,7 @@ class Channel<T> implements SelectionChannel<T> {
   /** 라우터가 없을 때 — 문서를 떠나지 않고 기록만 고친다. */
   private writeHistory(value: T | undefined): void {
     const { href } = this.addressOf(value);
-    if (this.options.history !== 'push') window.history.replaceState(window.history.state, '', href);
-    else window.history.pushState(window.history.state, '', href);
+    writeHistoryEntry(this.options.history !== 'push' ? 'replace' : 'push', window.history.state, href);
   }
 }
 

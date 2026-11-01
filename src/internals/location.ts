@@ -25,6 +25,32 @@ export interface RouterHistoryState {
  */
 export const ROUTER_STATE_EVENT = 'u-router-state';
 
+let throttleWarned = false;
+
+/**
+ * 기록 항목을 쓴다(`replaceState` / `pushState`) — 브라우저가 호출 수 한도로 거부하면 예외를 앱에 올리지 않는다.
+ *
+ * Safari 는 10초에 100번을 넘는 `replaceState` · `pushState` 에 `SecurityError` 를 던진다(Firefox 도 한도가 있다 · Chromium 은
+ * 넘친 호출을 조용히 버린다). 주소에 묶인 선택을 화살표 키 반복으로 넘기면 몇 초 안에 닿는다 — 그때 이동 · 선택 처리 전체가
+ * 예외로 끊기던 것을, 그 한 번의 주소 쓰기만 건너뛰게 한다(화면 · 채널 값은 그대로, 주소는 다음 쓰기에서 따라온다).
+ * 다른 오류는 그대로 던진다. 거부되면 `false`.
+ */
+export function writeHistoryEntry(kind: 'replace' | 'push', state: unknown, url?: string): boolean {
+  try {
+    if (kind === 'replace') window.history.replaceState(state, '', url);
+    else window.history.pushState(state, '', url);
+    return true;
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error;
+    if (!throttleWarned) {
+      throttleWarned = true;
+      // diagnostic: 한 번만 — 넘친 호출마다 쓰면 콘솔이 같은 줄로 덮인다.
+      console.warn('[@iyulab/router] the browser refused a history update (too many in a short time); the address catches up on the next one:', error.message);
+    }
+    return false;
+  }
+}
+
 /** 현재 히스토리 상태가 선언한 모드(라우터가 아직 상태를 쓰지 않았으면 `history`). */
 export function stateMode(): RouterMode {
   return (window.history.state as RouterHistoryState | null)?.mode === 'hash' ? 'hash' : 'history';

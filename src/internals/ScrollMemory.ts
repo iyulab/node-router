@@ -1,4 +1,5 @@
 import type { RouteNavigation } from '../types/RouteContext.js';
+import { writeHistoryEntry } from './location.js';
 
 /** 기록 항목의 스크롤 위치 — `history.state.scroll` 에도 같은 모양으로 남는다(새로 고침 뒤 복원). */
 export interface ScrollPosition {
@@ -98,7 +99,7 @@ export class ScrollMemory {
   private writeToCurrentEntry(position: ScrollPosition): void {
     const state = window.history.state;
     const base = typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
-    window.history.replaceState({ ...base, scroll: position }, '');
+    writeHistoryEntry('replace', { ...base, scroll: position });
   }
 
   /** 새로 고침·문서 이동 직전 — 지금 항목의 위치를 그 항목 상태에 남긴다. */
