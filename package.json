@@ -1,6 +1,6 @@
 {
   "name": "@iyulab/router",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "description": "A modern client-side router for web applications with support for Lit and React components",
   "keywords": [
     "lit",
@@ -82,7 +82,7 @@
     }
   },
   "devDependencies": {
-    "@iyulab/components": "^2.27.0",
+    "@iyulab/components": "^3.0.0",
     "@lit/react": "^1.0.8",
     "@microsoft/api-extractor": "^7.58.8",
     "@types/node": "^26.1.1",
