@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **`custom-elements.json` — a Custom Elements Manifest for every element.** The package ships `dist/custom-elements.json`
+  (`@iyulab/router/dist/custom-elements.json`, declared in the `customElements` field of `package.json`) so editors,
+  documentation tools and AI agents can read each element's attributes, properties, events, slots and CSS parts without
+  parsing the source. It is generated at build time (`npm run analyze`).
+
 ## [0.25.1] - 2026-11-11
 
 ### Fixed
