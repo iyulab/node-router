@@ -80,6 +80,6 @@ import { NotFoundError } from '@iyulab/router';
 } }
 ```
 
-Anything else thrown from `render()` becomes a `ContentLoadError` (its `original` is what was thrown). An
+Anything else thrown from `render()` becomes a `ContentLoadError` (its `original` is what was thrown, typed `unknown` — narrow it before reading it). An
 error thrown from an `enter` guard keeps its own `status` or `code` when it has one, otherwise the code is
 `'UNKNOWN_ERROR'`.

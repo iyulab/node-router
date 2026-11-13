@@ -1,3 +1,5 @@
+import type { RootPart } from 'lit';
+import type { Root as ReactRoot } from 'react-dom/client';
 import { assertNotDefined } from '../internals/single-copy.js';
 
 /**
@@ -106,7 +108,7 @@ class UOutlet extends HTMLElement {
   /** 마운트된 콘텐츠의 종류 */
   private kind?: ContentKind;
   /** 실제 렌더링 컨텐츠 */
-  private root?: any;
+  private root?: RootPart | ReactRoot;
   /** 진행 중인 render — 다음 render 는 이것이 끝난 뒤 판정한다 */
   private pending?: Promise<void>;
 
@@ -163,7 +165,7 @@ class UOutlet extends HTMLElement {
         this.root = (await loadLit()).render(value, this);
         await this.childrenRendered();
       } else if (kind === 'react') {
-        await commitReact(this.root, value);
+        if (isReactRoot(this.root)) await commitReact(this.root, value);
       }
       // 'element': 조정할 수단이 없으므로 기존 인스턴스를 유지한다 — 새 ctx 는 창의
       // RouteDoneEvent 로만 도달한다(RouteConfig.key 참조).
@@ -181,8 +183,9 @@ class UOutlet extends HTMLElement {
       await this.childrenRendered();
     } else {
       const { createRoot } = await import('react-dom/client');
-      this.root = createRoot(this);
-      await commitReact(this.root, value);
+      const root = createRoot(this);
+      this.root = root;
+      await commitReact(root, value);
     }
   }
 
@@ -206,7 +209,7 @@ class UOutlet extends HTMLElement {
     }
 
     // React가 붙어있던 경우
-    if (this.root && 'unmount' in this.root) {
+    if (isReactRoot(this.root)) {
       this.root.unmount();
     }
 
@@ -227,6 +230,11 @@ class UOutlet extends HTMLElement {
  */
 function loadLit(): Promise<typeof import('lit')> {
   return import('lit');
+}
+
+/** React 루트인가 — Lit 의 `RootPart` 에는 `unmount` 가 없다. */
+function isReactRoot(root: RootPart | ReactRoot | undefined): root is ReactRoot {
+  return root !== undefined && 'unmount' in root;
 }
 
 async function commitReact(root: { render(value: unknown): void }, value: unknown): Promise<void> {

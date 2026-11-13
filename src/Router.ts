@@ -15,6 +15,18 @@ import type { FallbackRouteConfig, RouteConfig } from './types/RouteConfig.js';
 import type { NavigateOptions } from './types/NavigateOptions.js';
 
 /**
+ * 던져진 값(무엇이든 될 수 있다)을 라우트 오류로 — `status` · `code` 를 가진 값은 그 코드로, 아니면 `UNKNOWN_ERROR`.
+ * 가드가 던진 `{ status: 401 }` 류가 여기를 지나 같은 코드의 `RouteError` 가 된다.
+ */
+function toRouteError(error: unknown): RouteError {
+  if (error instanceof RouteError) return error;
+  const thrown = (typeof error === 'object' && error !== null ? error : {}) as { status?: unknown; code?: unknown; message?: unknown };
+  const code = [thrown.status, thrown.code].find((c): c is number | string => (typeof c === 'number' && c !== 0) || (typeof c === 'string' && c !== ''));
+  const message = typeof thrown.message === 'string' && thrown.message !== '' ? thrown.message : 'An unexpected error occurred';
+  return new RouteError(code ?? 'UNKNOWN_ERROR', message, error);
+}
+
+/**
  * 실패가 «예상된 결과» 인가 — 상태 코드가 4xx 인 것(없는 경로 404 · 가드 거부 403 · 가드가 던진 `{ status: 401 }` 류).
  * 판정은 클래스가 아니라 코드로 한다: 가드가 던진 상태도 router 가 같은 코드의 `RouteError` 로 감싼다.
  */
@@ -320,12 +332,8 @@ export class Router {
       completed = true;
       // 라우트 완료 이벤트 발생
       window.dispatchEvent(new RouteDoneEvent(context));
-    } catch (error: any) {
-      const routeError = error instanceof RouteError ? error
-        : new RouteError(
-          error?.status || error?.code || 'UNKNOWN_ERROR', 
-          error?.message || 'An unexpected error occurred', 
-          error);
+    } catch (error) {
+      const routeError = toRouteError(error);
 
       // 대체 화면은 라우트 사슬이 아니다 — 그 화면을 떠날 때는 글로벌 `leave` 만 묻는다.
       if (this._requestID === requestID) this._activeRoutes = [];

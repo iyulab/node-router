@@ -63,8 +63,10 @@ describe('오류 메시지 정직성 — 실제 값·기대 형식을 포함한�
       await router.go('/broken');
 
       const event = await errorEvent;
-      expect(event.error.original?.message).toMatch(/"\/broken"/);
-      expect(event.error.original?.message).toMatch(/route id: "broken-page"/);
+      const original = event.error.original;
+      expect(original).toBeInstanceOf(Error);
+      expect((original as Error).message).toMatch(/"\/broken"/);
+      expect((original as Error).message).toMatch(/route id: "broken-page"/);
     });
   });
 });

@@ -9,6 +9,13 @@
   documentation tools and AI agents can read each element's attributes, properties, events, slots and CSS parts without
   parsing the source. It is generated at build time (`npm run analyze`).
 
+### Changed
+
+- **`RouteError.original` is typed `unknown`** (it was `Error | any`, which is `any`). It holds whatever was thrown, which need
+  not be an `Error`, so reading `err.original.message` now needs a narrowing check first (`original instanceof Error`). The
+  constructors of `RouteError`, `NotFoundError`, `ContentLoadError` and `ContentRenderError` accept `unknown` for it. Types only —
+  nothing changes at run time.
+
 ## [0.25.1] - 2026-11-11
 
 ### Fixed

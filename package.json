@@ -52,9 +52,11 @@
     "test": "vitest run --project=unit --project=browser",
     "test:webkit": "vitest run --project=webkit",
     "analyze": "cem analyze",
-    "build": "npm run typecheck && vite build && npm run analyze",
+    "build": "npm run typecheck && npm run lint && vite build && npm run analyze",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "dependencies": {
     "urlpattern-polyfill": "^10.1.0"
@@ -85,6 +87,7 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@eslint/js": "^10.0.1",
     "@iyulab/components": "^3.0.0",
     "@lit/react": "^1.0.8",
     "@microsoft/api-extractor": "^7.58.8",
@@ -92,11 +95,15 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitest/browser-playwright": "^5.0.0",
+    "eslint": "^10.1.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
     "happy-dom": "^21.0.1",
     "lit": "^3.3.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.64.0",
     "vite": "^8.1.4",
     "vite-plugin-dts": "^5.0.3",
     "vitest": "^5.0.0"

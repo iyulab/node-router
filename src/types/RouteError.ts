@@ -13,7 +13,7 @@ export class RouteError extends Error {
    * 원본 에러 객체
    * - 원본 Error 객체 또는 예외 정보
    */
-  public original?: Error | any;
+  public original?: unknown;
 
   /**
    * 에러 발생 시간
@@ -24,7 +24,7 @@ export class RouteError extends Error {
   constructor(
     code: number | string,
     message: string,
-    original?: Error | any
+    original?: unknown
   ) {
     super(message);
     this.name = 'RouteError';
@@ -43,7 +43,7 @@ export class RouteError extends Error {
  * 페이지를 찾을 수 없을 때 발생하는 에러
  */
 export class NotFoundError extends RouteError {
-  constructor(path: string, original?: Error | any) {
+  constructor(path: string, original?: unknown) {
     super(404, `Page not found: ${path}`, original);
   }
 }
@@ -70,7 +70,7 @@ export class OutletMissingError extends RouteError {
  * 컨텐츠 로드시 나타나는 에러
  */
 export class ContentLoadError extends RouteError {
-  constructor(original?: Error | any) {
+  constructor(original?: unknown) {
     super('CONTENT_LOAD_FAILED', 'Failed to load route content. Check browser console for details.', original);
   }
 }
@@ -79,7 +79,7 @@ export class ContentLoadError extends RouteError {
  * 컨텐츠 렌더링시 발생하는 에러
  */
 export class ContentRenderError extends RouteError {
-  constructor(original?: Error | any) {
+  constructor(original?: unknown) {
     super('CONTENT_RENDER_FAILED', 'Failed to render route component. Check browser console for details.', original);
   }
 }
