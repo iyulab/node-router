@@ -9,6 +9,10 @@
   documentation tools and AI agents can read each element's attributes, properties, events, slots and CSS parts without
   parsing the source. It is generated at build time (`npm run analyze`).
 
+### Fixed
+
+- **A nested `<u-outlet>` releases its React root when it is detached.** When the parent screen was replaced, the inner outlet left the page without being told, so its `createRoot` root was never unmounted and the effect cleanups inside it (unsaved-change guards, event subscriptions) never ran. The outlet now releases its content once it has stayed detached past the current microtask — moving it elsewhere in the same turn keeps the content — and a mount still waiting on a dynamic import when the outlet is detached drops its root instead of keeping it.
+
 ### Changed
 
 - **`RouteError.original` is typed `unknown`** (it was `Error | any`, which is `any`). It holds whatever was thrown, which need

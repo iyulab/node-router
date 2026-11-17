@@ -112,8 +112,29 @@ class UOutlet extends HTMLElement {
   /** 진행 중인 render — 다음 render 는 이것이 끝난 뒤 판정한다 */
   private pending?: Promise<void>;
 
+  /** 떨어져서 거둔 횟수 — 진행 중인 `mount()` 가 «기다리는 사이에 떨어졌는가» 를 알아보는 표지. */
+  private released = 0;
+
   connectedCallback() {
     adoptOutletDisplay(this.getRootNode());
+  }
+
+  /**
+   * 떼어지면 마운트한 내용을 거둔다 — React 뿌리를 `unmount()` 해 안의 효과 정리가 돌게 한다.
+   *
+   * 중첩 라우트에서 안쪽 아웃렛은 바깥 화면 안에 있다. 바깥 화면이 바뀌면 이 아웃렛은 `render()` 를 다시
+   * 받지 않고 DOM 에서 떨어질 뿐이라, 여기서 거두지 않으면 뿌리가 살아 남아 그 안의 등록(저장 안 한
+   * 변경 · 이벤트 구독)이 남는다.
+   *
+   * ⚠이동(떼었다 곧바로 다시 붙임)은 내용을 유지해야 하므로 `disconnectedCallback` 이 동기로 거두지 않고
+   *   마이크로태스크 뒤에도 여전히 떨어져 있을 때만 거둔다.
+   */
+  disconnectedCallback() {
+    queueMicrotask(() => {
+      if (this.isConnected) return;
+      this.released += 1;
+      this.reset();
+    });
   }
 
   /**
@@ -151,6 +172,8 @@ class UOutlet extends HTMLElement {
     }
 
     const kind = contentKind(value);
+    // 동적 import 를 기다리는 사이에 아웃렛이 떨어져 거둬졌으면(`disconnectedCallback`) 이 마운트의 뿌리는 버린다.
+    const released = this.released;
     const inPlace =
       this.kind !== undefined &&
       this.kind === kind &&
@@ -162,7 +185,9 @@ class UOutlet extends HTMLElement {
 
     if (inPlace) {
       if (kind === 'lit') {
-        this.root = (await loadLit()).render(value, this);
+        const lit = await loadLit();
+        if (released !== this.released) return;
+        this.root = lit.render(value, this);
         await this.childrenRendered();
       } else if (kind === 'react') {
         if (isReactRoot(this.root)) await commitReact(this.root, value);
@@ -179,10 +204,13 @@ class UOutlet extends HTMLElement {
       this.replaceChildren(value as HTMLElement);
       this.root = undefined;
     } else if (kind === 'lit') {
-      this.root = (await loadLit()).render(value, this);
+      const lit = await loadLit();
+      if (released !== this.released) return;
+      this.root = lit.render(value, this);
       await this.childrenRendered();
     } else {
       const { createRoot } = await import('react-dom/client');
+      if (released !== this.released) return;
       const root = createRoot(this);
       this.root = root;
       await commitReact(root, value);
